@@ -20,7 +20,7 @@
     <div id="container">
         <div class="flex">
         <aside id="sidebar">
-            <div id="bio" class="note">Welcome!</div>
+            <div id="bio" class="note">Welcome! Use nyaa.si for video files...</div>
             <div class="side-sticky">
             <nav id="navi">
             <details open=""><summary>Pages</summary>
@@ -81,6 +81,10 @@
                     <li><b>④</b> 観る watch</li>
                 </ol>
                 <form id="search-form" class="bubble search-bar">
+                    <select id="search-kind" class="search-kind" aria-label="what to search" title="anime come from AniList + kitsunekko; films and dramas from JP-Subtitles on GitHub">
+                        <option value="anime">アニメ anime</option>
+                        <option value="film">映画・ドラマ films &amp; dramas</option>
+                    </select>
                     <input id="search-input" type="search" placeholder="search an anime… (e.g. Frieren, 3-gatsu no Lion)" autocomplete="off">
                     <button type="submit">探す</button>
                 </form>
@@ -100,7 +104,11 @@
                 </div>
 
                 <div class="note sub-browser">
-                    <h3><span class="step-no">③</span> Japanese subtitles <small>(kitsunekko.net + <a href="https://github.com/Ajatt-Tools/kitsunekko-mirror" target="_blank" rel="noopener">GitHub mirror</a>)</small></h3>
+                    <div class="sub-browser-actions">
+                        <button id="show-toggle" class="show-toggle" title="show / hide the subtitle list">hide list ▴</button>
+                        <button id="show-close" class="show-close" title="close this and the search results">✕</button>
+                    </div>
+                    <h3><span class="step-no">③</span> Japanese subtitles <small>(kitsunekko.net + <a href="https://github.com/Ajatt-Tools/kitsunekko-mirror" target="_blank" rel="noopener">GitHub mirror</a> + <a href="https://github.com/Matchoo95/JP-Subtitles" target="_blank" rel="noopener">JP-Subtitles</a>)</small></h3>
                     <div class="sub-browser-controls">
                         <label>folder
                             <select id="folder-select"></select>

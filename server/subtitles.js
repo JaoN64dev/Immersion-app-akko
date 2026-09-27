@@ -1,4 +1,5 @@
-// Japanese subtitles from kitsunekko.net and its GitHub mirror (Ajatt-Tools/kitsunekko-mirror)
+// Japanese subtitles from kitsunekko.net, its GitHub mirror (Ajatt-Tools/kitsunekko-mirror),
+// and Matchoo95/JP-Subtitles on GitHub (live-action films, dramas, Netflix shows)
 //
 //   GET /api/subs/shows?source=            every show folder
 //   GET /api/subs/files?source=&dir=       files + sub-folders in one folder
@@ -69,49 +70,66 @@ async function listDir(dir) {
   return parseListing(await fetchText(url));
 }
 
-// ---------- GitHub mirror ----------
+// ---------- GitHub repos ----------
 // Folders are listed with the git trees API (one call per folder, cached; GitHub allows
 // 60 calls/hour without a token, set GITHUB_TOKEN for more). Files come from
 // raw.githubusercontent.com, which isn't rate limited.
 
 const MIRROR = 'Ajatt-Tools/kitsunekko-mirror';
 const MIRROR_CATEGORIES = { anime_tv: '', anime_movie: ' (movie)' };
+const JPSUBS = 'Matchoo95/JP-Subtitles';
 
-async function githubTree(sha) {
+function githubHeaders() {
   const headers = { 'User-Agent': UA, Accept: 'application/vnd.github+json' };
   if (process.env.GITHUB_TOKEN) headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
-  // tree shas never change, so these can be cached forever
-  return cached('tree:' + sha, Infinity, async () => {
-    const res = await fetch(`https://api.github.com/repos/${MIRROR}/git/trees/${sha}`, { headers });
-    if (res.status === 403 || res.status === 429) throw new Error('GitHub rate limit hit, try again in a bit (or set GITHUB_TOKEN)');
-    if (!res.ok) throw new Error(`${res.status} from GitHub`);
-    return (await res.json()).tree;
-  });
+  return headers;
 }
 
-// sha of the subtitles/ folder at the current commit (re-checked every 6 hours)
-const mirrorRoot = () => cached('mirror-root', 6 * 3600e3, async () =>
-  (await githubTree('main')).find((t) => t.path === 'subtitles').sha);
+async function githubJson(url) {
+  const res = await fetch(url, { headers: githubHeaders() });
+  if (res.status === 403 || res.status === 429) throw new Error('GitHub rate limit hit, try again in a bit (or set GITHUB_TOKEN)');
+  if (!res.ok) throw new Error(`${res.status} from GitHub`);
+  return res.json();
+}
 
-// Walk "anime_tv/Show Name/sub folder" down to its tree sha
-async function mirrorSha(dir) {
-  let sha = await mirrorRoot();
+// tree shas never change, so these can be cached forever
+const githubTree = (repo, sha) => cached(`tree:${repo}:${sha}`, Infinity, async () =>
+  (await githubJson(`https://api.github.com/repos/${repo}/git/trees/${encodeURIComponent(sha)}`)).tree);
+
+// sha of the folder the subtitles live in, at the current commit (re-checked every 6 hours)
+const mirrorRoot = () => cached('root:' + MIRROR, 6 * 3600e3, async () =>
+  (await githubTree(MIRROR, 'main')).find((t) => t.path === 'subtitles').sha);
+const jpsubsRoot = () => cached('root:' + JPSUBS, 6 * 3600e3, async () =>
+  (await githubJson(`https://api.github.com/repos/${JPSUBS}/commits/master`)).commit.tree.sha);
+
+// Walk "Show Name/sub folder" down from a root tree to its sha
+async function treeSha(repo, root, dir) {
+  let sha = root;
   for (const part of dir.split('/')) {
-    const node = (await githubTree(sha)).find((t) => t.path === part && t.type === 'tree');
-    if (!node) throw new Error('folder not found in mirror');
+    const node = (await githubTree(repo, sha)).find((t) => t.path === part && t.type === 'tree');
+    if (!node) throw new Error('folder not found on GitHub');
     sha = node.sha;
   }
   return sha;
 }
 
-function safeMirrorPath(p) {
-  if (typeof p !== 'string' || !p) return null;
-  const parts = p.split('/');
-  if (!(parts[0] in MIRROR_CATEGORIES) || parts.some((s) => !s || s === '.' || s === '..')) return null;
-  return p;
+// Folders + files of one tree, as the browser wants them
+async function treeListing(repo, sha, dir) {
+  const visible = (await githubTree(repo, sha)).filter((t) => !t.path.startsWith('.'));
+  return {
+    folders: visible.filter((t) => t.type === 'tree').map((t) => ({ name: t.path, dir: `${dir}/${t.path}` })),
+    files: visible.filter((t) => t.type === 'blob')
+      .map((t) => ({ name: t.path, path: `${dir}/${t.path}`, size: t.size, ext: extOf(t.path) }))
+      .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true })),
+  };
 }
 
-// ---------- sources: same interface for both ----------
+const cleanParts = (p) => typeof p === 'string' && p !== '' && p.split('/').every((s) => s && s !== '.' && s !== '..');
+const safeMirrorPath = (p) => (cleanParts(p) && p.split('/')[0] in MIRROR_CATEGORIES ? p : null);
+const safeRepoPath = (p) => (cleanParts(p) ? p : null);
+const rawUrl = (repo, branch, p) => `https://raw.githubusercontent.com/${repo}/${branch}/${p.split('/').map(encodeURIComponent).join('/')}`;
+
+// ---------- sources: same interface for all ----------
 
 const sources = {
   kitsunekko: {
@@ -123,26 +141,26 @@ const sources = {
   github: {
     safe: safeMirrorPath,
     async shows() {
-      const root = await githubTree(await mirrorRoot());
+      const root = await githubTree(MIRROR, await mirrorRoot());
       const lists = await Promise.all(Object.entries(MIRROR_CATEGORIES).map(async ([cat, suffix]) => {
         const node = root.find((t) => t.path === cat);
-        return (await githubTree(node.sha))
+        return (await githubTree(MIRROR, node.sha))
           .filter((t) => t.type === 'tree')
           .map((t) => ({ name: t.path + suffix, dir: `${cat}/${t.path}` }));
       }));
       return lists.flat();
     },
-    async files(dir) {
-      const tree = await githubTree(await mirrorSha(dir));
-      const visible = tree.filter((t) => !t.path.startsWith('.'));
-      return {
-        folders: visible.filter((t) => t.type === 'tree').map((t) => ({ name: t.path, dir: `${dir}/${t.path}` })),
-        files: visible.filter((t) => t.type === 'blob')
-          .map((t) => ({ name: t.path, path: `${dir}/${t.path}`, size: t.size, ext: extOf(t.path) }))
-          .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true })),
-      };
-    },
-    url: (p) => `https://raw.githubusercontent.com/${MIRROR}/main/subtitles/${p.split('/').map(encodeURIComponent).join('/')}`,
+    files: async (dir) => treeListing(MIRROR, await treeSha(MIRROR, await mirrorRoot(), dir), dir),
+    url: (p) => rawUrl(MIRROR, 'main', 'subtitles/' + p),
+  },
+  // live-action films, dramas and shows, one folder per title
+  jpsubs: {
+    safe: safeRepoPath,
+    shows: async () => (await githubTree(JPSUBS, await jpsubsRoot()))
+      .filter((t) => t.type === 'tree' && !t.path.startsWith('.'))
+      .map((t) => ({ name: t.path, dir: t.path })),
+    files: async (dir) => treeListing(JPSUBS, await treeSha(JPSUBS, await jpsubsRoot(), dir), dir),
+    url: (p) => rawUrl(JPSUBS, 'master', p),
   },
 };
 

@@ -1176,3 +1176,32 @@ main .transcript-toggle[aria-pressed="false"] {border-style: dashed;}
 .about-links b {color: var(--dark-link-color); letter-spacing: 1px;}
 .about-links a {color: var(--dark-link-color); font-weight: bold; word-break: break-all;}
 .about-handle {font-weight: bold; user-select: all;}
+
+/* manga OCR (mokuro, run by the local server) */
+.manga-ocr-bar {display: flex; flex-wrap: wrap; align-items: center; gap: .5em 1em; padding: .5em .8em;}
+.manga-ocr-status {font-size: .9em; flex: 1; min-width: 12em;}
+.manga-ocr-status .bar {display: inline-block; width: 140px; vertical-align: middle; margin: 0 .5em;}
+
+/* search: anime / films & dramas */
+main .search-kind {font-weight: bold; color: var(--dark-link-color); max-width: 45%;}
+.card .card-noimg {
+  display: grid; place-content: center;
+  width: 100%; aspect-ratio: 2 / 3; margin-bottom: 4px; border-radius: 4px;
+  background: var(--text-bg); color: var(--post-bg);
+  font-size: 2.6em; font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif;
+}
+
+/* subtitle panel: fold to one line after a pick, or close */
+.show-layout .sub-browser {position: relative;}
+.sub-browser-actions {position: absolute; top: .9em; right: 1.2em; display: flex; gap: .4em;}
+main .sub-browser-actions button {padding: .1em .6em; font-size: .85em;}
+.show-layout .sub-browser h3 {padding-right: 11em;}
+.show-layout.folded {grid-template-columns: auto minmax(0, 1fr); align-items: center;}
+.show-layout.folded .show-head img, .show-layout.folded .show-head .muted {display: none;}
+.show-layout.folded .show-head h2 {font-size: 1.1em; max-width: 22em;}
+.show-layout.folded .sub-browser > :not(h3):not(.sub-browser-actions) {display: none;}
+.show-layout.folded .sub-browser h3 {margin: .1em 0; border-bottom: 0;}
+@container (max-width: 560px) {
+  .sub-browser-actions {position: static; justify-content: flex-end; margin-top: .3em;}
+  .show-layout .sub-browser h3 {padding-right: 0;}
+}

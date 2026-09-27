@@ -78,6 +78,22 @@ Anki must be open while you use the app. You don't need to change any AnkiConnec
 
 Cards can include a recording of the word being said. Set a field to **word audio** in the Anki panel on the Watch page. The audio comes from [JapanesePod101](https://www.japanesepod101.com/) or, if that has none, from [Lingua Libre](https://lingualibre.org/) recordings on Wikimedia Commons. Both are free, but you need an internet connection for this.
 
+## Manga OCR (optional)
+
+To click words in manga, the text on each page has to be read first (OCR). The app does this with [mokuro](https://github.com/kha-white/mokuro), on your own computer.
+
+1. Install [Python](https://www.python.org/downloads/) 3.10 or newer.
+2. In a terminal, run:
+
+   ```
+   pip install mokuro
+   ```
+
+   This is a big download (about 1.5–2 GB with PyTorch). The first OCR also downloads mokuro's models (about 500 MB).
+3. On the **Read** page, open a manga volume and press **OCR this volume**.
+
+Without an NVIDIA graphics card, OCR runs on the processor and takes a few seconds per page. The result is saved in `data/ocr/`, so each volume only needs it once. To use a specific Python, set `AKKO_PYTHON` to the path of its `python.exe` before starting the server.
+
 ## Optional: GitHub token
 
 Subtitles are also searched in a GitHub mirror. Without a token, GitHub allows only 60 requests per hour. If you use the app a lot, you can raise that limit with a [personal access token](https://github.com/settings/tokens) (it doesn't need any permissions):
@@ -132,7 +148,8 @@ These files are used under the [EDRDG licence](https://www.edrdg.org/edrdg/licen
 
 - Word splitting: [kuromoji](https://github.com/takuyaa/kuromoji.js) (Apache 2.0)
 - Anime search: [AniList](https://anilist.co) API
-- Subtitles: [kitsunekko.net](https://kitsunekko.net) and the [kitsunekko mirror](https://github.com/Ajatt-Tools/kitsunekko-mirror) on GitHub
+- Anime subtitles: [kitsunekko.net](https://kitsunekko.net) and the [kitsunekko mirror](https://github.com/Ajatt-Tools/kitsunekko-mirror) on GitHub
+- Film and drama subtitles: [JP-Subtitles](https://github.com/Matchoo95/JP-Subtitles) on GitHub
 - Word audio: [JapanesePod101](https://www.japanesepod101.com/) and [Lingua Libre](https://lingualibre.org/) (Wikimedia Commons)
 
 The app fetches subtitles and word audio from these sites while you use it. It doesn't include any of their files, and it may stop working if they change.

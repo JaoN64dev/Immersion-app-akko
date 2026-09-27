@@ -4,6 +4,7 @@
 //   - /api/dict, /api/tokenize   offline dictionary + word splitting     server/dictionary.js
 //   - /api/anki     AnkiConnect passthrough                               server/anki.js
 //   - /api/audio    word pronunciation audio                              server/audio.js
+//   - /api/ocr      manga OCR with mokuro (runs locally)                  server/ocr.js
 //   - /api/podcasts podcast feeds + transcripts                           server/podcasts.js
 
 const path = require('path');
@@ -12,6 +13,7 @@ const subtitles = require('./server/subtitles');
 const dictionary = require('./server/dictionary');
 const anki = require('./server/anki');
 const audio = require('./server/audio');
+const ocr = require('./server/ocr');
 const podcasts = require('./server/podcasts');
 
 const hostname = '127.0.0.1';
@@ -24,6 +26,7 @@ app.use('/api/subs', subtitles.router);
 app.use('/api', dictionary.router);
 app.use('/api/anki', anki.router);
 app.use('/api/audio', audio.router);
+app.use('/api/ocr', ocr.router);
 app.use('/api/podcasts', podcasts.router);
 
 // ---------- static site (only the files the pages need) ----------
@@ -39,6 +42,11 @@ for (const dir of ['scripts', 'images', 'fonts', 'node_modules/@ffmpeg']) {
 
 // Run Server
 app.listen(port, hostname, () => {
-  console.log('Server running at http://' + hostname + ':' + port + '\n');
+  const url = 'http://' + hostname + ':' + port;
+  console.log('Server running at ' + url + '\n');
+  // start-akko.bat sets AKKO_OPEN=1 so the page opens as soon as the server is up
+  if (process.env.AKKO_OPEN && process.platform === 'win32') {
+    require('child_process').exec(`start "" "${url}"`);
+  }
   dictionary.init();
 });

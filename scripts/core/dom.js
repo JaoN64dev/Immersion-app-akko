@@ -3,7 +3,7 @@
 export const $ = (sel) => document.querySelector(sel);
 
 export const el = {
-    searchForm: $("#search-form"), searchInput: $("#search-input"),
+    searchForm: $("#search-form"), searchInput: $("#search-input"), searchKind: $("#search-kind"),
     searchStatus: $("#search-status"), results: $("#results"),
     showSection: $("#show-section"), showCover: $("#show-cover"),
     showNative: $("#show-native"), showRomaji: $("#show-romaji"), showMeta: $("#show-meta"),

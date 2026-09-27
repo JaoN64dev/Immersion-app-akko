@@ -20,7 +20,7 @@
     <div id="container">
         <div class="flex">
         <aside id="sidebar">
-            <div id="bio" class="note">I`m akko. read books and manga in japanese, click any word you don't know.</div>
+            <div id="bio" class="note">I`m akko. read books and manga in japanese, click any word you don't know.Btw use nyaa.si</div>
             <div class="side-sticky">
             <nav id="navi">
             <details open=""><summary>Pages</summary>
@@ -128,9 +128,9 @@
                     </div>
                     <p class="note manga-hint">
                         Manga text is part of the picture, so it needs OCR to be clickable.
-                        Run <a href="https://github.com/kha-white/mokuro" target="_blank" rel="noopener">mokuro</a> on a volume once
-                        (<code>pip install mokuro</code>, then <code>mokuro path/to/volume</code>) and open its <code>.mokuro</code> file
-                        together with the pages. Without it you can still read, just not click words.
+                        Open the pages and press <b>OCR this volume</b>: <a href="https://github.com/kha-white/mokuro" target="_blank" rel="noopener">mokuro</a>
+                        reads them on this computer (needs <code>pip install mokuro</code> once), and the text is saved so it only happens once per volume.
+                        You can also open a <code>.mokuro</code> file you made yourself together with the pages.
                     </p>
                     <p id="manga-status" class="status"></p>
 
@@ -145,6 +145,11 @@
                         <b id="manga-title" class="reader-title" lang="ja"></b>
                         <span id="manga-stats" class="word-stats"></span>
                         <span id="manga-badge" class="comp-badge inline" hidden></span>
+                    </div>
+                    <div id="manga-ocr-bar" class="bubble manga-ocr-bar" hidden>
+                        <button id="manga-ocr" title="read the text on every page with mokuro, on this computer">OCR this volume</button>
+                        <span id="manga-ocr-status" class="manga-ocr-status"></span>
+                        <button id="manga-ocr-cancel" hidden>cancel</button>
                     </div>
                     <div class="toolbar manga-tools">
                         <button id="manga-next" title="next page (←)">◀ next</button>

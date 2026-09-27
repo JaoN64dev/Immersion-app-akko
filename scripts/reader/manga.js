@@ -3,7 +3,7 @@
 // page, invisible until hovered, with clickable words.
 
 import { $ } from "../core/dom.js";
-import { store, escapeHtml } from "../core/utils.js";
+import { store, escapeHtml, getJson, postJson } from "../core/utils.js";
 import { pctLevel } from "../words/status.js";
 import { tokenize, tokensHtml, recolor, comprehension } from "../words/render.js";
 import { watchHover } from "../words/hover.js";
@@ -20,9 +20,10 @@ const ui = {
     double: $("#manga-double"), showText: $("#manga-showtext"),
     stats: $("#manga-stats"), badge: $("#manga-badge"), status: $("#manga-status"),
     recentWrap: $("#manga-recent-wrap"), recent: $("#manga-recent"), files: $("#manga-files"),
+    ocrBar: $("#manga-ocr-bar"), ocr: $("#manga-ocr"), ocrStatus: $("#manga-ocr-status"), ocrCancel: $("#manga-ocr-cancel"),
 };
 
-let book = null;               // {title, key, pages: [{name, url, ocr}]}
+let book = null;               // {title, key, pages: [{name, url, size, ocr}]}
 let index = 0;                 // first page of the current spread
 let tokens = new Map();        // page -> block -> line -> tokens
 let job = 0;
@@ -79,10 +80,10 @@ export async function openFiles(fileList) {
     book = {
         title,
         key: `${title}:${images.length}`,
-        pages: images.map((img) => ({ name: img.name, url: URL.createObjectURL(img.blob), ocr: ocrByPage[base(img.name)] || null })),
+        pages: images.map((img) => ({ name: img.name, url: URL.createObjectURL(img.blob), size: img.blob.size, ocr: ocrByPage[base(img.name)] || null })),
     };
     const withText = book.pages.filter((p) => p.ocr && p.ocr.blocks.length).length;
-    ui.status.textContent = `${images.length} pages` + (withText ? ` · text on ${withText} pages` : " · no OCR file, so no clickable text");
+    ui.status.textContent = `${images.length} pages` + (withText ? ` · text on ${withText} pages` : " · no OCR yet, so no clickable text");
 
     job++;
     tokens = new Map();
@@ -93,6 +94,8 @@ export async function openFiles(fileList) {
     show(saved ? saved.page : 0);
     renderStats();
     if (withText) tokenizeVolume(job);
+    else loadSavedOcr(book);
+    ui.ocrBar.hidden = !!withText;
     ui.viewer.scrollIntoView({ behavior: "smooth" });
 }
 
@@ -183,19 +186,120 @@ function renderStats() {
     ui.badge.title = `you know ${c.known} of the ${c.total} words in this volume (ignored words don't count)`;
 }
 
+// ---------- OCR with mokuro (server/ocr.js) ----------
+// Pages are sent as 0001.jpg, 0002.png … so mokuro's result maps back by position.
+
+const pageFile = (i, page) => `${String(i + 1).padStart(4, "0")}.${(ext(page.name).replace("jpeg", "jpg")) || "jpg"}`;
+let ocrJob = null;
+
+// Same pages (names + sizes) -> same key, so a volume is only read once
+async function volumeKey(b) {
+    const text = b.pages.map((p) => `${p.name}:${p.size}`).join("\n");
+    const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+    return [...new Uint8Array(hash)].slice(0, 16).map((x) => x.toString(16).padStart(2, "0")).join("");
+}
+
+function applyOcr(b, volume) {
+    if (b !== book) return;
+    let n = 0;
+    volume.pages.forEach((p) => {
+        const i = parseInt(base(p.img_path || ""), 10) - 1;
+        if (b.pages[i] && Array.isArray(p.blocks)) { b.pages[i].ocr = p; if (p.blocks.length) n++; }
+    });
+    ui.status.textContent = `${b.pages.length} pages · text on ${n} pages`;
+    ui.ocrBar.hidden = true;
+    job++;
+    tokens = new Map();
+    show(index);
+    tokenizeVolume(job);
+}
+
+// Done before? The server keeps every result in data/ocr/
+async function loadSavedOcr(b) {
+    try {
+        b.ocrKey = await volumeKey(b);
+        const volume = await getJson(`/api/ocr/cached/${b.ocrKey}`);
+        applyOcr(b, volume);
+    } catch { /* not done yet: the OCR button stays */ }
+}
+
+const ocrSay = (html) => { ui.ocrStatus.innerHTML = html; };
+const minutes = (s) => (s < 90 ? `${Math.max(1, Math.round(s))} s` : `${Math.round(s / 60)} min`);
+
+async function runOcr() {
+    const b = book;
+    if (!b || ocrJob) return;
+    ui.ocr.disabled = true;
+    try {
+        const status = await getJson("/api/ocr/status");
+        if (!status.installed) {
+            ocrSay(`mokuro isn't installed. In a terminal run <code>pip install mokuro</code>, then try again.`);
+            return;
+        }
+        b.ocrKey = b.ocrKey || await volumeKey(b);
+        const { id } = await postJson("/api/ocr/jobs", { key: b.ocrKey, title: b.title, total: b.pages.length });
+        ocrJob = id;
+        ui.ocrCancel.hidden = false;
+        for (let i = 0; i < b.pages.length; i++) {
+            if (ocrJob !== id) return;
+            ocrSay(`sending pages ${i + 1} / ${b.pages.length}…`);
+            const blob = await (await fetch(b.pages[i].url)).blob();
+            const r = await fetch(`/api/ocr/jobs/${id}/pages/${pageFile(i, b.pages[i])}`, { method: "PUT", body: blob });
+            if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || "upload failed");
+        }
+        await postJson(`/api/ocr/jobs/${id}/run`, {});
+        const started = Date.now();
+        let firstDoneAt = null, firstDone = 0;
+        while (ocrJob === id) {
+            await new Promise((r) => setTimeout(r, 2000));
+            const s = await getJson(`/api/ocr/jobs/${id}`);
+            if (s.state === "done") break;
+            if (s.state === "failed") throw new Error(s.error || "mokuro failed");
+            if (s.state === "cancelled") return;
+            if (s.loadingModels) {
+                ocrSay(`starting mokuro… (the very first time it downloads its OCR models, ~500 MB, so this can take a few minutes)`);
+                continue;
+            }
+            if (firstDoneAt === null) { firstDoneAt = Date.now(); firstDone = s.done; }
+            const rate = (s.done - firstDone) / ((Date.now() - firstDoneAt) / 1000);
+            const left = rate > 0 ? ` · about ${minutes((s.total - s.done) / rate)} left` : "";
+            ocrSay(`reading text <span class="bar"><i style="width:${(s.done / s.total) * 100}%"></i></span> ${s.done} / ${s.total} pages${left}`);
+        }
+        if (ocrJob !== id) return;
+        applyOcr(b, await getJson(`/api/ocr/cached/${b.ocrKey}`));
+        ocrSay(`done in ${minutes((Date.now() - started) / 1000)} ✓`);
+    } catch (err) {
+        ocrSay(`OCR failed: ${escapeHtml(err.message)}`);
+    } finally {
+        ocrJob = null;
+        ui.ocr.disabled = false;
+        ui.ocrCancel.hidden = true;
+    }
+}
+
+async function cancelOcr() {
+    const id = ocrJob;
+    if (!id) return;
+    ocrJob = null;
+    await fetch(`/api/ocr/jobs/${id}`, { method: "DELETE" }).catch(() => {});
+    ocrSay("cancelled");
+}
+
 // ---------- continue reading ----------
 
 function renderRecent() {
-    const recs = Object.values(store.get(PROGRESS, {})).sort((a, b) => b.updated - a.updated).slice(0, 8);
+    const recs = Object.entries(store.get(PROGRESS, {})).map(([key, r]) => ({ ...r, key }))
+        .sort((a, b) => b.updated - a.updated).slice(0, 8);
     ui.recentWrap.hidden = !recs.length;
     ui.recent.innerHTML = recs.map((r) => `
-        <div class="resume-card" data-title="${escapeHtml(r.title)}">
+        <div class="resume-card" data-key="${escapeHtml(r.key)}" data-title="${escapeHtml(r.title)}">
             <div class="noimg">漫</div>
             <div class="info">
                 <b lang="ja">${escapeHtml(r.title)}</b>
                 <span>page ${r.page + 1} / ${r.total}</span>
                 <div class="bar"><i style="width:${Math.round(((r.page + 1) / r.total) * 100)}%"></i></div>
             </div>
+            <button class="forget" title="remove from continue reading">✕</button>
         </div>`).join("");
 }
 
@@ -206,6 +310,8 @@ export function init() {
     ui.double.addEventListener("input", () => { store.set("akko-manga-double", ui.double.checked); show(index); });
     ui.double.checked = store.get("akko-manga-double", false);
     ui.showText.addEventListener("input", applyShowText);
+    ui.ocr.addEventListener("click", runOcr);
+    ui.ocrCancel.addEventListener("click", cancelOcr);
     window.addEventListener("resize", sizeText);
 
     // click the left half for the next page, the right half for the previous one (right-to-left)
@@ -233,6 +339,12 @@ export function init() {
     ui.recent.addEventListener("click", (e) => {
         const card = e.target.closest(".resume-card");
         if (!card) return;
+        if (e.target.closest(".forget")) {
+            const all = store.get(PROGRESS, {});
+            delete all[card.dataset.key];
+            store.set(PROGRESS, all);        // "akko-saved" redraws the row
+            return;
+        }
         ui.status.textContent = `open the pages of “${card.dataset.title}” to continue`;
         ui.files.value = "";
         ui.files.click();

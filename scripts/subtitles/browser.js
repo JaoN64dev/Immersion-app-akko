@@ -1,4 +1,5 @@
-// Finding Japanese subtitles: kitsunekko.net + its GitHub mirror (both through our server)
+// Finding Japanese subtitles: kitsunekko.net + its GitHub mirror (anime), JP-Subtitles on
+// GitHub (films, dramas, shows). All through our server.
 
 import { el } from "../core/dom.js";
 import { state } from "../core/state.js";
@@ -6,7 +7,7 @@ import { escapeHtml, getJson, episodeOf } from "../core/utils.js";
 import { loadSubtitleText } from "../player/cues.js";
 import * as progress from "../progress.js";
 
-const SOURCES = { kitsunekko: "kitsunekko.net", github: "GitHub mirror" };
+const SOURCES = { kitsunekko: "kitsunekko.net", github: "GitHub mirror", jpsubs: "JP-Subtitles (films & dramas)" };
 const PLAYABLE = ["srt", "ass", "ssa", "vtt", "zip"];
 
 let shows = null;           // folder list from every source (loaded on first use)
@@ -17,22 +18,47 @@ let files = [];             // what's in the open folder
 const api = (what, source, params) => `/api/subs/${what}?` + new URLSearchParams({ source, ...params });
 const folderValue = (s) => `${s.source}|${s.dir}`;
 
+// ---------- the panel: open, folded to one line, or closed ----------
+
+const showToggle = document.getElementById("show-toggle");
+
+function foldPanel(folded) {
+    el.showSection.classList.toggle("folded", folded);
+    showToggle.textContent = folded ? "show list ▾" : "hide list ▴";
+}
+
+// after a subtitle is picked: the search results go, the list folds away
+function tidyAfterPick() {
+    el.results.innerHTML = "";
+    el.searchStatus.textContent = "";
+    foldPanel(true);
+}
+
+function closePanel() {
+    el.showSection.hidden = true;
+    el.results.innerHTML = "";
+    el.searchStatus.textContent = "";
+}
+
 // ---------- folders ----------
 
-// Folder lists from every source, merged. A source that's down just gets skipped.
+// Folder lists from every source, merged. A source that's down just gets skipped (and
+// tried again next time: only a complete list is kept).
+let failedSources = {};      // source -> error message, from the last try
 async function loadShows() {
     if (!shows) {
         const results = await Promise.allSettled(Object.keys(SOURCES).map(async (source) =>
             (await getJson(api("shows", source))).map((s) => ({
                 ...s, source, label: `${s.name} — ${SOURCES[source]}`,
             }))));
-        sourceErrors = results
-            .map((r, i) => r.status === "rejected" ? `${Object.values(SOURCES)[i]}: ${r.reason.message}` : null)
-            .filter(Boolean);
+        failedSources = {};
+        results.forEach((r, i) => { if (r.status === "rejected") failedSources[Object.keys(SOURCES)[i]] = r.reason.message; });
+        sourceErrors = Object.entries(failedSources).map(([source, msg]) => `${SOURCES[source]}: ${msg}`);
         const all = results.flatMap((r) => r.status === "fulfilled" ? r.value : []);
         if (!all.length) throw new Error(sourceErrors.join("; "));
-        shows = all;
-        el.folderList.innerHTML = shows.map((s) => `<option value="${escapeHtml(s.label)}">`).join("");
+        el.folderList.innerHTML = all.map((s) => `<option value="${escapeHtml(s.label)}">`).join("");
+        if (!sourceErrors.length) shows = all;
+        return all;
     }
     return shows;
 }
@@ -73,6 +99,8 @@ export async function selectAnime(anime) {
     state.anime = anime;
     progress.update({ anime });
     el.showSection.hidden = false;
+    foldPanel(false);
+    el.showCover.hidden = false;
     el.showCover.src = anime.coverImage.large;
     el.showNative.textContent = anime.title.native || anime.title.romaji;
     el.showRomaji.textContent = [anime.title.romaji, anime.title.english].filter(Boolean).join(" / ");
@@ -101,6 +129,54 @@ export async function selectAnime(anime) {
     } catch (err) {
         el.filesStatus.textContent = "couldn't reach the subtitle sites: " + err.message;
     }
+}
+
+// ---------- films & dramas (no AniList: search the folder names) ----------
+
+// "Annihilation - アナイアレイション" -> {english: "Annihilation", japanese: "アナイアレイション"}
+const JAPANESE = /[\u3040-\u30ff\u3400-\u9fff]/;
+function splitName(name) {
+    const parts = name.split(/\s+-\s+/);
+    const japanese = parts.filter((p) => JAPANESE.test(p)).join(" ");
+    const english = parts.filter((p) => !JAPANESE.test(p)).join(" - ");
+    return { japanese, english };
+}
+
+// Folders of the films & dramas source whose names match what was typed
+export async function searchTitles(q) {
+    const n = normTitle(q);
+    const all = await loadShows();
+    if (failedSources.jpsubs) {
+        const oldServer = /unknown source/.test(failedSources.jpsubs);
+        throw new Error(oldServer
+            ? "the server is running an older version. restart it (close its window and open Japanese akko again)"
+            : `couldn't load the films & dramas list (${failedSources.jpsubs})`);
+    }
+    return all
+        .filter((s) => s.source === "jpsubs")
+        .map((s) => ({ ...s, ...splitName(s.name), score: normTitle(s.name).includes(n) ? 1 : matchScore(s.name, [q]) }))
+        .filter((s) => s.score >= 0.34)
+        .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
+        .slice(0, 36);
+}
+
+// A film or drama was picked: same panel as an anime, without a cover
+export function selectTitle(show) {
+    state.anime = null;
+    el.showSection.hidden = false;
+    foldPanel(false);
+    el.showCover.hidden = true;
+    el.showCover.removeAttribute("src");
+    el.showNative.textContent = show.japanese || show.english || show.name;
+    el.showRomaji.textContent = show.japanese ? show.english : "";
+    el.showMeta.textContent = "film / drama · " + SOURCES[show.source];
+    el.showSection.scrollIntoView({ behavior: "smooth" });
+
+    folderChoices = [show];
+    renderFolderOptions(folderChoices);
+    el.folderSelect.value = folderValue(show);
+    el.fileList.innerHTML = "";
+    openFolder(show.source, show.dir);
 }
 
 // ---------- files ----------
@@ -159,6 +235,7 @@ async function pickFile(file, li) {
         }
         const sub = await getJson(url);
         loadSubtitleText(sub.text, sub.ext, sub.name);
+        tidyAfterPick();
     } catch (err) {
         el.filesStatus.textContent = "error: " + err.message;
     } finally {
@@ -183,6 +260,7 @@ function showZipEntries(file, li, entries) {
             try {
                 const s = await getJson(api("file", file.source, { path: file.path, entry }));
                 loadSubtitleText(s.text, s.ext, s.name);
+                tidyAfterPick();
             } catch (err) {
                 el.filesStatus.textContent = "error: " + err.message;
             } finally {
@@ -206,6 +284,8 @@ async function loadOwnFile() {
 }
 
 export function init() {
+    showToggle.addEventListener("click", () => foldPanel(!el.showSection.classList.contains("folded")));
+    document.getElementById("show-close").addEventListener("click", closePanel);
     el.folderSelect.addEventListener("change", () => {
         const [source, ...rest] = el.folderSelect.value.split("|");
         openFolder(source, rest.join("|"));
