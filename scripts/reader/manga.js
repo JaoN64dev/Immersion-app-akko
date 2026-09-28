@@ -7,8 +7,9 @@ import { store, escapeHtml, getJson, postJson } from "../core/utils.js";
 import { pctLevel } from "../words/status.js";
 import { tokenize, tokensHtml, recolor, comprehension } from "../words/render.js";
 import { watchHover } from "../words/hover.js";
-import { enableWordClicks } from "../popup.js";
+import { enableWordClicks, setPopupHooks } from "../popup.js";
 import { getJSZip } from "./import.js";
+import { setPresence } from "../core/presence.js";
 
 const PROGRESS = "akko-manga";
 const IMAGE = /\.(jpe?g|png|webp|gif|avif|bmp)$/i;
@@ -146,6 +147,8 @@ function show(i) {
     const all = store.get(PROGRESS, {});
     all[book.key] = { title: book.title, total: book.pages.length, page: index, updated: Date.now() };
     store.set(PROGRESS, all);
+
+    setPresence({ type: 0, details: book.title, state: `page ${index + 1}${last !== index ? "–" + (last + 1) : ""} / ${book.pages.length}` });
 }
 
 export const nextPage = () => book && show(spreadAt(index).slice(-1)[0] + 1);
@@ -303,6 +306,14 @@ function renderRecent() {
         </div>`).join("");
 }
 
+// Anki screenshot for a mined word: the page it was clicked on, whichever page that was
+// (in two-page mode the mouse could be over either half of the spread).
+function mediaFor(info) {
+    if (!book || info.pageIndex == null) return null;
+    const img = ui.stage.querySelector(`.manga-page[data-p="${info.pageIndex}"] img`);
+    return img ? { player: img, screenshot: true, static: true } : null;
+}
+
 export function init() {
     ui.next.addEventListener("click", nextPage);
     ui.prev.addEventListener("click", prevPage);
@@ -325,9 +336,10 @@ export function init() {
         const p = Number(el.dataset.p);
         return {
             sentence: book.pages[p].ocr.blocks[Number(el.dataset.b)].lines.join(""),
-            info: { source: `${book.title} p.${p + 1}` },
+            info: { source: `${book.title} p.${p + 1}`, pageIndex: p },
         };
     });
+    setPopupHooks({ media: mediaFor });
     watchHover(ui.stage);
 
     window.addEventListener("akko-words-changed", () => {

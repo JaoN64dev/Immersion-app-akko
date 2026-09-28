@@ -2,10 +2,11 @@
 
 import { el } from "../core/dom.js";
 import { state } from "../core/state.js";
-import { loadScript } from "../core/utils.js";
+import { loadScript, timeFormatter } from "../core/utils.js";
 import { renderFiles } from "../subtitles/browser.js";
 import * as dualAudio from "./dual-audio.js";
 import * as progress from "../progress.js";
+import { setPresence, tickPresence } from "../core/presence.js";
 
 const HLS_JS = "https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.20/hls.min.js";
 let hls = null;
@@ -52,6 +53,18 @@ export function updateNowPlaying() {
     if (state.videoName) parts.push("▶ " + state.videoName);
     if (state.subName) parts.push(`字幕: ${state.subName} (${state.cues.length} lines)`);
     el.nowPlaying.textContent = parts.join("   ·   ");
+    updatePresence(el.video.paused);
+}
+
+// What to show on Discord: the show title if one was picked from AniList, else the file name;
+// the episode file and playback position underneath.
+function updatePresence(paused, throttled = false) {
+    const title = (state.anime && (state.anime.title.native || state.anime.title.romaji)) || state.videoName;
+    if (!title) return;
+    const time = isFinite(el.video.duration) ? `${timeFormatter(el.video.currentTime)} / ${timeFormatter(el.video.duration)}` : timeFormatter(el.video.currentTime);
+    const line = state.anime ? `${state.videoName} — ${time}` : time;
+    const payload = { type: 3, details: title, state: (paused ? "⏸ " : "▶ ") + line };
+    (throttled ? tickPresence : setPresence)(payload);
 }
 
 // For "continue watching": reopen a link, or ask for the local file again
@@ -80,4 +93,7 @@ export function init() {
     el.video.addEventListener("error", () => {
         el.nowPlaying.textContent = "this video can't be played by the browser (try an .mp4 / .webm, or an .mkv with h264 video)";
     });
+    el.video.addEventListener("play", () => updatePresence(false));
+    el.video.addEventListener("pause", () => updatePresence(true));
+    el.video.addEventListener("timeupdate", () => updatePresence(el.video.paused, true));
 }

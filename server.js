@@ -5,6 +5,7 @@
 //   - /api/anki     AnkiConnect passthrough                               server/anki.js
 //   - /api/audio    word pronunciation audio                              server/audio.js
 //   - /api/ocr      manga OCR with mokuro (runs locally)                  server/ocr.js
+//   - Discord Rich Presence while the server runs                        server/discord.js
 //   - /api/podcasts podcast feeds + transcripts                           server/podcasts.js
 
 const path = require('path');
@@ -15,6 +16,7 @@ const anki = require('./server/anki');
 const audio = require('./server/audio');
 const ocr = require('./server/ocr');
 const podcasts = require('./server/podcasts');
+const discord = require('./server/discord');
 
 const hostname = '127.0.0.1';
 const port = 3000;
@@ -28,6 +30,7 @@ app.use('/api/anki', anki.router);
 app.use('/api/audio', audio.router);
 app.use('/api/ocr', ocr.router);
 app.use('/api/podcasts', podcasts.router);
+app.use('/api/presence', discord.router);
 
 // ---------- static site (only the files the pages need) ----------
 const file = (name) => (req, res) => res.sendFile(path.join(__dirname, name));
@@ -49,4 +52,5 @@ app.listen(port, hostname, () => {
     require('child_process').exec(`start "" "${url}"`);
   }
   dictionary.init();
+  discord.init();
 });

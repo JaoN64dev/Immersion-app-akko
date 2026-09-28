@@ -9,6 +9,7 @@ import { bindWordDisplay } from "../words/display.js";
 import { watchHover } from "../words/hover.js";
 import { enableWordClicks } from "../popup.js";
 import { fetchText, parseTranscript, pickTranscript } from "./feed.js";
+import { setPresence, tickPresence } from "../core/presence.js";
 
 const PROGRESS = "akko-podcast-progress";
 
@@ -47,6 +48,14 @@ function saveProgress() {
 
 // ---------- playing ----------
 
+// What to show on Discord: the podcast as the "show", the episode + playback position under it.
+function updatePresence(paused, throttled = false) {
+    if (!episode) return;
+    const time = isFinite(ui.audio.duration) ? `${timeFormatter(ui.audio.currentTime)} / ${timeFormatter(ui.audio.duration)}` : timeFormatter(ui.audio.currentTime);
+    const payload = { type: 2, details: podcast ? podcast.title : episode.title, state: `${paused ? "⏸ " : "▶ "}${episode.title} — ${time}` };
+    (throttled ? tickPresence : setPresence)(payload);
+}
+
 export function play(ep, pod) {
     saveProgress();
     job++;
@@ -64,6 +73,7 @@ export function play(ep, pod) {
         ui.audio.addEventListener("loadedmetadata", () => { ui.audio.currentTime = saved.time; }, { once: true });
     }
     ui.audio.play().catch(() => {});
+    updatePresence(false);
     ui.section.scrollIntoView({ behavior: "smooth" });
 
     setCues([]);
@@ -183,9 +193,10 @@ export function init({ onProgressChange }) {
         follow();
         checkAutoPause();
         if (Date.now() - lastSave > 5000) { lastSave = Date.now(); saveProgress(); }
+        updatePresence(ui.audio.paused, true);
     });
-    ui.audio.addEventListener("pause", saveProgress);
-    ui.audio.addEventListener("play", () => { pauseAt = null; });
+    ui.audio.addEventListener("pause", () => { saveProgress(); updatePresence(true); });
+    ui.audio.addEventListener("play", () => { pauseAt = null; updatePresence(false); });
     window.addEventListener("pagehide", saveProgress);
 
     ui.file.addEventListener("change", async () => {

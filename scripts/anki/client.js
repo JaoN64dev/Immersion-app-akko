@@ -2,7 +2,8 @@
 // settings panel (anki/panel.js) only exists on the Watch page. Settings live in "akko-anki".
 //
 // media (optional, when sending) = { player: <video>/<audio> to seek, audioFrom: element to
-// record the line from, screenshot: bool } — together with item.cueStart/cueEnd.
+// record the line from, screenshot: bool } — together with item.cueStart/cueEnd. Or, for a
+// still source with no timeline (a manga page): { player: <img>, screenshot: true, static: true }.
 
 import { state } from "../core/state.js";
 import { store, escapeHtml, getJson, postJson } from "../core/utils.js";
@@ -149,13 +150,17 @@ const blobToBase64 = (blob) => new Promise((resolve) => {
     r.readAsDataURL(blob);
 });
 
-function grabFrame(v) {
-    const w = Math.min(640, v.videoWidth);
+// Works on a <video> (videoWidth/videoHeight) or a still <img> (naturalWidth/naturalHeight),
+// e.g. a manga page.
+function grabFrame(el) {
+    const srcW = el.videoWidth || el.naturalWidth;
+    const srcH = el.videoHeight || el.naturalHeight;
+    const w = Math.min(el.videoWidth ? 640 : 1000, srcW);
     const canvas = document.createElement("canvas");
     canvas.width = w;
-    canvas.height = Math.round(v.videoHeight * (w / v.videoWidth));
-    canvas.getContext("2d").drawImage(v, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL("image/jpeg", 0.8).split(",")[1];   // throws on cross-origin video
+    canvas.height = Math.round(srcH * (w / srcW));
+    canvas.getContext("2d").drawImage(el, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/jpeg", 0.8).split(",")[1];   // throws on a cross-origin source
 }
 
 // Plays the line once and records its audio
@@ -196,26 +201,28 @@ async function recordClip(player, from, start, end) {
 
 async function captureMedia(item, media, wantShot, wantAudio) {
     const out = { problems: [] };
-    if (!media || item.cueStart === null || (!wantShot && !wantAudio)) return out;
+    if (!media || (!media.static && item.cueStart === null) || (!wantShot && !wantAudio)) return out;
     const { player } = media;
 
     state.recording = true;
-    const back = player.currentTime;
+    const back = media.static ? null : player.currentTime;
     try {
         if (wantShot && media.screenshot) {
             try {
-                await seekTo(player, (item.cueStart + item.cueEnd) / 2);
+                if (!media.static) await seekTo(player, (item.cueStart + item.cueEnd) / 2);
                 out.screenshot = grabFrame(player);
             } catch { out.problems.push("screenshot blocked by the video host"); }
         }
-        if (wantAudio) {
+        if (wantAudio && !media.static) {
             say("recording the line's audio…", false, { quiet: true });
             try { out.audio = await recordClip(player, media.audioFrom || player, item.cueStart, item.cueEnd); }
             catch (err) { out.problems.push("audio: " + err.message); }
         }
     } finally {
-        player.pause();
-        await seekTo(player, back);
+        if (!media.static) {
+            player.pause();
+            await seekTo(player, back);
+        }
         state.recording = false;
     }
     return out;
