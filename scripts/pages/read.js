@@ -84,7 +84,7 @@ ui.textFile.addEventListener("change", async () => {
 
 for (const input of [ui.mangaFiles, ui.mangaFolder]) {
     input.addEventListener("change", () => {
-        if (input.files.length) manga.openFiles(input.files);
+        if (input.files.length) manga.openFiles(input.files, { picker: input === ui.mangaFolder ? "folder" : "files" });
         input.value = "";
     });
 }
@@ -101,6 +101,10 @@ initKeys({
     arrowleft: () => inManga() && manga.nextPage(),      // manga reads right-to-left
     arrowright: () => inManga() && manga.prevPage(),
     t: () => inManga() && manga.toggleText(),
+    "+": () => inManga() && manga.zoomIn(),
+    "=": () => inManga() && manga.zoomIn(),
+    "-": () => inManga() && manga.zoomOut(),
+    "0": () => inManga() && manga.resetZoom(),
 });
 
 remindBackup();

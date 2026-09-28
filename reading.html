@@ -28,6 +28,7 @@
                 <li><a href="/">観る watch</a></li>
                 <li><a href="/reading.html" aria-current="page">読む read</a></li>
                 <li><a href="/podcasts.html">聴く listen</a></li>
+                <li><a href="/stats.html">統計 stats</a></li>
                 <li><a href="/about.html">私 about</a></li>
             </ul>
             </details>
@@ -42,6 +43,7 @@
                 <li><kbd>1</kbd>–<kbd>4</kbd> new / learning / known / ignore the word under the mouse</li>
                 <li><kbd>←</kbd> <kbd>→</kbd> turn the manga page</li>
                 <li><kbd>T</kbd> show all manga text</li>
+                <li><kbd>+</kbd> <kbd>−</kbd> zoom the manga page, <kbd>0</kbd> reset zoom</li>
             </ul>
             </details>
             </nav>
@@ -54,6 +56,7 @@
                 <a class="tab" href="/">観る <small>watch</small></a>
                 <a class="tab" href="/reading.html" aria-current="page">読む <small>read</small></a>
                 <a class="tab" href="/podcasts.html">聴く <small>listen</small></a>
+                <a class="tab" href="/stats.html">統計 <small>stats</small></a>
                 <a class="tab" href="/about.html">私 <small>about</small></a>
             </nav>
 
@@ -159,8 +162,16 @@
                         <span class="sep"></span>
                         <label><input id="manga-double" type="checkbox"> two pages</label>
                         <label title="show every text box (T)"><input id="manga-showtext" type="checkbox"> show text</label>
+                        <span class="sep"></span>
+                        <span class="offset" title="zoom the page">zoom
+                            <button id="manga-zoom-minus" title="zoom out (-)">−</button>
+                            <output id="manga-zoom-level" class="manga-zoom-level" title="click to reset zoom">100%</output>
+                            <button id="manga-zoom-plus" title="zoom in (+)">+</button>
+                        </span>
                     </div>
-                    <div id="manga-stage" class="manga-stage"></div>
+                    <div class="manga-viewport">
+                        <div id="manga-stage" class="manga-stage"></div>
+                    </div>
                 </section>
             </div>
 

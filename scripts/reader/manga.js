@@ -20,14 +20,19 @@ const ui = {
     page: $("#manga-page"), slider: $("#manga-slider"), next: $("#manga-next"), prev: $("#manga-prev"),
     double: $("#manga-double"), showText: $("#manga-showtext"),
     stats: $("#manga-stats"), badge: $("#manga-badge"), status: $("#manga-status"),
-    recentWrap: $("#manga-recent-wrap"), recent: $("#manga-recent"), files: $("#manga-files"),
+    recentWrap: $("#manga-recent-wrap"), recent: $("#manga-recent"), files: $("#manga-files"), folder: $("#manga-folder"),
     ocrBar: $("#manga-ocr-bar"), ocr: $("#manga-ocr"), ocrStatus: $("#manga-ocr-status"), ocrCancel: $("#manga-ocr-cancel"),
+    zoomIn: $("#manga-zoom-plus"), zoomOut: $("#manga-zoom-minus"), zoomLevel: $("#manga-zoom-level"),
 };
 
-let book = null;               // {title, key, pages: [{name, url, size, ocr}]}
+const ZOOM_KEY = "akko-manga-zoom";
+const ZOOM_MIN = 0.5, ZOOM_MAX = 3, ZOOM_STEP = 0.25;
+
+let book = null;               // {title, key, pickedAs, pages: [{name, url, size, ocr}]}
 let index = 0;                 // first page of the current spread
 let tokens = new Map();        // page -> block -> line -> tokens
 let job = 0;
+let zoom = 1;
 
 const natural = (a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
 const base = (name) => name.replace(/^.*[\\/]/, "").replace(/\.[^.]+$/, "").toLowerCase();
@@ -35,7 +40,7 @@ const ext = (name) => (name.split(".").pop() || "").toLowerCase();
 
 // ---------- opening ----------
 
-export async function openFiles(fileList) {
+export async function openFiles(fileList, { picker } = {}) {
     const files = [...fileList];
     const images = [];
     let volume = null;          // .mokuro file: {title, volume, pages: [{img_path, img_width, img_height, blocks}]}
@@ -81,6 +86,7 @@ export async function openFiles(fileList) {
     book = {
         title,
         key: `${title}:${images.length}`,
+        pickedAs: picker || (folder ? "folder" : "files"),   // so "continue reading" reopens the same kind of picker
         pages: images.map((img) => ({ name: img.name, url: URL.createObjectURL(img.blob), size: img.blob.size, ocr: ocrByPage[base(img.name)] || null })),
     };
     const withText = book.pages.filter((p) => p.ocr && p.ocr.blocks.length).length;
@@ -145,7 +151,7 @@ function show(i) {
     ui.slider.value = index;
 
     const all = store.get(PROGRESS, {});
-    all[book.key] = { title: book.title, total: book.pages.length, page: index, updated: Date.now() };
+    all[book.key] = { title: book.title, total: book.pages.length, page: index, pickedAs: book.pickedAs, updated: Date.now() };
     store.set(PROGRESS, all);
 
     setPresence({ type: 0, details: book.title, state: `page ${index + 1}${last !== index ? "–" + (last + 1) : ""} / ${book.pages.length}` });
@@ -155,6 +161,24 @@ export const nextPage = () => book && show(spreadAt(index).slice(-1)[0] + 1);
 export const prevPage = () => book && show(index === 0 ? 0 : spreadAt(index - 1)[0]);
 export const toggleText = () => { ui.showText.checked = !ui.showText.checked; applyShowText(); };
 const applyShowText = () => ui.stage.classList.toggle("show-text", ui.showText.checked);
+
+// ---------- zoom ----------
+// Scales the whole stage (pages + their OCR overlay together, so text stays aligned) and
+// lets .manga-viewport scroll to it. Click-to-turn-page is disabled while zoomed in, since
+// then a click is more likely someone panning around than trying to turn the page.
+
+function applyZoom() {
+    ui.stage.style.setProperty("--zoom", zoom);
+    ui.zoomLevel.textContent = Math.round(zoom * 100) + "%";
+    store.set(ZOOM_KEY, zoom);
+}
+function setZoom(z) {
+    zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(z * 100) / 100));
+    applyZoom();
+}
+export const zoomIn = () => setZoom(zoom + ZOOM_STEP);
+export const zoomOut = () => setZoom(zoom - ZOOM_STEP);
+export const resetZoom = () => setZoom(1);
 
 // ---------- words ----------
 
@@ -325,9 +349,16 @@ export function init() {
     ui.ocrCancel.addEventListener("click", cancelOcr);
     window.addEventListener("resize", sizeText);
 
-    // click the left half for the next page, the right half for the previous one (right-to-left)
+    ui.zoomIn.addEventListener("click", zoomIn);
+    ui.zoomOut.addEventListener("click", zoomOut);
+    ui.zoomLevel.addEventListener("click", resetZoom);
+    zoom = store.get(ZOOM_KEY, 1);
+    applyZoom();
+
+    // click the left half for the next page, the right half for the previous one (right-to-left);
+    // zoomed in, a click is more likely panning around than trying to turn the page
     ui.stage.addEventListener("click", (e) => {
-        if (e.target.closest(".ocr-block") || !book) return;
+        if (e.target.closest(".ocr-block") || !book || zoom > 1) return;
         const r = ui.stage.getBoundingClientRect();
         (e.clientX < r.left + r.width / 2 ? nextPage : prevPage)();
     });
@@ -357,9 +388,17 @@ export function init() {
             store.set(PROGRESS, all);        // "akko-saved" redraws the row
             return;
         }
-        ui.status.textContent = `open the pages of “${card.dataset.title}” to continue`;
-        ui.files.value = "";
-        ui.files.click();
+        // reopen with whichever picker was used originally, so a folder doesn't prompt for files.
+        // Volumes saved before this was tracked have no pickedAs at all; a whole volume is far
+        // more often a folder than picking every page file by hand, so that's the default guess.
+        const rec = store.get(PROGRESS, {})[card.dataset.key];
+        const asFiles = rec && rec.pickedAs === "files";
+        const input = asFiles ? ui.files : ui.folder;
+        ui.status.textContent = asFiles
+            ? `open the pages of “${card.dataset.title}” to continue`
+            : `pick the “${card.dataset.title}” folder again to continue`;
+        input.value = "";
+        input.click();
     });
     window.addEventListener("akko-saved", renderRecent);
     renderRecent();

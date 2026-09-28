@@ -37,6 +37,7 @@ const file = (name) => (req, res) => res.sendFile(path.join(__dirname, name));
 app.get(['/', '/index.html'], file('index.html'));
 app.get('/reading.html', file('reading.html'));
 app.get('/podcasts.html', file('podcasts.html'));
+app.get('/stats.html', file('stats.html'));
 app.get('/about.html', file('about.html'));
 app.get('/style.css', file('style.css'));
 for (const dir of ['scripts', 'images', 'fonts', 'node_modules/@ffmpeg']) {

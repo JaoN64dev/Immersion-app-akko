@@ -971,11 +971,14 @@ main .mode-switch button[aria-selected="true"] {background: var(--post-bg); colo
 .manga-tools {margin: 12px 0;}
 .manga-page-count, .manga-page {font-variant-numeric: tabular-nums; font-weight: bold; min-width: 5em; text-align: center;}
 #manga-slider {flex: 1; min-width: 120px;}
+.manga-viewport {overflow: auto; max-height: 88vh; border-radius: 10px;}
 .manga-stage {
   display: flex; flex-direction: row-reverse; justify-content: center; gap: 2px;
-  background: #1c1c1c; border-radius: 10px; padding: 8px;
+  background: #1c1c1c; padding: 8px;
   min-height: 60vh; cursor: pointer; user-select: none;
+  transform: scale(var(--zoom, 1)); transform-origin: top center;
 }
+.manga-zoom-level {cursor: pointer;}
 .manga-page {position: relative; max-height: 88vh; flex: 0 1 auto;}
 .manga-page img {display: block; max-height: 88vh; max-width: 100%; height: auto;}
 .ocr-layer {position: absolute; inset: 0;}
@@ -1176,6 +1179,43 @@ main .transcript-toggle[aria-pressed="false"] {border-style: dashed;}
 .about-links b {color: var(--dark-link-color); letter-spacing: 1px;}
 .about-links a {color: var(--dark-link-color); font-weight: bold; word-break: break-all;}
 .about-handle {font-weight: bold; user-select: all;}
+
+/* ---- stats ---- */
+.stats-note {color: #333;}
+.stats-grid {display: grid; grid-template-columns: repeat(auto-fill, minmax(min(160px, 100%), 1fr)); gap: 12px; margin: 0 0 1.2em;}
+.stat-tile {display: flex; flex-direction: column; gap: .1em; padding: .8em 1em;}
+.stat-tile b {font-size: 1.8em; line-height: 1.1;}
+.stat-tile span {font-size: .85em; color: var(--visited-link-color);}
+.stat-tile small {font-size: .75em; color: var(--border-color);}
+
+.stats-bar {display: flex; height: 20px; border-radius: 999px; overflow: hidden; background: #d8d8e0;}
+.stats-bar i {display: block; height: 100%;}
+.stats-bar + .stats-legend {margin-top: .6em;}
+.stats-legend {list-style: none; display: flex; flex-wrap: wrap; gap: .4em 1.2em; padding: 0; margin: 0; font-size: .9em;}
+.stats-legend li {display: flex; align-items: center; gap: .4em;}
+.stats-legend i {width: 10px; height: 10px; border-radius: 3px; display: inline-block;}
+.stats-legend b {font-variant-numeric: tabular-nums;}
+
+.stats-chart {position: relative;}
+.mining-svg {width: 100%; height: 140px; display: block; overflow: visible;}
+.mining-bar {fill: #2a78d6; transition: fill .1s;}
+.mining-bar:hover, .mining-bar.hover {fill: #184f95;}
+.mining-bar:focus-visible {outline: 2px solid #184f95; outline-offset: 1px;}
+.mining-baseline {stroke: var(--border-color); stroke-width: 1;}
+.stats-tooltip {
+  position: absolute; transform: translate(-50%, calc(-100% - 8px));
+  background: #0b0b0b; color: #fff; padding: .3em .6em; border-radius: 6px;
+  font-size: .8em; white-space: nowrap; pointer-events: none; z-index: 2;
+}
+.stats-tooltip strong {font-variant-numeric: tabular-nums;}
+
+.stats-recent {list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px;}
+.stats-recent li {display: flex; align-items: center; gap: .7em; padding: .5em .9em; color: #333;}
+.stats-recent .chip {flex: none; font-size: .75em; font-weight: bold; color: #333;}
+.stats-recent .stats-title {flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+.stats-recent .stats-extra {flex: none; font-size: .85em; color: var(--visited-link-color);}
+.stats-recent .stats-when {flex: none; font-size: .8em; color: var(--border-color); min-width: 5em; text-align: right;}
+.stats-empty {color: #555; font-size: .95em; padding: .8em 1.2em;}
 
 /* manga OCR (mokuro, run by the local server) */
 .manga-ocr-bar {display: flex; flex-wrap: wrap; align-items: center; gap: .5em 1em; padding: .5em .8em;}
