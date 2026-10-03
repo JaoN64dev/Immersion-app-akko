@@ -19,7 +19,7 @@ const { spawn, execFile } = require('child_process');
 
 const router = express.Router();
 const PYTHON = process.env.AKKO_PYTHON || (process.platform === 'win32' ? 'python' : 'python3');
-const CACHE = path.join(__dirname, '..', 'data', 'ocr');
+const CACHE = path.join(require('./paths').DATA, 'ocr');
 const WORK = path.join(os.tmpdir(), 'akko-ocr');
 const IMAGE = /^[\w-]+\.(jpe?g|png|webp|gif|avif|bmp)$/i;
 

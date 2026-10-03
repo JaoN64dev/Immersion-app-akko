@@ -7,3 +7,4 @@ data/ocr/
 data/english-online.json
 data/opensubtitles.json
 
+dist/

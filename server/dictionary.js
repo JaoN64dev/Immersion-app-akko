@@ -19,7 +19,7 @@ const { UA, cached, fetchText, asyncRoute } = require('./http');
 const grammar = require('./grammar');
 const english = require('./english');
 
-const DATA = path.join(__dirname, '..', 'data');
+const { DATA } = require('./paths');
 const DICT_FILE = path.join(DATA, 'dict.json');
 const ZIP_FILE = path.join(DATA, 'jmdict.zip');
 const KANJI_FILE = path.join(DATA, 'kanji.json');

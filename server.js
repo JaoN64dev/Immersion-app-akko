@@ -25,7 +25,6 @@ const course = require('./server/course');
 const opensubs = require('./server/opensubtitles');
 
 const hostname = '127.0.0.1';
-const port = 3000;
 
 const app = express();
 
@@ -57,14 +56,32 @@ for (const dir of ['scripts', 'images', 'fonts', 'node_modules/@ffmpeg']) {
   app.use('/' + dir, express.static(path.join(__dirname, dir)));
 }
 
-// Run Server
-app.listen(port, hostname, () => {
-  const url = 'http://' + hostname + ':' + port;
-  console.log('Server running at ' + url + '\n');
-  // start-akko.bat sets AKKO_OPEN=1 so the page opens as soon as the server is up
-  if (process.env.AKKO_OPEN && process.platform === 'win32') {
-    require('child_process').exec(`start "" "${url}"`);
-  }
-  dictionary.init();
-  discord.init();
-});
+// ---------- start ----------
+// npm start / start-akko.bat run this file directly; the desktop app (electron/main.js) calls start().
+// AKKO_PORT changes the port (the desktop app uses its own, so both can run at once).
+function start(port = Number(process.env.AKKO_PORT) || 3000) {
+  return new Promise((resolve, reject) => {
+    const server = app.listen(port, hostname, () => {
+      const url = 'http://' + hostname + ':' + port;
+      console.log('Server running at ' + url + '\n');
+      dictionary.init();
+      discord.init();
+      resolve(url);
+    });
+    server.on('error', reject);
+  });
+}
+
+if (require.main === module) {
+  start().then((url) => {
+    // start-akko.bat sets AKKO_OPEN=1 so the page opens as soon as the server is up
+    if (process.env.AKKO_OPEN && process.platform === 'win32') {
+      require('child_process').exec(`start "" "${url}"`);
+    }
+  }, (err) => {
+    console.error(err.code === 'EADDRINUSE' ? `Port ${err.port} is already in use: is akko already running?` : err);
+    process.exit(1);
+  });
+}
+
+module.exports = { start };

@@ -14,7 +14,7 @@ const path = require('path');
 const express = require('express');
 const { asyncRoute } = require('./http');
 
-const FILE = path.join(__dirname, '..', 'data', 'opensubtitles.json');
+const FILE = path.join(require('./paths').DATA, 'opensubtitles.json');
 const API = 'https://api.opensubtitles.com/api/v1';
 // OpenSubtitles asks every app to send its name and version
 const APP = 'akko v1.0';

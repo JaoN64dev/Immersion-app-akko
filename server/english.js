@@ -326,7 +326,7 @@ function japaneseFor(word, dict) {
 const WIKT = 'https://en.wiktionary.org';
 // Wikimedia asks API users to say who they are
 const WIKI_UA = 'akko-immersion/1.0 (https://github.com/JaoN64dev/japaneselocalwebapp; local learning app)';
-const ONLINE_FILE = path.join(__dirname, '..', 'data', 'english-online.json');
+const ONLINE_FILE = path.join(require('./paths').DATA, 'english-online.json');
 const KEEP = 90 * 24 * 3600e3;          // a saved answer is refreshed after 90 days
 const MAX_SAVED = 30000;                // words kept on disk
 
