@@ -6,6 +6,9 @@
 //        -> dictionary entries for the first q that hits, with pitch accent, the kanji in
 //           the word, and what the conjugation of `form` means
 //   Both take lang=en for English (server/english.js), which uses this file's JMdict too.
+//   GET  /api/dictionary                    -> what's installed (Settings → Dictionary)
+//   POST /api/dictionary/upload  (the file) -> install a JMdict / KANJIDIC2 file from jmdict-simplified
+//   POST /api/dictionary/update             -> download and install the newest ones
 //
 // On first start the data is downloaded into ./data (JMdict ~12 MB, KANJIDIC2 ~1 MB,
 // accents ~3 MB) and squeezed. After that everything works offline.
@@ -18,6 +21,7 @@ const kuromoji = require('kuromoji');
 const { UA, cached, fetchText, asyncRoute } = require('./http');
 const grammar = require('./grammar');
 const english = require('./english');
+const dictionaries = require('./dictionaries');
 
 const { DATA } = require('./paths');
 const DICT_FILE = path.join(DATA, 'dict.json');
@@ -37,16 +41,29 @@ const ready = { dict: false, tokenizer: false, kanji: false, pitch: false, error
 // ---------- downloads ----------
 
 async function download(url, what) {
-  const res = await fetch(url, { headers: { 'User-Agent': UA } });
+  let res;
+  try {
+    res = await fetch(url, { headers: { 'User-Agent': UA } });
+  } catch {
+    throw new Error(`couldn't download ${what}: are you connected to the internet?`);
+  }
   if (!res.ok) throw new Error(`${res.status} downloading ${what}`);
   return Buffer.from(await res.arrayBuffer());
 }
 
 // Newest zip from the jmdict-simplified releases whose name matches `pattern`
 async function downloadRelease(pattern) {
-  const rel = await (await fetch('https://api.github.com/repos/scriptin/jmdict-simplified/releases/latest',
-    { headers: { 'User-Agent': UA } })).json();
-  const asset = rel.assets.find((a) => pattern.test(a.name));
+  let res;
+  try {
+    res = await fetch('https://api.github.com/repos/scriptin/jmdict-simplified/releases/latest', { headers: { 'User-Agent': UA } });
+  } catch {
+    throw new Error("can't reach GitHub: are you connected to the internet?");
+  }
+  // without a login GitHub allows 60 requests an hour (shared with the subtitle search)
+  if (res.status === 403 || res.status === 429) throw new Error('GitHub is limiting requests right now, try again in an hour');
+  if (!res.ok) throw new Error(`GitHub answered ${res.status}, try again later`);
+  const rel = await res.json();
+  const asset = (rel.assets || []).find((a) => pattern.test(a.name));
   if (!asset) throw new Error(`${pattern} not found in the latest release`);
   console.log(`dictionary: downloading ${asset.name} (${(asset.size / 1e6).toFixed(1)} MB)…`);
   return download(asset.browser_download_url, asset.name);
@@ -84,7 +101,32 @@ function compact(jm) {
   return { entries, tags: jm.tags, version: jm.dictDate };
 }
 
+// Put a word dictionary in use. Lookups keep using the old one until the new one is indexed.
+function useDict(d) {
+  const idx = new Map();
+  d.entries.forEach((e, i) => {
+    for (const text of new Set([...e.k, ...e.r, ...(e.h || [])])) {
+      const list = idx.get(text);
+      if (list) list.push(i); else idx.set(text, [i]);
+    }
+  });
+  dict = d;
+  index = idx;
+  ready.dict = true;
+}
+
+let loadingDict = false;      // true while the start-up load (maybe a first download + build) runs
+
 async function loadDict() {
+  loadingDict = true;
+  try {
+    await readOrBuildDict();
+  } finally {
+    loadingDict = false;
+  }
+}
+
+async function readOrBuildDict() {
   if (!fs.existsSync(DICT_FILE)) {
     fs.mkdirSync(DATA, { recursive: true });
     if (!fs.existsSync(ZIP_FILE)) await downloadJmdict();
@@ -94,44 +136,123 @@ async function loadDict() {
     fs.writeFileSync(DICT_FILE, JSON.stringify(compact(JSON.parse(entry.getData().toString('utf8')))));
     fs.unlinkSync(ZIP_FILE);
   }
-  dict = JSON.parse(fs.readFileSync(DICT_FILE, 'utf8'));
-  index = new Map();
-  dict.entries.forEach((e, i) => {
-    for (const text of new Set([...e.k, ...e.r, ...(e.h || [])])) {
-      const list = index.get(text);
-      if (list) list.push(i); else index.set(text, [i]);
-    }
-  });
-  ready.dict = true;
+  useDict(JSON.parse(fs.readFileSync(DICT_FILE, 'utf8')));
   console.log(`dictionary: ${dict.entries.length} entries ready`);
 }
 
 // KANJIDIC2, keeping meanings, readings, JLPT (converted to N-levels), strokes, school grade
+function compactKanji(kd) {
+  const N = { 4: 'N5', 3: 'N4', 2: 'N3–N2', 1: 'N1' };      // KANJIDIC still uses the old 4 levels
+  const out = {};
+  for (const c of kd.characters) {
+    const groups = c.readingMeaning ? c.readingMeaning.groups : [];
+    const readings = groups.flatMap((g) => g.readings);
+    const entry = {
+      m: groups.flatMap((g) => g.meanings.filter((m) => m.lang === 'en').map((m) => m.value)),
+      on: readings.filter((r) => r.type === 'ja_on').map((r) => r.value),
+      kun: readings.filter((r) => r.type === 'ja_kun').map((r) => r.value),
+      s: c.misc.strokeCounts[0],
+    };
+    if (c.misc.jlptLevel) entry.j = N[c.misc.jlptLevel];
+    if (c.misc.grade) entry.g = c.misc.grade;
+    out[c.literal] = entry;
+  }
+  return out;
+}
+
 async function loadKanji() {
   if (!fs.existsSync(KANJI_FILE)) {
     fs.mkdirSync(DATA, { recursive: true });
-    const kd = firstJsonIn(await downloadRelease(/^kanjidic2-en-\d.*\.json\.zip$/));
-    const N = { 4: 'N5', 3: 'N4', 2: 'N3–N2', 1: 'N1' };      // KANJIDIC still uses the old 4 levels
-    const out = {};
-    for (const c of kd.characters) {
-      const groups = c.readingMeaning ? c.readingMeaning.groups : [];
-      const readings = groups.flatMap((g) => g.readings);
-      const entry = {
-        m: groups.flatMap((g) => g.meanings.filter((m) => m.lang === 'en').map((m) => m.value)),
-        on: readings.filter((r) => r.type === 'ja_on').map((r) => r.value),
-        kun: readings.filter((r) => r.type === 'ja_kun').map((r) => r.value),
-        s: c.misc.strokeCounts[0],
-      };
-      if (c.misc.jlptLevel) entry.j = N[c.misc.jlptLevel];
-      if (c.misc.grade) entry.g = c.misc.grade;
-      out[c.literal] = entry;
-    }
-    fs.writeFileSync(KANJI_FILE, JSON.stringify(out));
+    fs.writeFileSync(KANJI_FILE, JSON.stringify(compactKanji(firstJsonIn(await downloadRelease(/^kanjidic2-en-\d.*\.json\.zip$/)))));
   }
   kanji = JSON.parse(fs.readFileSync(KANJI_FILE, 'utf8'));
   ready.kanji = true;
   console.log(`kanji: ${Object.keys(kanji).length} ready`);
 }
+
+// ---------- installing another dictionary (Settings → Dictionary) ----------
+// Takes the jmdict-simplified files: jmdict-eng-….json.zip (words) or kanjidic2-en-….json.zip
+// (kanji), zipped or as the .json itself. The new file replaces the old one in ./data and is
+// used straight away, no restart.
+
+let installing = false;
+
+// What an uploaded file is: {kind: 'words' | 'kanji', data}
+function readDictionaryFile(buf) {
+  let text = null;
+  if (buf[0] === 0x50 && buf[1] === 0x4b) {            // "PK": a zip
+    let entry;
+    try {
+      entry = new AdmZip(buf).getEntries().find((e) => e.entryName.endsWith('.json'));
+    } catch {
+      throw new Error('this zip file is damaged');
+    }
+    if (!entry) throw new Error('there is no .json file inside this zip');
+    text = entry.getData().toString('utf8');
+  } else {
+    // a JSON file starts with "{" (after spaces or a BOM): anything else (a video picked by
+    // mistake…) is refused before reading the whole thing
+    const start = buf.subarray(0, 64).toString('utf8').replace(/^[\s﻿]+/, '');
+    if (!start.startsWith('{')) throw new Error('this is not a JMdict or KANJIDIC2 file from jmdict-simplified');
+    text = buf.toString('utf8');
+  }
+  let data;
+  try { data = JSON.parse(text); } catch { data = null; }
+  if (data && Array.isArray(data.words)) return { kind: 'words', data };
+  if (data && Array.isArray(data.characters)) return { kind: 'kanji', data };
+  throw new Error('this is not a JMdict or KANJIDIC2 file from jmdict-simplified');
+}
+
+// Save next to the old file first, then swap, so a failure never leaves a half-written file
+function replaceFile(file, text) {
+  fs.mkdirSync(DATA, { recursive: true });
+  fs.writeFileSync(file + '.new', text);
+  fs.renameSync(file + '.new', file);
+}
+
+function install({ kind, data }) {
+  if (kind === 'words') {
+    let d;
+    try { d = compact(data); } catch { throw new Error('this JMdict file is in a format akko doesn\'t know'); }
+    if (!d.entries.length) throw new Error('this JMdict file has no words in it');
+    const previous = dict && dict.version;
+    const previousCount = dict ? dict.entries.length : 0;
+    replaceFile(DICT_FILE, JSON.stringify(d));
+    useDict(d);
+    console.log(`dictionary: installed JMdict ${d.version || ''} (${d.entries.length} entries)`);
+    // previousCount lets the page warn about a much smaller dictionary (e.g. jmdict-eng-common)
+    return { kind, count: d.entries.length, version: d.version || null, previous: previous || null, previousCount };
+  }
+  let k;
+  try { k = compactKanji(data); } catch { throw new Error('this KANJIDIC2 file is in a format akko doesn\'t know'); }
+  const count = Object.keys(k).length;
+  if (!count) throw new Error('this KANJIDIC2 file has no kanji in it');
+  replaceFile(KANJI_FILE, JSON.stringify(k));
+  kanji = k;
+  ready.kanji = true;
+  console.log(`kanji: installed ${count}`);
+  return { kind, count, version: data.dictDate || null };
+}
+
+// One install at a time: they use a lot of memory for a few seconds
+// replacesJmdict: false for adding a Yomitan dictionary, which doesn't touch JMdict
+async function oneAtATime(job, { replacesJmdict = true } = {}) {
+  const busy = (message) => Object.assign(new Error(message), { status: 409 });
+  if (installing) throw busy('a dictionary is already being installed, wait a moment');
+  // on the very first start the dictionary is still being downloaded and built: installing one
+  // now would be overwritten when that finishes
+  if (replacesJmdict && loadingDict) throw busy('the dictionary is still loading, wait a moment');
+  installing = true;
+  try { return await job(); } finally { installing = false; }
+}
+
+const dictionaryInfo = () => ({
+  words: dict ? { count: dict.entries.length, version: dict.version || null } : null,
+  kanji: kanji ? { count: Object.keys(kanji).length } : null,
+  loading: loadingDict,
+  installing,
+  error: ready.error,
+});
 
 // Kanjium accents.txt: "橋\tはし\t2" / "１\tひと\t0,2" (reading column is empty when it's the word itself)
 async function loadPitch() {
@@ -450,11 +571,51 @@ router.get('/dict', asyncRoute(async (req, res) => {
   const qs = [].concat(req.query.q || []).map((q) => String(q).trim()).filter(Boolean);
   if (!qs.length) return res.json({ query: '', entries: [] });
   const form = String(req.query.form || '').trim();
+  // more: entries from the dictionaries you added (Settings → Dictionaries), under JMdict's
+  const withMore = (result, lang) => {
+    const words = [...new Set([...qs, ...(result.entries || []).slice(0, 2).map((e) => e.word)])];
+    return { ...result, more: dictionaries.lookup(lang === 'en' ? words.map((w) => w.toLowerCase()).concat(words) : words, lang) };
+  };
   if (req.query.lang === 'en') {
     if (!ready.dict) return res.status(503).json({ error: ready.error || 'dictionary still loading' });
-    return res.json(await english.lookup(qs, form, dict, String(req.query.native || '')));
+    return res.json(withMore(await english.lookup(qs, form, dict, String(req.query.native || '')), 'en'));
   }
-  res.json(ready.dict ? lookup(qs, form) : await jishoLookup(qs[0]));
+  res.json(withMore(ready.dict ? lookup(qs, form) : await jishoLookup(qs[0]), 'ja'));
+}));
+
+// ---------- Settings → Dictionary ----------
+
+// errors here are about the file or the download, so they go back as a message to show
+const installRoute = (fn) => (req, res) => fn(req, res).catch((err) => {
+  console.error('dictionary install:', err.message);
+  res.status(err.status || 400).json({ error: err.message });
+});
+
+router.get('/dictionary', (req, res) => res.json(dictionaryInfo()));
+
+// the file itself is the body (sent straight from the file picker). A Yomitan dictionary is
+// added next to JMdict (server/dictionaries.js); a jmdict-simplified file replaces JMdict / KANJIDIC2.
+// ?lang= is the language you're learning: the language of a Yomitan dictionary that doesn't say.
+router.post('/dictionary/upload', express.raw({ type: () => true, limit: '1gb' }), installRoute(async (req, res) => {
+  if (!Buffer.isBuffer(req.body) || !req.body.length) throw new Error('the file is empty');
+  if (dictionaries.isYomitan(req.body)) {
+    const lang = req.query.lang === 'en' ? 'en' : 'ja';
+    const done = await oneAtATime(() => dictionaries.importZip(req.body, lang), { replacesJmdict: false });
+    return res.json({ installed: [done], ...dictionaryInfo() });
+  }
+  const done = await oneAtATime(async () => install(readDictionaryFile(req.body)));
+  res.json({ installed: [done], ...dictionaryInfo() });
+}));
+
+// the newest JMdict + KANJIDIC2 from jmdict-simplified's GitHub releases
+router.post('/dictionary/update', installRoute(async (req, res) => {
+  const installed = await oneAtATime(async () => {
+    // both downloads first: if one fails, nothing has changed yet
+    const wordsFile = readDictionaryFile(await downloadRelease(/^jmdict-eng-\d.*\.json\.zip$/));
+    const kanjiFile = readDictionaryFile(await downloadRelease(/^kanjidic2-en-\d.*\.json\.zip$/));
+    return [install(wordsFile), install(kanjiFile)];
+  });
+  res.json({ installed, ...dictionaryInfo() });
 }));
 
 // tokenize / lookup / ready are also used by the tests (tests/japanese.test.js)

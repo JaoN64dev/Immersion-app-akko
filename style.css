@@ -1496,3 +1496,32 @@ main .review-buttons button {font-size: 1.05em; padding: .4em 1.2em;}
 main .review-buttons .review-known {background: var(--extra4); border-color: #2e7d32;}
 .review-progress {text-align: center; color: var(--post-bg); font-weight: bold;}
 .review-empty, .review-done {font-size: 1.1em;}
+
+/* Settings → Dictionary */
+.dictionary-note .dict-info {font-weight: bold; color: var(--dark-link-color);}
+.dictionary-note #dict-msg {margin: 0;}
+
+/* the dictionaries you added (Settings → Dictionaries), in the popup under JMdict */
+.more-dict {border-top: 2px dashed var(--border-color); margin-top: .5em; padding-top: .3em;}
+.more-dict > summary {cursor: pointer; font-weight: bold; font-size: .85em; color: var(--dark-link-color);}
+.more-entry {margin: .3em 0 .5em;}
+.more-entry .reading {margin-left: .3em;}
+.more-gloss {margin: .2em 0 0; padding-left: 1.4em; font-size: .92em;}
+.more-gloss ul, .more-gloss ol {margin: .1em 0; padding-left: 1.2em;}
+.more-gloss table {border-collapse: collapse; font-size: .9em; margin: .2em 0;}
+.more-gloss td, .more-gloss th {border: 1px solid var(--border-color); padding: .1em .4em;}
+/* Jitendex-style details: examples and notes a bit smaller */
+.more-gloss .yd-example-sentence, .more-gloss .yd-extra-info, .more-gloss .yd-attribution {font-size: .88em; color: var(--visited-link-color);}
+.more-gloss .yd-attribution {display: none;}
+.dict-list {list-style: none; padding: 0; margin: .6em 0;}
+.dict-list li {display: flex; align-items: center; gap: .5em; padding: .3em 0; border-bottom: 1px dashed var(--border-color);}
+.dict-list li:last-child {border-bottom: none;}
+.dict-list .dict-name {flex: 1;}
+.dict-list .dict-name small {color: var(--visited-link-color);}
+.dict-list li.off .dict-name {opacity: .5;}
+.dict-list button {padding: 0 .5em;}
+/* Jitendex-style labels (part of speech…), examples and "see also" */
+.more-gloss .yd-tag {display: inline-block; font-size: .75em; font-weight: bold; padding: 0 .45em; margin: 0 .3em .15em 0; border: 1px solid var(--border-color); border-radius: .7em; background: #fff;}
+.more-gloss .yd-extra-box {border-left: 3px solid var(--border-color); padding-left: .5em; margin: .25em 0;}
+.more-gloss .yd-example-keyword {font-weight: bold; text-decoration: underline dotted;}
+.more-gloss .yd-reference-label {font-weight: bold; margin-right: .3em;}

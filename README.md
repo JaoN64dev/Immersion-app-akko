@@ -7,7 +7,7 @@ An immersion app for learning **Japanese** or **American English**, on your own 
 - **Watch** videos with subtitles. Search Japanese subtitles (kitsunekko, JP-Subtitles) or English ones (OpenSubtitles), or load your own.
 - **Read** books (EPUB, text) and manga.
 - **Listen** to podcasts with transcripts.
-- **Click any word** to see its dictionary entry, kanji and pitch accent. Hover a word and press 1–4 to mark it new / learning / known / ignored; the app colours words by how well you know them.
+- **Click any word** to see its dictionary entry, kanji and pitch accent, plus any **dictionaries you add** (Yomitan format: Jitendex, monolingual dictionaries…). Hover a word and press 1–4 to mark it new / learning / known / ignored; the app colours words by how well you know them.
 - Send words to **Anki** as flashcards.
 - Follow the **course**: a step-by-step path from the basics to immersion, built on the AJATT idea, with goals the app checks for you.
 - Study **grammar** with short lessons and quizzes (Japanese N5–N1, English A1–C1). Grammar you've studied is underlined in subtitles and texts.
@@ -105,6 +105,12 @@ tokenizer: ready
 ```
 
 Words can't be looked up until these lines appear.
+
+## More dictionaries
+
+In **Settings → Dictionaries**, press **add a dictionary (.zip)** and pick a dictionary in **Yomitan format**, the same files [Yomitan](https://yomitan.wiki/) uses: for example [Jitendex](https://jitendex.org) or a monolingual Japanese dictionary (or, when learning English, an English one or one into your language). It shows in the word popup under the built-in dictionary. Add as many as you like, then turn them on or off, put them in order, or remove them in the same list. Adding a newer version of one replaces the old one. Frequency, pitch accent and kanji-only dictionaries aren't supported yet.
+
+**A newer built-in dictionary:** in **Settings → Dictionaries** (Japanese mode), press **download the newest**, or add a `jmdict-eng-….json.zip` (words) or `kanjidic2-en-….json.zip` (kanji) from [jmdict-simplified](https://github.com/scriptin/jmdict-simplified/releases). It's used right away, no restart, and your words and progress aren't touched. (Running from the code, this replaces `data/dict.json` / `data/kanji.json`, so git will show them as changed.)
 
 ## Anki (optional)
 

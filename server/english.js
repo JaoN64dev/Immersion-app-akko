@@ -113,7 +113,7 @@ can could will would shall should may might must also too very just only oh uh u
 
 // ---------- the word list (from JMdict's English glosses) ----------
 
-let vocab = null;       // { index: Map(word -> [entry*16 + sense]), verbs, adjectives, nouns }
+let vocab = null;       // { dict, index: Map(word -> [entry*16 + sense]), verbs, adjectives, nouns }
 
 const keyOf = (gloss) => gloss.toLowerCase()
   .replace(/\([^)]*\)/g, ' ')            // "run (of a machine)" -> "run"
@@ -122,7 +122,7 @@ const keyOf = (gloss) => gloss.toLowerCase()
   .replace(/\s+/g, ' ').trim();
 
 function buildVocab(dict) {
-  if (vocab) return vocab;
+  if (vocab && vocab.dict === dict) return vocab;      // rebuilt when a new dictionary is installed
   const started = Date.now();
   // JMdict backwards: English gloss -> Japanese entries (for Japanese translations)
   const index = new Map();
@@ -140,7 +140,7 @@ function buildVocab(dict) {
   // which words are real nouns / verbs / adjectives: WordNet
   const wn = wordnet.sets();
   const verbs = new Set([...wn.verb, ...IRREGULAR_BASES]);
-  vocab = { index, verbs, adjectives: wn.adj, nouns: wn.noun, adverbs: wn.adv };
+  vocab = { dict, index, verbs, adjectives: wn.adj, nouns: wn.noun, adverbs: wn.adv };
   console.log(`english: ${index.size} words ready (${Date.now() - started} ms)`);
   return vocab;
 }

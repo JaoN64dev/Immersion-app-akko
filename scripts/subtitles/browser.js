@@ -149,7 +149,7 @@ export async function searchTitles(q) {
     if (failedSources.jpsubs) {
         const oldServer = /unknown source/.test(failedSources.jpsubs);
         throw new Error(oldServer
-            ? "the server is running an older version. restart it (close its window and open Japanese akko again)"
+            ? "the server is running an older version. restart it (close its window and open akko again)"
             : `couldn't load the films & dramas list (${failedSources.jpsubs})`);
     }
     return all

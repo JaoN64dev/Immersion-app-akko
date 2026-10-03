@@ -13,7 +13,7 @@ const t = target();
 document.body.classList.add(`target-${t}`);
 if (t === "en") {
     document.querySelectorAll("main [lang=ja]").forEach((el) => { el.lang = "en"; });
-    document.title = "akko";       // the page titles are "読む Japanese akko" and such
+    document.title = "akko";       // the page titles are "読む akko" and such
 }
 
 function askTarget() {

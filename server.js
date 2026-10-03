@@ -10,6 +10,7 @@
 //   - /api/grammar  grammar lessons from ./grammar/*.md                   server/grammar.js
 //   - /api/course   the learning path from ./course/*.md                  server/course.js
 //   - /api/opensubs English subtitles from OpenSubtitles (your API key)   server/opensubtitles.js
+//   - /api/dictionaries  Yomitan dictionaries you added (Settings)        server/dictionaries.js
 
 const path = require('path');
 const express = require('express');
@@ -23,13 +24,19 @@ const discord = require('./server/discord');
 const grammar = require('./server/grammar');
 const course = require('./server/course');
 const opensubs = require('./server/opensubtitles');
+const { guard } = require('./server/guard');
+const dictionaries = require('./server/dictionaries');
 
 const hostname = '127.0.0.1';
 
 const app = express();
 
+// only akko's own pages may use the server (other websites can reach 127.0.0.1 too)
+app.use(guard);
+
 // ---------- API ----------
 app.use('/api/subs', subtitles.router);
+app.use('/api/dictionaries', dictionaries.router);
 app.use('/api', dictionary.router);
 app.use('/api/anki', anki.router);
 app.use('/api/audio', audio.router);

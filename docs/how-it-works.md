@@ -20,7 +20,7 @@ akko is two programs that run on your own computer:
  (words, progress, books, mined words)             /api/grammar, /api/course ─▶ grammar/*.md …
 ```
 
-Start the server with `npm start` (or `start-akko.bat` on Windows, which also opens the browser). It listens on `http://127.0.0.1:3000`, only reachable from your own computer.
+Start the server with `npm start` (or `start-akko.bat` on Windows, which also opens the browser). It listens on `http://127.0.0.1:3000`, only reachable from your own computer. Websites open in your browser can still send requests to it, so `server/guard.js` answers only at 127.0.0.1 / localhost (against DNS rebinding) and refuses POST/PUT/DELETE whose `Origin` is another site (tested in `tests/guard.test.js`).
 
 The **desktop app** (`electron/main.js`, built with `npm run dist`) is the same thing in a window. It sets `AKKO_DATA` to a folder in the user profile, copies the bundled dictionary files there on the first start, calls `start(3417)` from `server.js`, and opens a window on that address. The port never changes, because the window's storage (words, books…) belongs to the address. Links to other sites open in the normal browser. On each start it asks (a native dialog, before the server starts) whether to open the **app window** or the **browser**, unless `--browser` / `--window` is given or a choice was remembered (`desktop.json` in the user profile; the akko menu → When akko starts). In **browser mode** no window opens: the app shows a tray icon, keeps the server running and opens the address in the default browser. `npm run desktop` runs it from the code (through `electron/run.js`, which removes `ELECTRON_RUN_AS_NODE`: VS Code terminals set it, and it stops Electron from opening a window).
 
@@ -126,6 +126,10 @@ The matches come back as token ranges. The tokenizer maps them onto the words it
 | Pitch accent | Kanjium (`data/accents.txt`) |
 | What the ending means (食べ**られなかった** → passive + negative + past) | `explainForm` |
 | Before JMdict is ready, on the very first start | jisho.org |
+
+JMdict and KANJIDIC2 can be replaced while the app runs, from **Settings → Dictionary**: `POST /api/dictionary/upload` (the file as the body: a jmdict-simplified `jmdict-eng-….json.zip` or `kanjidic2-en-….json.zip`, or the `.json` inside) or `POST /api/dictionary/update` (downloads the newest of both from jmdict-simplified's GitHub releases). The file is checked, squeezed like on the first start, written next to the old one and renamed over it, then swapped in memory (`useDict`); English mode's reverse index (`buildVocab`) rebuilds because it remembers which dictionary it was built from. `GET /api/dictionary` says what's installed. Tested in `tests/dictionary-install.test.js`.
+
+**Dictionaries you add** (`server/dictionaries.js`): Yomitan-format zips go through the same upload route, which recognizes them (`index.json` + `term_bank_*.json`) and calls `importZip`. Each one is stored in `<data>/dictionaries/<id>/`: `terms.jsonl` (one entry per line, its meanings already turned into safe HTML: only plain formatting tags, no attributes except `yd-*` classes from Yomitan's `data` names and `lang`; no links, images, scripts or styles), `keys.txt` (every word and reading, sorted) and `index.bin` (where each key's lines are). A lookup halves the sorted keys to find the word and reads only those lines, so Jitendex (440,000 entries, 230 MB on disk) costs about 35 MB of memory and a lookup takes a few milliseconds. `/api/dict` adds them as `more: [{title, entries}]`, for each dictionary that's on, in the order of `list.json`, only for the language you're learning; the popup shows them under JMdict (`moreHtml` in `scripts/popup.js`). A newer version replaces the old one when its `indexUrl` (or else its title) matches. Tested in `tests/yomitan.test.js`.
 
 **English** (`server/english.js` → `entryFor`):
 

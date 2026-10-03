@@ -2,7 +2,7 @@
 rem Starts the akko server and opens it in the browser.
 rem Keep this window open while you use the app; close it (or press Ctrl+C) to stop the server.
 
-title Japanese akko
+title akko
 cd /d "%~dp0"
 set "URL=http://127.0.0.1:3000"
 

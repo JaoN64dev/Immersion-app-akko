@@ -119,6 +119,28 @@ function kanjiHtml(list) {
     </details>`;
 }
 
+// ---------- the dictionaries you added (Settings → Dictionaries) ----------
+
+const MORE_CLOSED = "akko-dict-closed";      // titles of the ones you folded away
+
+// e.html is already made safe by the server (server/dictionaries.js: plain formatting tags only)
+function moreHtml(more) {
+    if (!more || !more.length) return "";
+    const closed = store.get(MORE_CLOSED, []);
+    const lang = target();
+    return more.map((d) => `<details class="more-dict"${closed.includes(d.title) ? "" : " open"} data-title="${escapeHtml(d.title)}">
+        <summary translate="no">${escapeHtml(d.title)}</summary>
+        ${d.entries.map((e) => `<div class="more-entry">
+            <div class="entry-head">
+                <span class="headword" lang="${lang}">${escapeHtml(e.word)}</span>
+                ${e.reading ? `<span class="reading" lang="${lang}">${escapeHtml(e.reading)}</span>` : ""}
+                ${e.tags.slice(0, 6).map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join("")}
+            </div>
+            <ol class="more-gloss" translate="no" lang="${lang}">${e.html.map((h) => `<li>${h}</li>`).join("")}</ol>
+        </div>`).join("")}
+    </details>`).join("");
+}
+
 // ---------- grammar ----------
 
 // the grammar lessons this word is part of, linking to the lesson (new tab: the video keeps its place)
@@ -156,7 +178,7 @@ function englishEntryHtml(e, i) {
 
 // ---------- drawing ----------
 
-function render(word, { entries, inflection, kanji, grammar = [] }) {
+function render(word, { entries, inflection, kanji, grammar = [], more = [] }) {
     const en = target() === "en";
     const body = entries.length ? entries.map((e, i) => {
         if (en) return englishEntryHtml(e, i);
@@ -175,7 +197,7 @@ function render(word, { entries, inflection, kanji, grammar = [] }) {
             ${e.forms.length ? `<div class="forms" lang="ja">also: ${escapeHtml(e.forms.join("、"))}</div>` : ""}
             <ol translate="no">${senses}</ol>
         </div>`;
-    }).join("") : `<p class="muted">no dictionary entry for this. try selecting a longer or shorter bit of text.</p>`;
+    }).join("") : more.length ? "" : `<p class="muted">no dictionary entry for this. try selecting a longer or shorter bit of text.</p>`;
 
     const lemma = ctx && ctx.lemma;
     const link = en
@@ -187,13 +209,18 @@ function render(word, { entries, inflection, kanji, grammar = [] }) {
         <button class="close" title="close">✕</button></div>
         ${inflectionHtml(lemma || word, inflection)}
         ${grammarHtml(grammar)}
-        ${lemma ? statusButtons(lemma) : ""}${body}${kanjiHtml(kanji)}`;
+        ${lemma ? statusButtons(lemma) : ""}${body}${moreHtml(more)}${kanjiHtml(kanji)}`;
 
     popup.querySelectorAll(".mine").forEach((btn) => btn.addEventListener("click", () =>
         mineEntry(entries[Number(btn.dataset.i)], btn)));
     // remember whether the kanji section is open
     const box = popup.querySelector(".kanji-box");
     if (box) box.addEventListener("toggle", () => store.set(KANJI_OPEN, box.open));
+    // and which added dictionaries are folded away
+    popup.querySelectorAll(".more-dict").forEach((d) => d.addEventListener("toggle", () => {
+        const closed = store.get(MORE_CLOSED, []).filter((t) => t !== d.dataset.title);
+        store.set(MORE_CLOSED, d.open ? closed : [...closed, d.dataset.title]);
+    }));
     popup.querySelectorAll(".say").forEach((b) => b.addEventListener("click", () => new Audio(b.dataset.src).play().catch(() => {})));
 }
 

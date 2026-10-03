@@ -38,6 +38,7 @@
                 <li><a href="#language-section">interface language</a></li>
                 <li><a href="#display-section">display</a></li>
                 <li><a href="#stats-section">your stats</a></li>
+                <li><a href="#dictionary-section">dictionaries</a></li>
                 <li><a href="#backup-section">backup / restore</a></li>
             </ul>
             </details>
@@ -130,6 +131,24 @@
 
                 <h3 class="stats-heading">Recent activity</h3>
                 <ul id="stats-recent" class="stats-recent"></ul>
+            </section>
+
+            <!-- DICTIONARIES: the built-in JMdict + KANJIDIC2 (Japanese), and Yomitan dictionaries you add (both languages) -->
+            <section id="dictionary-section">
+                <h2 class="dashed-heading">Dictionaries</h2>
+                <div class="note settings-note dictionary-note">
+                    <p class="ja-only"><b>Built in:</b> <span id="dict-info" class="dict-info">…</span></p>
+                    <p class="hint ja-only" data-i18n="dict-help">You can add more dictionaries in <b>Yomitan format</b> (.zip), like <a href="https://jitendex.org" target="_blank" rel="noopener">Jitendex</a> or monolingual Japanese ones: they show in the word popup under JMdict, in the order below. A <code>jmdict-eng-….json.zip</code> or <code>kanjidic2-en-….json.zip</code> from <a href="https://github.com/scriptin/jmdict-simplified/releases" target="_blank" rel="noopener">jmdict-simplified</a> replaces the built-in one instead, and <b>download the newest</b> updates it (about 13 MB). Your words and progress are not touched.</p>
+                    <p class="hint en-only" data-i18n="dict-help-en">You can add dictionaries in <b>Yomitan format</b> (.zip), for example an English dictionary or one into your own language: they show in the word popup under the definitions, in the order below. Your words and progress are not touched.</p>
+                    <ul id="dict-list" class="dict-list"></ul>
+                    <div class="backup-actions">
+                        <label class="btn">⬆ add a dictionary (.zip)
+                            <input id="dict-upload" type="file" accept=".zip,.json,application/zip,application/json" hidden>
+                        </label>
+                        <button id="dict-update" class="ja-only">⟳ download the newest</button>
+                    </div>
+                    <p id="dict-msg" class="status dark"></p>
+                </div>
             </section>
 
             <!-- BACKUP -->
