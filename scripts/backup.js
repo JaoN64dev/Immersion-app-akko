@@ -7,6 +7,8 @@ import { store, download } from "./core/utils.js";
 import { idbAll, idbCount, idbReplace, IDB_STORES } from "./core/idb.js";
 import { wordCounts } from "./words/status.js";
 import { KEY as PROGRESS_KEY } from "./progress.js";
+import { t } from "./i18n.js";
+import { keyFor } from "./core/target.js";
 
 const PREFIX = "akko-";
 const APP = "akko-immersion";
@@ -34,7 +36,7 @@ function describe(words, minedCount, videos, texts) {
 async function renderSummary() {
     const last = store.get("akko-last-backup", null);
     const [texts, minedCount] = await Promise.all([idbCount("texts").catch(() => 0), idbCount("mined").catch(() => 0)]);
-    summary.textContent = describe(store.get("akko-words", {}), minedCount, Object.keys(store.get(PROGRESS_KEY, {})).length, texts)
+    summary.textContent = describe(store.get(keyFor("akko-words"), {}), minedCount, Object.keys(store.get(PROGRESS_KEY, {})).length, texts)
         + (last ? `  ·  last backup ${new Date(last).toLocaleDateString()}` : "  ·  never backed up");
 }
 
@@ -66,9 +68,9 @@ async function restoreBackup() {
     const idb = file.idb && typeof file.idb === "object" ? file.idb : {};      // version 1 backups have none
     const parse = (k, fallback) => { try { return JSON.parse(data[k]) ?? fallback; } catch { return fallback; } };
     const minedCount = (Array.isArray(idb.mined) ? idb.mined.length : 0) + parse("akko-mined", []).length;
-    const what = describe(parse("akko-words", {}), minedCount,
+    const what = describe(parse(keyFor("akko-words"), {}), minedCount,
         Object.keys(parse(PROGRESS_KEY, {})).length, (idb.texts || []).length);
-    if (!confirm(`Restore the backup from ${new Date(file.exported).toLocaleString()}?\n\n${what}\n\nThis replaces everything saved in this browser right now.`)) return;
+    if (!confirm(t(`Restore the backup from ${new Date(file.exported).toLocaleString()}?\n\n${what}\n\nThis replaces everything saved in this browser right now.`))) return;
 
     try {
         ourKeys().forEach((k) => localStorage.removeItem(k));

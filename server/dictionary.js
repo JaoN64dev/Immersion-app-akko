@@ -5,6 +5,7 @@
 //   GET  /api/dict?q=食べる&q=食べられなかった&form=食べられなかった
 //        -> dictionary entries for the first q that hits, with pitch accent, the kanji in
 //           the word, and what the conjugation of `form` means
+//   Both take lang=en for English (server/english.js), which uses this file's JMdict too.
 //
 // On first start the data is downloaded into ./data (JMdict ~12 MB, KANJIDIC2 ~1 MB,
 // accents ~3 MB) and squeezed. After that everything works offline.
@@ -15,6 +16,8 @@ const express = require('express');
 const AdmZip = require('adm-zip');
 const kuromoji = require('kuromoji');
 const { UA, cached, fetchText, asyncRoute } = require('./http');
+const grammar = require('./grammar');
+const english = require('./english');
 
 const DATA = path.join(__dirname, '..', 'data');
 const DICT_FILE = path.join(DATA, 'dict.json');
@@ -241,7 +244,9 @@ function lemmaOf(group, surface) {
 
 function tokenizeLine(line) {
   const out = [];
-  for (const g of groupTokens(tokenizer.tokenize(line))) {
+  const raw = tokenizer.tokenize(line);
+  const groups = groupTokens(raw);
+  for (const g of groups) {
     const s = g.tokens.map((t) => t.surface_form).join('');
     const h = g.head;
     // punctuation, ♪, ～ … (kuromoji calls unknown symbols nouns, so check for real letters)
@@ -257,7 +262,22 @@ function tokenizeLine(line) {
     if (isName) tok.n = 1;
     out.push(tok);
   }
+  markGrammar(raw, groups, out);
   return out;
+}
+
+// gr: ids of the grammar lessons (server/grammar.js) whose pattern covers this word
+function markGrammar(raw, groups, out) {
+  const found = grammar.detect(raw);
+  if (!found.length) return;
+  const wordOf = new Map();          // kuromoji token -> index in out (one word per group)
+  groups.forEach((g, i) => g.tokens.forEach((t) => wordOf.set(t, i)));
+  for (const { id, start, end } of found) {
+    for (let k = start; k < end; k++) {
+      const tok = out[wordOf.get(raw[k])];
+      if (tok && tok.b && !(tok.gr ||= []).includes(id)) tok.gr.push(id);
+    }
+  }
 }
 
 // One subtitle line may contain line breaks; keep them as {s:"\n"}
@@ -416,8 +436,13 @@ async function jishoLookup(q) {
 const router = express.Router();
 
 router.post('/tokenize', express.json({ limit: '5mb' }), (req, res) => {
-  if (!ready.tokenizer) return res.status(503).json({ error: ready.error || 'tokenizer still loading' });
   const lines = Array.isArray(req.body.lines) ? req.body.lines : [];
+  // English (server/english.js) needs the dictionary, for its list of words
+  if (req.body.lang === 'en') {
+    if (!ready.dict) return res.status(503).json({ error: ready.error || 'dictionary still loading' });
+    return res.json({ tokens: lines.map((l) => english.tokenize(String(l), dict)) });
+  }
+  if (!ready.tokenizer) return res.status(503).json({ error: ready.error || 'tokenizer still loading' });
   res.json({ tokens: lines.map((l) => tokenize(String(l))) });
 });
 
@@ -425,7 +450,12 @@ router.get('/dict', asyncRoute(async (req, res) => {
   const qs = [].concat(req.query.q || []).map((q) => String(q).trim()).filter(Boolean);
   if (!qs.length) return res.json({ query: '', entries: [] });
   const form = String(req.query.form || '').trim();
+  if (req.query.lang === 'en') {
+    if (!ready.dict) return res.status(503).json({ error: ready.error || 'dictionary still loading' });
+    return res.json(await english.lookup(qs, form, dict, String(req.query.native || '')));
+  }
   res.json(ready.dict ? lookup(qs, form) : await jishoLookup(qs[0]));
 }));
 
-module.exports = { init, router };
+// tokenize / lookup / ready are also used by the tests (tests/japanese.test.js)
+module.exports = { init, router, tokenize, lookup, ready, data: () => dict };

@@ -10,8 +10,9 @@ import { watchHover } from "../words/hover.js";
 import { enableWordClicks } from "../popup.js";
 import { fetchText, parseTranscript, pickTranscript } from "./feed.js";
 import { setPresence, tickPresence } from "../core/presence.js";
+import { keyFor, understood } from "../core/target.js";
 
-const PROGRESS = "akko-podcast-progress";
+const PROGRESS = keyFor("akko-podcast-progress");
 
 const ui = {
     section: $("#pod-player"), audio: $("#pod-audio"), art: $("#pod-now-art"),
@@ -128,7 +129,7 @@ function renderStats() {
     ui.stats.textContent = `${c.unknown} unknown`;
     ui.badge.hidden = false;
     ui.badge.className = "comp-badge inline " + pctLevel(c.pct);
-    ui.badge.innerHTML = `<b>${c.pct}%</b> 理解`;
+    ui.badge.innerHTML = `<b>${c.pct}%</b> ${understood()}`;
     ui.badge.title = `you know ${c.known} of the ${c.total} words in this episode (ignored words don't count)`;
 }
 

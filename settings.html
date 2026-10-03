@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>設定 akko</title>
+    <link href="/style.css" rel="stylesheet" type="text/css" media="all">
+    <script type="module" src="/scripts/site.js"></script>
+    <script type="module" src="/scripts/pages/settings.js"></script>
+</head>
+<body>
+    <header>
+        <marquee class="en-only" style="margin-bottom:1em;" scrollamount="4">SITE BY: AKKO • a little every day • SITE BY: AKKO • it's okay not to understand everything • SITE BY: AKKO • just keep listening • SITE BY: AKKO • i might be narcisist</marquee>
+        <marquee class="ja-only" style="margin-bottom:1em;" scrollamount="4">SITE BY: AKKO ・ 毎日少しずつ ・ SITE BY: AKKO ・ 積み重ね ・ SITE BY: AKKO ・ i might be narcisist</marquee>
+    </header>
+    <div id="container">
+        <div class="flex">
+        <aside id="sidebar">
+            <div id="bio" class="note">I`m akko. everything about the app in one place: what you're learning, how it looks, your data and your stats.</div>
+            <div class="side-sticky">
+            <nav id="navi">
+            <details open=""><summary>Pages</summary>
+            <ul>
+                <li><a href="/course.html">course</a></li>
+                <li><a href="/">watch</a></li>
+                <li><a href="/reading.html">read</a></li>
+                <li><a href="/podcasts.html">listen</a></li>
+                <li><a href="/grammar.html">grammar</a></li>
+                <li><a href="/review.html">review</a></li>
+                <li><a href="/settings.html" aria-current="page">settings</a></li>
+                <li><a href="/about.html">about</a></li>
+            </ul>
+            </details>
+            <details open=""><summary>Settings</summary>
+            <ul>
+                <li><a href="#learning-section">language you learn</a></li>
+                <li class="en-only"><a href="#subtitles-section">English subtitles</a></li>
+                <li><a href="#language-section">interface language</a></li>
+                <li><a href="#display-section">display</a></li>
+                <li><a href="#stats-section">your stats</a></li>
+                <li><a href="#backup-section">backup / restore</a></li>
+            </ul>
+            </details>
+            </nav>
+            </div>
+        </aside>
+        <main>
+        <div id="content">
+            <nav class="tabs" aria-label="pages">
+                <a class="tab" href="/course.html"><span class="ja-only">道 </span><small translate="no">course</small></a>
+                <a class="tab" href="/"><span class="ja-only">観る </span><small translate="no">watch</small></a>
+                <a class="tab" href="/reading.html"><span class="ja-only">読む </span><small translate="no">read</small></a>
+                <a class="tab" href="/podcasts.html"><span class="ja-only">聴く </span><small translate="no">listen</small></a>
+                <a class="tab" href="/grammar.html"><span class="ja-only">文法 </span><small translate="no">grammar</small></a>
+                <a class="tab" href="/review.html"><span class="ja-only">復習 </span><small translate="no">review</small></a>
+                <a class="tab" href="/settings.html" aria-current="page"><span class="ja-only">設定 </span><small translate="no">settings</small></a>
+                <a class="tab" href="/about.html"><span class="ja-only">私 </span><small translate="no">about</small></a>
+            </nav>
+
+            <h1><span class="ja-only">設定 </span>Settings</h1>
+
+            <!-- WHAT YOU'RE LEARNING -->
+            <section id="learning-section">
+                <h2 class="dashed-heading">Learning</h2>
+                <div class="note settings-note">
+                    <p>The language you're studying. Each one keeps its own known words, lessons, course and progress, so you can switch back and forth.</p>
+                    <div class="choice-row" role="radiogroup" aria-label="language you're learning">
+                        <button class="choice" data-target="ja" role="radio" translate="no"><b lang="ja">日本語</b><span>Japanese</span></button>
+                        <button class="choice" data-target="en" role="radio" translate="no"><b lang="en">English</b><span>American English</span></button>
+                    </div>
+                    <label class="native-row en-only">Your language, for translations of English words
+                        <select id="native-lang"></select>
+                    </label>
+                </div>
+            </section>
+
+            <!-- ENGLISH SUBTITLES (OpenSubtitles) -->
+            <section id="subtitles-section" class="en-only">
+                <h2 class="dashed-heading">English subtitles</h2>
+                <form id="os-settings" class="note settings-note os-settings">
+                    <p data-i18n="os-help">The Watch page can search <a href="https://www.opensubtitles.com" target="_blank" rel="noopener">OpenSubtitles.com</a> for English subtitles. It needs a free API key: make an account there, then in your profile open <b>API consumers</b> and create one. Without logging in you get about 5 downloads a day; with your account, 20. The key and login are kept on this computer only (the password is not saved).</p>
+                    <label class="row">API key <input id="os-key" type="text" autocomplete="off" spellcheck="false"></label>
+                    <label class="row">username (optional) <input id="os-user" type="text" autocomplete="username"></label>
+                    <label class="row">password (optional) <input id="os-pass" type="password" autocomplete="current-password"></label>
+                    <div class="row-buttons"><button type="submit">save</button><button type="button" id="os-clear">remove</button></div>
+                    <p id="os-msg" class="status dark"></p>
+                </form>
+            </section>
+
+            <!-- INTERFACE LANGUAGE -->
+            <section id="language-section">
+                <h2 class="dashed-heading">Interface language</h2>
+                <div class="note settings-note">
+                    <p>The language of the menus and buttons.</p>
+                    <div class="choice-row" role="radiogroup" aria-label="interface language">
+                        <button class="choice" data-lang="en" role="radio" translate="no"><b lang="en">English</b></button>
+                        <button class="choice" data-lang="ja" role="radio" translate="no"><b lang="ja">日本語</b></button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- DISPLAY -->
+            <section id="display-section">
+                <h2 class="dashed-heading">Display</h2>
+                <div class="note settings-note settings-display">
+                    <label class="ja-only">ふりがな
+                        <select id="furigana-mode">
+                            <option value="unknown">on words I don't know</option>
+                            <option value="always">always</option>
+                            <option value="hover">on hover</option>
+                            <option value="off">off</option>
+                        </select>
+                    </label>
+                    <label title="underline words you don't know (red) and are learning (yellow)"><input id="color-words" type="checkbox" checked> colour words</label>
+                    <label title="underline grammar from the lessons (purple dots)"><input id="grammar-marks" type="checkbox" checked> underline grammar</label>
+                </div>
+            </section>
+
+            <!-- STATS -->
+            <section id="stats-section">
+                <h2 class="dashed-heading">Stats</h2>
+                <p class="note stats-note">Everything below comes from what's saved in this browser — mostly rough totals (a video's "watched" seconds are just its last known position), not a stopwatch. Nothing here leaves your computer.</p>
+                <div id="stats-tiles" class="stats-grid"></div>
+
+                <h3 class="stats-heading">Words you know</h3>
+                <div id="stats-words" class="note stats-note"></div>
+
+                <h3 class="stats-heading">Mining activity <small style="font-weight:normal">(last 30 days)</small></h3>
+                <div id="stats-mining" class="note stats-note stats-chart"></div>
+
+                <h3 class="stats-heading">Recent activity</h3>
+                <ul id="stats-recent" class="stats-recent"></ul>
+            </section>
+
+            <!-- BACKUP -->
+            <section id="backup-section">
+                <h2 class="dashed-heading">Backup</h2>
+                <div class="backup">
+                    <p class="hint">Everything is saved in this browser only. Clearing site data, or switching browser or computer, loses it, so keep a backup file.</p>
+                    <p id="backup-summary" class="backup-summary"></p>
+                    <div class="backup-actions">
+                        <button id="backup-export">⬇ download backup</button>
+                        <label class="btn">⬆ restore from backup
+                            <input id="backup-import" type="file" accept=".json,application/json" hidden>
+                        </label>
+                    </div>
+                    <p id="backup-msg" class="status dark"></p>
+                </div>
+            </section>
+        </div>
+        </main>
+        </div>
+    </div>
+</body>
+</html>

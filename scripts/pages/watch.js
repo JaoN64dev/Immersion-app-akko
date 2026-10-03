@@ -7,6 +7,7 @@ import { store, timeFormatter } from "../core/utils.js";
 import * as settings from "../player/settings.js";
 import * as search from "../search.js";
 import * as subtitles from "../subtitles/browser.js";
+import * as opensubs from "../subtitles/opensubs.js";
 import * as video from "../player/video.js";
 import * as dualAudio from "../player/dual-audio.js";
 import * as fullscreen from "../player/fullscreen.js";
@@ -17,12 +18,11 @@ import * as popup from "../popup.js";
 import * as mining from "../mining.js";
 import * as ankiPanel from "../anki/panel.js";
 import * as progress from "../progress.js";
-import * as backup from "../backup.js";
 import { watchHover } from "../words/hover.js";
 import { initKeys } from "../keys.js";
 import { remindBackup } from "../core/reminder.js";
 
-for (const mod of [settings, search, subtitles, video, dualAudio, fullscreen, cues, subs2, render, popup, ankiPanel, progress, backup]) {
+for (const mod of [settings, search, subtitles, opensubs, video, dualAudio, fullscreen, cues, subs2, render, popup, ankiPanel, progress]) {
     mod.init();
 }
 

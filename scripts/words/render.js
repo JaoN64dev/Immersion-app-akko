@@ -1,11 +1,13 @@
-// Turning Japanese text into clickable, coloured words (used by every page)
+// Turning Japanese (or English) text into clickable, coloured words (used by every page)
 
 import { escapeHtml, postJson } from "../core/utils.js";
 import { wordStatus, counts, isUnknown } from "./status.js";
+import { target } from "../core/target.js";
 
-const segmenter = "Segmenter" in Intl ? new Intl.Segmenter("ja", { granularity: "word" }) : null;
+const segmenter = "Segmenter" in Intl ? new Intl.Segmenter(target(), { granularity: "word" }) : null;
 
-// A token from /api/tokenize: {s: surface, b: dictionary form, f: furigana parts, c: counts as a word, n: name}.
+// A token from /api/tokenize: {s: surface, b: dictionary form, f: furigana parts, c: counts as a word, n: name,
+// gr: ids of grammar lessons it's part of}.
 // offset (optional) = where the token starts in its line, kept as data-o for finding the sentence.
 export function tokenHtml(t, offset) {
     if (t.s === "\n") return "<br>";
@@ -14,7 +16,8 @@ export function tokenHtml(t, offset) {
         ? t.f.map((p) => p.r ? `<ruby>${escapeHtml(p.t)}<rt>${escapeHtml(p.r)}</rt></ruby>` : escapeHtml(p.t)).join("")
         : escapeHtml(t.s);
     const cls = t.c ? `w s-${wordStatus(t.b)}` : t.n ? "w name" : "w g";
-    return `<span class="${cls}" data-b="${escapeHtml(t.b)}"${t.c ? ` data-c="1"` : ""}${offset !== undefined ? ` data-o="${offset}"` : ""}>${inner}</span>`;
+    const gr = t.gr ? ` data-gr="${escapeHtml(t.gr.join(" "))}"` : "";
+    return `<span class="${cls}" data-b="${escapeHtml(t.b)}"${t.c ? ` data-c="1"` : ""}${gr}${offset !== undefined ? ` data-o="${offset}"` : ""}>${inner}</span>`;
 }
 
 export function tokensHtml(tokens, { offsets = false } = {}) {
@@ -51,21 +54,37 @@ export function plainText(node) {
     return clone.textContent;
 }
 
+// English full stops that don't end a sentence: "Mr.", "Dr.", "etc.", "D.C.", "e.g."
+const ABBREVIATION = /(?:^|[\s("“])(?:mr|mrs|ms|dr|st|jr|sr|prof|vs|etc|[a-z])$|(?:[a-z]\.)+[a-z]$/i;
+
+// does the character at i end a sentence? (English also ends them with a full stop; Japanese uses 。)
+function endsSentence(text, i, en) {
+    const ch = text[i];
+    if (!en) return /[。！？!?…\n]/.test(ch);
+    if (/[!?…\n]/.test(ch)) return true;
+    if (ch !== ".") return false;
+    // "3.5", "a.m." and "D.C." keep going: a full stop ends a sentence only before a space or the end
+    if (i + 1 < text.length && !/[\s"”')\]]/.test(text[i + 1])) return false;
+    return !ABBREVIATION.test(text.slice(Math.max(0, i - 8), i));
+}
+
 // The sentence around position `at` in `text`
 export function sentenceAround(text, at) {
-    const END = /[。！？!?…\n]/;
+    const en = target() === "en";
     let start = at;
-    while (start > 0 && !END.test(text[start - 1])) start--;
+    while (start > 0 && !endsSentence(text, start - 1, en)) start--;
+    // a closing quote right after the full stop belongs to the sentence before ("Stop." She ran.)
+    while (start < at && /[\s"”')\]」』）]/.test(text[start])) start++;
     let end = at;
-    while (end < text.length && !END.test(text[end])) end++;
-    while (end < text.length && /[。！？!?…」』）)]/.test(text[end])) end++;    // keep the punctuation + closing quote
+    while (end < text.length && !endsSentence(text, end, en)) end++;
+    while (end < text.length && /[。！？.!?…」』）)"”']/.test(text[end])) end++;    // keep the punctuation + closing quote
     return text.slice(start, end).trim();
 }
 
 // Split lines into words on the server; retries while its tokenizer is still starting up
 export async function tokenize(lines, attempt = 0) {
     try {
-        return (await postJson("/api/tokenize", { lines })).tokens;
+        return (await postJson("/api/tokenize", { lines, lang: target() })).tokens;
     } catch (err) {
         if (attempt >= 20) throw err;
         await new Promise((r) => setTimeout(r, 3000));

@@ -1,11 +1,13 @@
-// Word pronunciation audio: GET /api/audio?word=食べる&reading=たべる[&form=喰べる…]
+// Word pronunciation audio: GET /api/audio?word=食べる&reading=たべる[&form=喰べる…][&lang=en]
 //   -> {data: base64, ext, source} or 404 {error}
-// Tries JapanesePod101 (the source Yomitan uses) first, then Lingua Libre recordings on
-// Wikimedia Commons. Both are free and need no key.
+// Japanese: tries JapanesePod101 (the source Yomitan uses) first, then Lingua Libre recordings on
+// Wikimedia Commons. English: the American recording from dictionaryapi.dev (server/english.js).
+// All free, no key needed.
 
 const express = require('express');
 const crypto = require('crypto');
 const { UA, cached, fetchBuffer, asyncRoute } = require('./http');
+const english = require('./english');
 
 const router = express.Router();
 const DAY = 24 * 60 * 60 * 1000;
@@ -65,7 +67,9 @@ router.get('/', asyncRoute(async (req, res) => {
   const reading = String(req.query.reading || '').trim();
   const forms = [].concat(req.query.form || []).map((f) => String(f).trim()).filter((f) => f && f !== word).slice(0, 5);
   if (!word) return res.status(400).json({ error: 'no word' });
-  const hit = await cached(`audio:${word}:${reading}:${forms}`, DAY, () => findAudio(word, reading, forms));
+  const hit = req.query.lang === 'en'
+    ? await cached(`audio-en:${word}`, DAY, () => english.audio(word))
+    : await cached(`audio:${word}:${reading}:${forms}`, DAY, () => findAudio(word, reading, forms));
   if (!hit) return res.status(404).json({ error: `no audio for ${word}` });
   res.json({ data: hit.buf.toString('base64'), ext: hit.ext, source: hit.source });
 }));

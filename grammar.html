@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文法 Japanese akko</title>
+    <link href="/style.css" rel="stylesheet" type="text/css" media="all">
+    <script type="module" src="/scripts/site.js"></script>
+    <script type="module" src="/scripts/pages/grammar.js"></script>
+</head>
+<body>
+    <header>
+        <marquee class="en-only" style="margin-bottom:1em;" scrollamount="4">SITE BY: AKKO • a little every day • SITE BY: AKKO • it's okay not to understand everything • SITE BY: AKKO • just keep listening • SITE BY: AKKO • i might be narcisist</marquee>
+        <marquee class="ja-only" style="margin-bottom:1em;" scrollamount="4">SITE BY: AKKO ・ 文法は道具 ・ SITE BY: AKKO ・ 少しずつ ・ SITE BY: AKKO ・ 分からなくても大丈夫 ・ SITE BY: AKKO ・ i might be narcisist</marquee>
+    </header>
+    <div id="container">
+        <div class="flex">
+        <aside id="sidebar">
+            <div id="bio" class="note">I`m akko. short grammar lessons, then go find them in the wild: grammar you've studied is underlined in subtitles and texts.</div>
+            <div class="side-sticky">
+            <nav id="navi">
+            <details open=""><summary>Pages</summary>
+            <ul>
+                <li><a href="/course.html">course</a></li>
+                <li><a href="/">watch</a></li>
+                <li><a href="/reading.html">read</a></li>
+                <li><a href="/podcasts.html">listen</a></li>
+                <li><a href="/grammar.html" aria-current="page">grammar</a></li>
+                <li><a href="/review.html">review</a></li>
+                <li><a href="/settings.html">settings</a></li>
+                <li><a href="/about.html">about</a></li>
+            </ul>
+            </details>
+            <details open=""><summary>Grammar</summary>
+            <ul>
+                <li><a href="#grammar-lessons">lessons</a></li>
+                <li><a href="#grammar-howto">add your own</a></li>
+            </ul>
+            </details>
+            <details><summary>Keys</summary>
+            <ul class="keys">
+                <li><kbd>←</kbd> <kbd>→</kbd> previous / next lesson</li>
+                <li><kbd>1</kbd>–<kbd>4</kbd> new / learning / known / ignore the word under the mouse</li>
+            </ul>
+            </details>
+            </nav>
+            <p class="credits en-only">definitions: <a href="https://wordnet.princeton.edu" target="_blank" rel="noopener">WordNet</a> (Princeton) · pronunciation: <a href="https://github.com/cmusphinx/cmudict" target="_blank" rel="noopener">CMU Pronouncing Dictionary</a> · translations: <a href="https://en.wiktionary.org" target="_blank" rel="noopener">Wiktionary</a> (CC BY-SA 4.0) · recordings: <a href="https://commons.wikimedia.org" target="_blank" rel="noopener">Wikimedia Commons</a></p>
+            <p class="credits ja-only">dictionary: <a href="https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project" target="_blank" rel="noopener">JMdict</a> &amp; <a href="https://www.edrdg.org/wiki/index.php/KANJIDIC_Project" target="_blank" rel="noopener">KANJIDIC2</a> (EDRDG, CC BY-SA 4.0) · pitch accent: <a href="https://github.com/mifunetoshiro/kanjium" target="_blank" rel="noopener">Kanjium</a> (Wadoku, CC BY-SA 4.0)</p>
+            </div>
+        </aside>
+        <main>
+        <div id="content">
+            <nav class="tabs" aria-label="pages">
+                <a class="tab" href="/course.html"><span class="ja-only">道 </span><small translate="no">course</small></a>
+                <a class="tab" href="/"><span class="ja-only">観る </span><small translate="no">watch</small></a>
+                <a class="tab" href="/reading.html"><span class="ja-only">読む </span><small translate="no">read</small></a>
+                <a class="tab" href="/podcasts.html"><span class="ja-only">聴く </span><small translate="no">listen</small></a>
+                <a class="tab" href="/grammar.html" aria-current="page"><span class="ja-only">文法 </span><small translate="no">grammar</small></a>
+                <a class="tab" href="/review.html"><span class="ja-only">復習 </span><small translate="no">review</small></a>
+                <a class="tab" href="/settings.html"><span class="ja-only">設定 </span><small translate="no">settings</small></a>
+                <a class="tab" href="/about.html"><span class="ja-only">私 </span><small translate="no">about</small></a>
+            </nav>
+
+            <h1><span class="ja-only">文法 </span>Grammar</h1>
+
+            <div id="grammar-problems" class="note grammar-problems" hidden></div>
+
+            <section id="grammar-lessons" class="grammar-layout">
+                <div class="grammar-side">
+                    <input id="grammar-filter" type="search" placeholder="search lessons…" autocomplete="off">
+                    <div id="grammar-levels" class="grammar-levels" role="tablist" aria-label="level"></div>
+                    <p id="grammar-progress" class="grammar-progress"></p>
+                    <div id="grammar-list" class="grammar-list"></div>
+                </div>
+
+                <div class="grammar-main">
+                    <div class="toolbar grammar-tools">
+                        <label class="ja-only">ふりがな
+                            <select id="furigana-mode">
+                                <option value="unknown">on words I don't know</option>
+                                <option value="always">always</option>
+                                <option value="hover">on hover</option>
+                                <option value="off">off</option>
+                            </select>
+                        </label>
+                        <label title="underline words you don't know (red) and are learning (yellow)"><input id="color-words" type="checkbox" checked> colour words</label>
+                        <label title="underline grammar from the lessons (purple dots) in subtitles, texts and examples"><input id="grammar-marks" type="checkbox" checked> underline grammar</label>
+                        <label title="hide the translations, to test yourself"><input id="hide-translations" type="checkbox"> hide translations</label>
+                    </div>
+                    <article id="grammar-lesson" class="note grammar-lesson">
+                        <p class="muted">loading lessons…</p>
+                    </article>
+                </div>
+            </section>
+
+            <section id="grammar-howto" class="quiet-section">
+                <h3 class="quiet-heading">Add your own lessons</h3>
+                <div class="note about-note" data-i18n="grammar-howto">
+                    <p>Lessons are Markdown files in the <code>grammar</code> folder of the app. To add one, copy <code>grammar/_template.md</code>, rename it and edit it. Changes show up when you reload this page, without restarting the server.</p>
+                    <p>Each file sets its title, meaning, level and order at the top. Its <code>detect:</code> lines describe how to find the grammar in subtitles and texts. <code>grammar/README.md</code> explains every option.</p>
+                </div>
+            </section>
+
+            <div id="popup" class="popup" hidden></div>
+        </div>
+        </main>
+        </div>
+    </div>
+</body>
+</html>

@@ -602,7 +602,9 @@ main .card {
   pointer-events: none;
 }
 .sub-overlay .line {
-  display: table;
+  /* shrink to the text and centre it (display: table would drop the spaces between English words) */
+  width: fit-content;
+  max-width: 100%;
   margin: .15em auto 0;
   padding: .05em .4em;
   background: #000000a8;
@@ -1245,3 +1247,252 @@ main .sub-browser-actions button {padding: .1em .6em; font-size: .85em;}
   .sub-browser-actions {position: static; justify-content: flex-end; margin-top: .3em;}
   .show-layout .sub-browser h3 {padding-right: 0;}
 }
+
+/* =========================================================
+   grammar: underlines, popup box, lessons page
+   ========================================================= */
+
+/* grammar from the lessons, dotted under the word (below the known/unknown colour line) */
+.grammar-marks .w[data-gr] {border-bottom: 2px dotted #8a5cf6;}
+.sub-overlay .w[data-gr] {border-bottom-color: #c4a8ff;}
+
+.grammar-box {display: flex; flex-direction: column; gap: 2px; margin: .45em 0 .1em; padding: .3em .6em; background: #ece6ff; border-radius: 8px; font-size: .85em;}
+.grammar-box-label {font-weight: bold; color: #5b3cc4; font-size: .85em;}
+.grammar-box a {color: var(--dark-link-color); text-decoration: none;}
+.grammar-box a:hover b {text-decoration: underline;}
+.grammar-box small {color: var(--visited-link-color);}
+
+.grammar-problems {color: #333; padding: .7em 1.4em; outline-color: #c62828;}
+.grammar-problems ul {margin: .3em 0 0; padding-left: 1.2em;}
+
+.grammar-layout {display: grid; grid-template-columns: minmax(200px, 270px) minmax(0, 1fr); gap: 18px; align-items: start;}
+.grammar-side {position: sticky; top: 12px; display: flex; flex-direction: column; gap: .5em; max-height: calc(100vh - 24px);}
+main .grammar-side input[type=search] {width: 100%; font: inherit; padding: .35em .7em; border: 2px solid var(--border-color); border-radius: 8px;}
+.grammar-levels {display: flex; flex-wrap: wrap; gap: 4px; background: var(--text-bg); padding: 4px; border-radius: 10px;}
+main .grammar-levels button {border: 0; background: transparent; color: var(--post-bg); padding: .15em .6em; font-size: .9em;}
+main .grammar-levels button[aria-selected="true"] {background: var(--post-bg); color: var(--dark-link-color);}
+.grammar-progress {margin: 0; font-size: .85em; color: var(--post-bg);}
+.grammar-list {overflow: auto; background: var(--post-bg); border-radius: 10px; box-shadow: 2px 2px 6px var(--border-shadow);}
+.grammar-list .empty-light {color: #555; padding: .5em 1em;}
+.grammar-level {margin: 0; padding: .2em .9em; background: var(--text-bg); color: var(--post-bg); font-size: .85em; letter-spacing: 1px; position: sticky; top: 0;}
+.grammar-list ul {list-style: none; margin: 0; padding: 0;}
+.grammar-item {display: grid; grid-template-columns: 1fr auto; padding: .35em .9em; color: #333; text-decoration: none; border-bottom: 1px dashed var(--border-color);}
+.grammar-item:visited {color: #333;}
+.grammar-item:hover {background: #fff;}
+.grammar-item[aria-current] {background: var(--extra3); box-shadow: inset 4px 0 var(--highlight);}
+.grammar-item .gi-title {font-weight: bold;}
+.grammar-item small {grid-column: 1 / -1; color: var(--visited-link-color); font-size: .78em; line-height: 1.3;}
+.gi-done {color: #2e7d32; font-weight: bold;}
+.gi-quiz {color: #5b3cc4;}
+
+.grammar-tools {margin: 0 0 12px;}
+.grammar-lesson {color: #333; font-size: 1em; padding: 1em 1.6em 1.4em; margin: 0;}
+.lesson-head {display: flex; flex-wrap: wrap; align-items: center; gap: .3em .8em;}
+.lesson-head h2 {margin: 0; flex: 1; font-size: 1.7em; color: var(--dark-link-color);}
+.lesson-level {background: var(--extra5); color: #333; font-weight: bold;}
+main .lesson-learned.on {background: var(--extra4); border-color: #2e7d32; color: #1b5e20;}
+.lesson-meaning {margin: .2em 0 .8em; font-size: 1.1em; color: var(--visited-link-color); font-weight: bold;}
+.lesson-body {line-height: 1.7;}
+.lesson-body h3, .lesson-body h4 {margin: 1em 0 .3em; color: var(--dark-link-color);}
+.lesson-body blockquote {margin: .8em 0; padding: .5em 1em; background: #fff8dc; border-left: 4px solid #e0a800; border-radius: 0 8px 8px 0;}
+.lesson-body code {background: #fff; padding: 0 .3em; border-radius: 3px;}
+.lesson-body a {color: var(--dark-link-color);}
+.table-wrap {overflow-x: auto;}
+.lesson-body table, main .lesson-body table {width: auto; margin: .6em 0; color: #333; background: #fff; font-size: .95em;}
+main .lesson-body tr {background: none;}
+main .lesson-body th, main .lesson-body td {border: 1px solid #ccc; padding: .25em .7em; text-align: left;}
+main .lesson-body th {background: #ece6ff; color: #333; font-size: 1em; letter-spacing: normal; text-transform: none;}
+.lesson-heading {margin: 1.2em 0 .4em; padding-bottom: .2em; border-bottom: 2px dashed var(--border-color); color: var(--dark-link-color);}
+.lesson-heading small {font-weight: normal; color: var(--visited-link-color);}
+.lesson-examples {margin: 0; padding-left: 1.6em;}
+.lesson-examples li {margin: .5em 0;}
+.ex-ja {display: block; font-size: 1.3em; line-height: 2; font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif;}
+.ex-ja .w:hover {background: #ffd0d8; color: inherit;}
+.ex-en {display: block; color: var(--visited-link-color); font-size: .95em;}
+.hide-translations .ex-en {filter: blur(5px); transition: filter .15s; cursor: pointer;}
+.hide-translations .ex-en:hover {filter: none;}
+.lesson-detect {font-size: .8em; color: #5b3cc4; margin: .6em 0 0; cursor: help;}
+.lesson-detect.partial {color: #b26a00;}
+.lesson-quiz {margin: 0; padding-left: 1.6em;}
+.lesson-quiz li {margin: .7em 0;}
+.quiz-q {margin: 0 0 .3em; font-size: 1.15em;}
+.quiz-options {display: flex; flex-wrap: wrap; gap: .4em;}
+main .quiz-options button {font-weight: normal; font-size: 1.05em;}
+main .quiz-options button.correct {background: var(--extra4); border-color: #2e7d32; opacity: 1;}
+main .quiz-options button.chosen-wrong {background: #ffd0d8; border-color: #c62828; opacity: 1;}
+.quiz-typed {display: flex; gap: .4em;}
+main .quiz-typed input {font: inherit; font-size: 1.05em; padding: .2em .6em; border: 2px solid var(--border-color); border-radius: 8px; min-width: 0;}
+.quiz-feedback {margin: .2em 0 0; font-size: .9em; min-height: 1.2em;}
+.lesson-quiz li.right .quiz-feedback {color: #2e7d32; font-weight: bold;}
+.lesson-quiz li.wrong .quiz-feedback {color: #c62828;}
+.quiz-score {margin: .6em 0 0; font-size: 1.05em;}
+.quiz-score button {margin-left: .6em;}
+.lesson-see {margin: 1.2em 0 0;}
+.lesson-see a {color: var(--dark-link-color); font-weight: bold;}
+.lesson-nav {display: flex; justify-content: space-between; gap: 1em; margin-top: 1.4em; padding-top: .6em; border-top: 2px dashed var(--border-color);}
+.lesson-nav a {color: var(--dark-link-color); font-weight: bold; text-decoration: none;}
+.lesson-nav a:hover {text-decoration: underline;}
+
+@container (max-width: 700px) {
+  .grammar-layout {grid-template-columns: 1fr;}
+  .grammar-side {position: static; max-height: none;}
+  .grammar-list {max-height: 40vh;}
+}
+
+
+/* =========================================================
+   course
+   ========================================================= */
+
+.course-overview {color: #333; padding: .8em 1.4em; margin-bottom: 1.2em;}
+.course-summary {font-size: 1.05em;}
+.course-summary a {color: var(--dark-link-color); font-weight: bold;}
+.course-bar {margin-top: .5em; height: 10px; border-radius: 999px; background: #d8d8e0; overflow: hidden;}
+.course-bar i {display: block; height: 100%; background: #0ca30c; transition: width .3s;}
+
+.course-steps {list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px;}
+.course-step > details {background: var(--post-bg); color: #333; border-radius: 12px; box-shadow: 2px 2px 6px var(--border-shadow); padding: .2em 1.4em .2em 1em; border-left: 6px solid var(--border-color);}
+.course-step.current > details {border-left-color: var(--highlight);}
+.course-step.done > details {border-left-color: #0ca30c;}
+.course-step summary {display: flex; align-items: center; gap: .9em; padding: .7em 0; cursor: pointer; list-style: none;}
+.course-step summary::-webkit-details-marker {display: none;}
+.step-num {flex: none; display: grid; place-content: center; width: 2.1em; height: 2.1em; border-radius: 50%; background: var(--text-bg); color: #fff; font-weight: bold;}
+.course-step.current .step-num {background: var(--highlight);}
+.course-step.done .step-num {background: #0ca30c;}
+.step-head {flex: 1; display: flex; flex-direction: column; min-width: 0;}
+.step-title {font-size: 1.2em; color: var(--dark-link-color);}
+.step-summary {font-size: .9em; color: var(--visited-link-color);}
+main .step-when {flex: none; max-width: 40%; background: var(--extra3); color: #333; font-size: .75em; font-weight: bold; text-align: center;}
+.course-step details[open] summary {border-bottom: 2px dashed var(--border-color);}
+.step-body {margin: .4em 0;}
+.course-goals {list-style: none; margin: .8em 0 .2em; padding: .5em .8em; background: #fff; border-radius: 8px; display: flex; flex-direction: column; gap: .4em;}
+.course-goal {display: grid; grid-template-columns: 1fr auto; gap: .1em 1em; font-size: .9em;}
+.goal-count {font-variant-numeric: tabular-nums; color: var(--visited-link-color);}
+.goal-bar {grid-column: 1 / -1; height: 6px; border-radius: 999px; background: #e0e0e8; overflow: hidden;}
+.goal-bar i {display: block; height: 100%; background: #8a5cf6;}
+.course-goal.reached .goal-label {color: #2e7d32; font-weight: bold;}
+.course-goal.reached .goal-bar i {background: #0ca30c;}
+.step-actions {display: flex; flex-wrap: wrap; align-items: center; gap: .6em 1em; padding: .4em 0 1em;}
+main .step-done.on {background: var(--extra4); border-color: #2e7d32; color: #1b5e20;}
+.step-hint {font-size: .85em; color: #2e7d32;}
+#navi .course-nav a {font-size: .9em;}
+#navi .course-nav a[aria-current="step"] {background: var(--extra3);}
+
+@container (max-width: 560px) {
+  .course-step summary {flex-wrap: wrap;}
+  main .step-when {max-width: none;}
+}
+
+/* =========================================================
+   learning Japanese / English (scripts/site.js), settings
+   ========================================================= */
+
+/* things that only work for one language */
+body.target-en .ja-only, body:not(.target-en) .en-only {display: none !important;}
+
+/* first visit: what do you want to learn? */
+.target-chooser {position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 16px; background: #00000099;}
+.target-card {width: min(640px, 100%); background: var(--post-bg); color: #333; border-radius: 16px; padding: 1.4em 1.6em; box-shadow: 4px 4px 16px var(--border-shadow); outline: 2px dashed var(--border-color); outline-offset: -.6em;}
+.target-card h2 {margin: 0 0 .8em; text-align: center; color: var(--dark-link-color); line-height: 1.4;}
+.target-card h2 span {font-size: .8em;}
+.target-options {display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;}
+.target-options button {
+  display: flex; flex-direction: column; align-items: center; gap: .3em; padding: 1em;
+  font: inherit; color: #333; background: #fff; cursor: pointer;
+  border: 3px solid var(--border-color); border-radius: 12px; white-space: normal;
+}
+.target-options button:hover, .target-options button:focus-visible {border-color: var(--highlight); background: var(--extra3);}
+.target-options b {font-size: 2em; color: var(--dark-link-color);}
+.target-options span {font-weight: bold;}
+.target-options small {color: var(--visited-link-color); text-align: center;}
+.target-later {margin: 1em 0 0; text-align: center; font-size: .85em; color: var(--visited-link-color);}
+
+/* settings page */
+.settings-note {color: #333; font-size: .95em; padding: .8em 1.4em; margin-bottom: 1em;}
+.settings-note p {margin: .3em 0 .7em;}
+.settings-note a {color: var(--dark-link-color);}
+.choice-row {display: flex; flex-wrap: wrap; gap: 10px;}
+main .choice {display: flex; flex-direction: column; align-items: flex-start; min-width: 10em; padding: .5em 1em; background: #fff; white-space: normal;}
+main .choice b {font-size: 1.3em;}
+main .choice span {font-weight: normal; font-size: .85em; color: var(--visited-link-color);}
+main .choice[aria-checked="true"] {background: var(--extra4); border-color: #2e7d32;}
+.settings-display {display: flex; flex-wrap: wrap; gap: .6em 1.6em; align-items: center;}
+.settings-display label {cursor: pointer;}
+.stats-heading {margin: 1.2em 15px .5em; text-shadow: 2px 2px var(--dark-color);}
+#backup-section .backup {display: grid; grid-template-columns: 1fr auto; gap: .4em 1em; align-items: center;}
+#backup-section .backup .hint {grid-column: 1; margin: 0; color: var(--post-bg);}
+#backup-section .backup-summary {grid-column: 1; margin: 0; color: var(--extra3);}
+#backup-section .backup-actions {grid-column: 2; grid-row: 1 / 3; display: flex; flex-wrap: wrap; gap: .5em;}
+#backup-section #backup-msg {grid-column: 1 / -1; margin: 0; color: var(--extra3);}
+@container (max-width: 600px) {
+  #backup-section .backup {grid-template-columns: 1fr;}
+  #backup-section .backup-actions {grid-column: 1; grid-row: auto;}
+}
+
+/* English words in the popup */
+.entry .ipa {font-family: "Charis SIL", "Doulos SIL", "Lucida Sans Unicode", "Segoe UI", sans-serif;}
+main .entry .say, .popup .say {padding: 0 .4em; font-size: .9em;}
+.defs {margin: .3em 0 0; padding-left: 1.4em; font-size: .9em;}
+.defs small {color: var(--border-color);}
+.ja-equivalents {margin-top: .3em; font-size: .9em;}
+.ja-equivalents summary {cursor: pointer; font-weight: bold; color: var(--dark-link-color);}
+.ja-equivalents ol {margin: .2em 0 0; padding-left: 1.4em;}
+.ja-equivalents b {font-size: 1.05em;}
+.ja-equivalents small {color: var(--border-color);}
+.def-example {color: var(--visited-link-color);}
+.native-row {display: flex; flex-wrap: wrap; align-items: center; gap: .5em; margin-top: .9em; font-weight: bold;}
+.translations {margin: .35em 0 .1em; padding: .3em .6em; background: #e6f4ea; border-radius: 8px; font-size: .9em;}
+.translations .tr-lang {font-size: .8em; font-weight: bold; color: #2e7d32;}
+.translations ol {margin: .1em 0 0; padding-left: 1.4em;}
+.translations small {color: var(--visited-link-color);}
+
+/* =========================================================
+   learning English: a blue theme (Japanese keeps the red one)
+   ========================================================= */
+
+body.target-en {
+  --nav-link-color: #1d4ed8;
+  --highlight: #2563eb;
+  --main-color: #2563eb9a;
+  --extra1: #9ec5ff;
+  --extra7: #bcd2ff;
+  background-image: none;
+}
+/* the same dotted background, turned blue */
+body.target-en::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: url(/images/bg.png);
+  filter: hue-rotate(220deg);
+}
+body.target-en .sub-overlay .w:hover {background: #2563ebcc;}
+/* learning English: the tabs show only their English word */
+body.target-en .tab small {font-size: .9em;}
+/* OpenSubtitles: settings form and search on the Watch page */
+.os-settings .row {display: grid; grid-template-columns: 170px 1fr; align-items: center; gap: .6em; margin: .4em 0; font-weight: bold;}
+.os-settings input {font: inherit; padding: .25em .6em; border: 2px solid var(--border-color); border-radius: 8px; min-width: 0;}
+.os-form input[type=number] {width: 6em; flex: none;}
+.os-results small {display: block; font-size: .8em; color: var(--visited-link-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+@container (max-width: 560px) {
+  .os-settings .row {grid-template-columns: 1fr;}
+}
+
+/* review page */
+.review-card {color: #333; padding: 1.4em 1.8em; margin: 0; min-height: 14em; text-align: center; font-size: 1.05em;}
+.review-word {font-size: 2.8em; font-weight: bold; color: var(--dark-link-color); line-height: 1.3;}
+.review-sentence {font-size: 1.25em; margin: .6em 0;}
+.review-sentence mark {background: var(--extra3); border-radius: 3px; padding: 0 .1em;}
+.review-answer {margin: .8em auto 0; padding-top: .8em; border-top: 2px dashed var(--border-color); max-width: 40em; text-align: left;}
+.review-reading {font-size: 1.3em; color: var(--dark-link-color); text-align: center; margin: 0 0 .4em;}
+.review-tr {background: #e6f4ea; border-radius: 8px; padding: .3em .7em; margin: .3em 0;}
+.review-tr small {color: #2e7d32; font-weight: bold;}
+.review-senses {margin: .3em 0; padding-left: 1.4em;}
+.review-translation {color: var(--visited-link-color); font-style: italic;}
+.review-buttons {display: flex; justify-content: center; flex-wrap: wrap; gap: .6em; margin-top: 1.2em;}
+main .review-buttons button {font-size: 1.05em; padding: .4em 1.2em;}
+main .review-buttons .review-known {background: var(--extra4); border-color: #2e7d32;}
+.review-progress {text-align: center; color: var(--post-bg); font-weight: bold;}
+.review-empty, .review-done {font-size: 1.1em;}

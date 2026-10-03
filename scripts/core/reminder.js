@@ -27,5 +27,5 @@ export async function remindBackup() {
     store.set("akko-backup-reminded", now);
     const days = Math.floor((now - since) / DAY);
     toast(last ? `it's been ${days} days since your last backup.` : `you've used the site for ${days} days without a backup.`,
-        false, { action: { label: "back up now", href: "/#backup-section" }, timeout: 15000 });
+        false, { action: { label: "back up now", href: "/settings.html#backup-section" }, timeout: 15000 });
 }

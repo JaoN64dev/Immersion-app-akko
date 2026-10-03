@@ -4,8 +4,9 @@ import { $ } from "../core/dom.js";
 import { store, escapeHtml, getJson, timeFormatter } from "../core/utils.js";
 import { loadFeed } from "./feed.js";
 import * as player from "./player.js";
+import { keyFor, learningEnglish } from "../core/target.js";
 
-const SAVED = "akko-podcasts";
+const SAVED = keyFor("akko-podcasts");
 const PAGE = 30;
 
 const ui = {
@@ -21,10 +22,10 @@ let shown = 0;         // episodes listed so far
 // ---------- search ----------
 
 async function search(q) {
-    ui.status.textContent = "探しています…";
+    ui.status.textContent = learningEnglish() ? "searching…" : "探しています…";
     ui.results.innerHTML = "";
     try {
-        const data = await getJson("https://itunes.apple.com/search?" + new URLSearchParams({ media: "podcast", country: "JP", limit: "24", term: q }));
+        const data = await getJson("https://itunes.apple.com/search?" + new URLSearchParams({ media: "podcast", country: learningEnglish() ? "US" : "JP", limit: "24", term: q }));
         const list = data.results.filter((r) => r.feedUrl).map((r) => ({
             id: String(r.collectionId), title: r.collectionName, author: r.artistName,
             art: r.artworkUrl600 || r.artworkUrl100, feedUrl: r.feedUrl, genre: r.primaryGenreName,

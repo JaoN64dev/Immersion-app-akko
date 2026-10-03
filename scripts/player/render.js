@@ -8,6 +8,7 @@ import { tokensHtml, plainHtml, unknownIn, comprehension } from "../words/render
 import { activeCues, cueIndexAt } from "./cues.js";
 import * as progress from "../progress.js";
 import * as subs2 from "./subs2.js";
+import { understood } from "../core/target.js";
 
 let shownKey = "";         // which cues the overlay is showing, to skip needless redraws
 
@@ -79,7 +80,7 @@ export function renderStats() {
     stats.title = `${c.unknown} different words you don't know yet.\n${c.iPlus1} lines have exactly one unknown word (best for mining).`;
     badge.hidden = false;
     badge.className = "comp-badge " + pctLevel(c.pct);
-    badge.innerHTML = `<b>${c.pct}%</b> 理解`;
+    badge.innerHTML = `<b>${c.pct}%</b> ${understood()}`;
     badge.title = `you know ${c.known} of the ${c.total} words in this episode (ignored words don't count)`;
     progress.update({ pct: c.pct });
 }

@@ -5,6 +5,9 @@ import { initKeys } from "../keys.js";
 import { remindBackup } from "../core/reminder.js";
 import * as directory from "../podcasts/directory.js";
 import * as player from "../podcasts/player.js";
+import { learningEnglish } from "../core/target.js";
+
+if (learningEnglish()) document.getElementById("pod-query").placeholder = "search English podcasts…";
 
 popup.init();
 directory.init();

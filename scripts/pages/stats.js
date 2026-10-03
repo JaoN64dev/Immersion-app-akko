@@ -1,14 +1,10 @@
-// 統計 Stats page (stats.html): rough totals pulled from what's already saved in this
-// browser — word knowledge, mining activity, and progress across watch/read/listen.
+// 統計 Stats, on the settings page (settings.html): rough totals pulled from what's already saved
+// in this browser for the language being learnt — word knowledge, mining, watch/read/listen.
 // Read-only: nothing here is fetched from the server or sent anywhere.
 
-import { store, escapeHtml } from "../core/utils.js";
-import { idbAll } from "../core/idb.js";
-import { KEY as PROGRESS_KEY } from "../progress.js";
-
-const MANGA_KEY = "akko-manga";
-const POD_KEY = "akko-podcast-progress";
-const WORDS_KEY = "akko-words";
+import { escapeHtml } from "../core/utils.js";
+import { target, learningEnglish } from "../core/target.js";
+import { wordStats, watchStats, mangaStats, podcastStats, textStats, minedStats, grammarStats } from "../totals.js";
 
 // ---------- small formatters ----------
 
@@ -35,77 +31,23 @@ function timeAgo(ms) {
     return `${Math.floor(s / 31536000)}y ago`;
 }
 
-// ---------- gathering ----------
-
-function wordStats() {
-    const words = store.get(WORDS_KEY, {});
-    const c = { known: 0, learning: 0, ignored: 0 };
-    Object.values(words).forEach((s) => { c[s] = (c[s] || 0) + 1; });
-    return c;
-}
-
-function watchStats() {
-    const all = Object.values(store.get(PROGRESS_KEY, {}));
-    const seconds = all.reduce((n, r) => n + (r.time || 0), 0);
-    const finished = all.filter((r) => r.duration && r.time / r.duration > 0.9).length;
-    const recent = all.map((r) => ({
-        type: "watch", title: (r.anime && (r.anime.title.native || r.anime.title.romaji)) || r.videoName || "video",
-        extra: r.duration ? `${Math.round((r.time / r.duration) * 100)}%` : "", when: r.updated,
-    }));
-    return { count: all.length, finished, seconds, recent };
-}
-
-function mangaStats() {
-    const all = Object.values(store.get(MANGA_KEY, {}));
-    const pages = all.reduce((n, r) => n + (r.page || 0) + 1, 0);
-    const recent = all.map((r) => ({
-        type: "manga", title: r.title, extra: `page ${r.page + 1} / ${r.total}`, when: r.updated,
-    }));
-    return { count: all.length, pages, recent };
-}
-
-function podcastStats() {
-    const all = Object.values(store.get(POD_KEY, {}));
-    const seconds = all.reduce((n, r) => n + (r.time || 0), 0);
-    const done = all.filter((r) => r.done).length;
-    // episodes only store a guid, not a title, so they can't join the recent-activity list
-    return { count: all.length, done, seconds };
-}
-
-async function textStats() {
-    const texts = await idbAll("texts").catch(() => []);
-    const chars = texts.reduce((n, t) => {
-        const frac = t.paragraphs && t.paragraphs.length > 1 ? Math.min(1, (t.position || 0) / (t.paragraphs.length - 1)) : 1;
-        return n + Math.round((t.chars || 0) * frac);
-    }, 0);
-    const recent = texts.map((t) => ({
-        type: "read", title: t.title, extra: t.pct != null ? `${t.pct}% 理解` : "", when: t.updated,
-    }));
-    return { count: texts.length, chars, recent };
-}
-
-async function minedStats() {
-    const mined = await idbAll("mined").catch(() => []);
-    const anki = mined.filter((m) => m.ankiNoteId).length;
-    return { count: mined.length, anki, items: mined };
-}
-
 // ---------- rendering ----------
 
 function tile(value, label, sub) {
     return `<div class="note stats-note stat-tile"><b>${value}</b><span>${label}</span>${sub ? `<small>${escapeHtml(sub)}</small>` : ""}</div>`;
 }
 
-function renderTiles({ words, watch, manga, podcast, text, mined }) {
+function renderTiles({ words, watch, manga, podcast, text, mined, grammar }) {
     document.getElementById("stats-tiles").innerHTML = [
         tile(compact(words.known), "words known"),
         tile(compact(words.learning), "words learning"),
         tile(compact(mined.count), "words mined", mined.anki ? `${mined.anki} sent to Anki` : ""),
         tile(compact(text.chars), "characters read", text.count ? `${text.count} texts` : ""),
-        tile(compact(manga.pages), "manga pages read", manga.count ? `${manga.count} volumes` : ""),
+        learningEnglish() ? "" : tile(compact(manga.pages), "manga pages read", manga.count ? `${manga.count} volumes` : ""),     // manga is Japanese only
         tile(compact(watch.count), "videos in progress", watch.finished ? `${watch.finished} finished` : ""),
         tile(hoursText(watch.seconds), "time watching"),
         tile(hoursText(podcast.seconds), "time listening", podcast.count ? `${podcast.done} / ${podcast.count} episodes done` : ""),
+        tile(compact(grammar.learned), "grammar lessons learned", grammar.passed ? `${grammar.passed} quizzes passed` : ""),
     ].join("");
 }
 
@@ -220,7 +162,7 @@ function renderRecent(rows) {
         const t = TYPE_INFO[r.type];
         return `<li class="note stats-note">
             <span class="chip" style="background:${t.color}">${t.label}</span>
-            <span class="stats-title" lang="ja">${escapeHtml(r.title)}</span>
+            <span class="stats-title" lang="${target()}">${escapeHtml(r.title)}</span>
             ${r.extra ? `<span class="stats-extra">${escapeHtml(r.extra)}</span>` : ""}
             <span class="stats-when">${timeAgo(r.when)}</span>
         </li>`;
@@ -232,9 +174,10 @@ async function init() {
     const watch = watchStats();
     const manga = mangaStats();
     const podcast = podcastStats();
+    const grammar = grammarStats();
     const [text, mined] = await Promise.all([textStats(), minedStats()]);
 
-    renderTiles({ words, watch, manga, podcast, text, mined });
+    renderTiles({ words, watch, manga, podcast, text, mined, grammar });
     renderWordBar(words);
     renderMiningChart(mined.items);
     renderRecent([...watch.recent, ...manga.recent, ...text.recent]);

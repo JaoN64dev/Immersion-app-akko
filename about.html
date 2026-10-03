@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>自己紹介 Japanese akko</title>
     <link href="/style.css" rel="stylesheet" type="text/css" media="all">
+    <script type="module" src="/scripts/site.js"></script>
 </head>
 <body>
     <header>
@@ -14,21 +15,26 @@
               /images/header.png 800w
             " src="/images/header.png">
         -->
-        <marquee style="margin-bottom:1em;" scrollamount="4">SITE BY: AKKO ・ よろしく ・ SITE BY: AKKO ・ 毎日少しずつ ・ SITE BY: AKKO ・ 分からなくても大丈夫 ・ SITE BY: AKKO ・ i might be narcisist</marquee>
+        <marquee class="en-only" style="margin-bottom:1em;" scrollamount="4">SITE BY: AKKO • a little every day • SITE BY: AKKO • it's okay not to understand everything • SITE BY: AKKO • just keep listening • SITE BY: AKKO • i might be narcisist</marquee>
+        <marquee class="ja-only" style="margin-bottom:1em;" scrollamount="4">SITE BY: AKKO ・ よろしく ・ SITE BY: AKKO ・ 毎日少しずつ ・ SITE BY: AKKO ・ 分からなくても大丈夫 ・ SITE BY: AKKO ・ i might be narcisist</marquee>
     </header>
     <div id="container">
         <div class="flex">
         <aside id="sidebar">
-            <div id="bio" class="note">I`m akko. this is my little japanese immersion workstation.</div>
+            <div class="note en-only">I`m akko. this is my little language immersion workstation.</div>
+            <div id="bio" class="note ja-only">I`m akko. this is my little japanese immersion workstation.</div>
             <div class="side-sticky">
             <nav id="navi">
             <details open=""><summary>Pages</summary>
             <ul>
-                <li><a href="/">観る watch</a></li>
-                <li><a href="/reading.html">読む read</a></li>
-                <li><a href="/podcasts.html">聴く listen</a></li>
-                <li><a href="/stats.html">統計 stats</a></li>
-                <li><a href="/about.html" aria-current="page">私 about</a></li>
+                <li><a href="/course.html">course</a></li>
+                <li><a href="/">watch</a></li>
+                <li><a href="/reading.html">read</a></li>
+                <li><a href="/podcasts.html">listen</a></li>
+                <li><a href="/grammar.html">grammar</a></li>
+                <li><a href="/review.html">review</a></li>
+                <li><a href="/settings.html">settings</a></li>
+                <li><a href="/about.html" aria-current="page">about</a></li>
             </ul>
             </details>
             </nav>
@@ -37,14 +43,17 @@
         <main>
         <div id="content">
             <nav class="tabs" aria-label="pages">
-                <a class="tab" href="/">観る <small>watch</small></a>
-                <a class="tab" href="/reading.html">読む <small>read</small></a>
-                <a class="tab" href="/podcasts.html">聴く <small>listen</small></a>
-                <a class="tab" href="/stats.html">統計 <small>stats</small></a>
-                <a class="tab" href="/about.html" aria-current="page">私 <small>about</small></a>
+                <a class="tab" href="/course.html"><span class="ja-only">道 </span><small translate="no">course</small></a>
+                <a class="tab" href="/"><span class="ja-only">観る </span><small translate="no">watch</small></a>
+                <a class="tab" href="/reading.html"><span class="ja-only">読む </span><small translate="no">read</small></a>
+                <a class="tab" href="/podcasts.html"><span class="ja-only">聴く </span><small translate="no">listen</small></a>
+                <a class="tab" href="/grammar.html"><span class="ja-only">文法 </span><small translate="no">grammar</small></a>
+                <a class="tab" href="/review.html"><span class="ja-only">復習 </span><small translate="no">review</small></a>
+                <a class="tab" href="/settings.html"><span class="ja-only">設定 </span><small translate="no">settings</small></a>
+                <a class="tab" href="/about.html" aria-current="page"><span class="ja-only">私 </span><small translate="no">about</small></a>
             </nav>
 
-            <h1>自己紹介 About</h1>
+            <h1><span class="ja-only">自己紹介 </span>About</h1>
 
             <section>
                 <h2 class="dashed-heading">akko</h2>

@@ -4,6 +4,8 @@ import { $ } from "../core/dom.js";
 import * as popup from "../popup.js";
 import { initKeys } from "../keys.js";
 import { remindBackup } from "../core/reminder.js";
+import { t } from "../i18n.js";
+import { learningEnglish } from "../core/target.js";
 import { readTextFile, splitParagraphs } from "../reader/import.js";
 import { addText, getText, removeText, renderLibrary } from "../reader/library.js";
 import * as reader from "../reader/text.js";
@@ -28,7 +30,8 @@ function setMode(mode) {
 }
 document.querySelectorAll("[data-mode]").forEach((b) => b.addEventListener("click", () => setMode(b.dataset.mode)));
 document.querySelectorAll("[data-mode-link]").forEach((a) => a.addEventListener("click", () => setMode(a.dataset.modeLink)));
-setMode(location.hash === "#manga" ? "manga" : "text");
+setMode(location.hash === "#manga" && !learningEnglish() ? "manga" : "text");     // manga OCR is Japanese only
+if (learningEnglish()) ui.pasteText.placeholder = "Paste some English text here…";
 
 // ---------- library ----------
 
@@ -37,7 +40,7 @@ function showLibrary() {
     renderLibrary(ui.library, {
         onOpen: async (id) => open(await getText(id)),
         onDelete: async (id, title) => {
-            if (!confirm(`delete “${title}” from the library?`)) return;
+            if (!confirm(t(`delete “${title}” from the library?`))) return;
             await removeText(id);
             showLibrary();
         },

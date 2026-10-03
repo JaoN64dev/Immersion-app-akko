@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>復習 Japanese akko</title>
+    <link href="/style.css" rel="stylesheet" type="text/css" media="all">
+    <script type="module" src="/scripts/site.js"></script>
+    <script type="module" src="/scripts/pages/review.js"></script>
+</head>
+<body>
+    <header>
+        <marquee class="en-only" style="margin-bottom:1em;" scrollamount="4">SITE BY: AKKO • a little every day • SITE BY: AKKO • it's okay to forget, that's how you remember • SITE BY: AKKO • i might be narcisist</marquee>
+        <marquee class="ja-only" style="margin-bottom:1em;" scrollamount="4">SITE BY: AKKO ・ 毎日少しずつ ・ SITE BY: AKKO ・ 忘れてもいい ・ SITE BY: AKKO ・ i might be narcisist</marquee>
+    </header>
+    <div id="container">
+        <div class="flex">
+        <aside id="sidebar">
+            <div class="note">I`m akko. a quick review of the words you're learning, for the days you don't want to open Anki.</div>
+            <div class="side-sticky">
+            <nav id="navi">
+            <details open=""><summary>Pages</summary>
+            <ul>
+                <li><a href="/course.html">course</a></li>
+                <li><a href="/">watch</a></li>
+                <li><a href="/reading.html">read</a></li>
+                <li><a href="/podcasts.html">listen</a></li>
+                <li><a href="/grammar.html">grammar</a></li>
+                <li><a href="/review.html" aria-current="page">review</a></li>
+                <li><a href="/settings.html">settings</a></li>
+                <li><a href="/about.html">about</a></li>
+            </ul>
+            </details>
+            <details><summary>Keys</summary>
+            <ul class="keys">
+                <li><kbd>space</kbd> show the answer</li>
+                <li><kbd>1</kbd> again · <kbd>2</kbd> good · <kbd>3</kbd> known</li>
+            </ul>
+            </details>
+            </nav>
+            </div>
+        </aside>
+        <main>
+        <div id="content">
+            <nav class="tabs" aria-label="pages">
+                <a class="tab" href="/course.html"><span class="ja-only">道 </span><small translate="no">course</small></a>
+                <a class="tab" href="/"><span class="ja-only">観る </span><small translate="no">watch</small></a>
+                <a class="tab" href="/reading.html"><span class="ja-only">読む </span><small translate="no">read</small></a>
+                <a class="tab" href="/podcasts.html"><span class="ja-only">聴く </span><small translate="no">listen</small></a>
+                <a class="tab" href="/grammar.html"><span class="ja-only">文法 </span><small translate="no">grammar</small></a>
+                <a class="tab" href="/review.html" aria-current="page"><span class="ja-only">復習 </span><small translate="no">review</small></a>
+                <a class="tab" href="/settings.html"><span class="ja-only">設定 </span><small translate="no">settings</small></a>
+                <a class="tab" href="/about.html"><span class="ja-only">私 </span><small translate="no">about</small></a>
+            </nav>
+
+            <h1><span class="ja-only">復習 </span>Review</h1>
+
+            <p class="note settings-note">The words you marked as <b>learning</b> (key <kbd>2</kbd> on any word), the ones you haven't reviewed for longest first. A word you mined shows the sentence you found it in. Press <b>known</b> once a word sticks, and it leaves the review.</p>
+
+            <section id="review-card" class="note review-card" aria-live="polite"></section>
+            <p id="review-progress" class="review-progress"></p>
+        </div>
+        </main>
+        </div>
+    </div>
+</body>
+</html>

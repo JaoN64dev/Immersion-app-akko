@@ -9,7 +9,7 @@ export function warnSaveFailed(err) {
     console.error("save failed", err);
     if (Date.now() - lastWarning < 60e3) return;
     lastWarning = Date.now();
-    toast("couldn't save your changes: this browser's storage for the site is full or blocked. download a backup (Watch page → Backup) so nothing is lost.", true);
+    toast("couldn't save your changes: this browser's storage for the site is full or blocked. download a backup (Settings → Backup) so nothing is lost.", true);
 }
 
 // localStorage as JSON. Every write fires "akko-saved" (the backup summary listens for it).

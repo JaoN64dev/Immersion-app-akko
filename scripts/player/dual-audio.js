@@ -5,6 +5,7 @@
 import { $, el } from "../core/dom.js";
 import { escapeHtml } from "../core/utils.js";
 import * as progress from "../progress.js";
+import { learningEnglish } from "../core/target.js";
 
 const FF = "/node_modules/@ffmpeg";
 
@@ -15,6 +16,9 @@ const COPY = {
 };
 const LANGS = { jpn: "🇯🇵 Japanese", ja: "🇯🇵 Japanese", eng: "English", en: "English", und: "unknown language" };
 const isJapanese = (t) => /^(jpn|ja|jap)$/i.test(t.lang) || /japanese|日本語/i.test(t.title);
+const isEnglish = (t) => /^(eng|en)$/i.test(t.lang) || /english|英語/i.test(t.title);
+// the track in the language you're learning
+const isWanted = (t) => (learningEnglish() ? isEnglish(t) : isJapanese(t));
 
 const ui = { bar: $("#audio-bar"), select: $("#audio-track"), status: $("#audio-status") };
 
@@ -92,7 +96,7 @@ function label(t) {
 
 // ---------- choosing a track ----------
 
-// A local file was opened: list its audio tracks and pick Japanese if needed
+// A local file was opened: list its audio tracks and pick Japanese (or English) if needed
 export async function load(f, preferred) {
     const myJob = job;
     file = f;
@@ -114,17 +118,18 @@ export async function load(f, preferred) {
     ui.bar.hidden = false;
 
     // Last time's choice for this file wins. Otherwise: the browser plays the first track,
-    // so if that isn't Japanese but another one is, switch automatically.
-    const jp = tracks.find(isJapanese);
+    // so if that isn't Japanese (English) but another one is, switch automatically.
+    const jp = tracks.find(isWanted);
     if (preferred === "orig" || (typeof preferred === "number" && tracks[preferred])) {
         ui.select.value = String(preferred);
         choose(preferred);
-    } else if (jp && !isJapanese(tracks[0])) {
+    } else if (jp && !isWanted(tracks[0])) {
         ui.select.value = String(jp.n);
         choose(jp.n);
     } else {
         ui.select.value = "orig";
-        say(jp ? "Japanese is already the main track ✓" : "no track is marked Japanese, pick one to try");
+        const name = learningEnglish() ? "English" : "Japanese";
+        say(jp ? `${name} is already the main track ✓` : `no track is marked ${name}, pick one to try`);
     }
 }
 

@@ -3,8 +3,9 @@
 // Any change fires "akko-words-changed" on window, so every page can re-colour itself.
 
 import { store } from "../core/utils.js";
+import { keyFor } from "../core/target.js";
 
-const KEY = "akko-words";
+const KEY = keyFor("akko-words");     // each language you learn has its own
 const words = store.get(KEY, {});
 
 // [status, button label]; the order is also the 1-4 keyboard shortcut

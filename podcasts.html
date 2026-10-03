@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>聴く Japanese akko</title>
     <link href="/style.css" rel="stylesheet" type="text/css" media="all">
+    <script type="module" src="/scripts/site.js"></script>
     <script type="module" src="/scripts/pages/listen.js"></script>
 </head>
 <body>
@@ -15,21 +16,26 @@
               /images/header.png 800w
             " src="/images/header.png">
         -->
-        <marquee style="margin-bottom:1em;" scrollamount="4">SITE BY: AKKO ・ 毎日聴く ・ SITE BY: AKKO ・ 耳を鍛える ・ SITE BY: AKKO ・ 分からなくても大丈夫 ・ SITE BY: AKKO ・ i might be narcisist</marquee>
+        <marquee class="en-only" style="margin-bottom:1em;" scrollamount="4">SITE BY: AKKO • a little every day • SITE BY: AKKO • it's okay not to understand everything • SITE BY: AKKO • just keep listening • SITE BY: AKKO • i might be narcisist</marquee>
+        <marquee class="ja-only" style="margin-bottom:1em;" scrollamount="4">SITE BY: AKKO ・ 毎日聴く ・ SITE BY: AKKO ・ 耳を鍛える ・ SITE BY: AKKO ・ 分からなくても大丈夫 ・ SITE BY: AKKO ・ i might be narcisist</marquee>
     </header>
     <div id="container">
         <div class="flex">
         <aside id="sidebar">
-            <div id="bio" class="note">I`m akko. listen to japanese podcasts, click any word you don't know.</div>
+            <div class="note en-only">I`m akko. listen to English podcasts, click any word you don't know.</div>
+            <div id="bio" class="note ja-only">I`m akko. listen to japanese podcasts, click any word you don't know.</div>
             <div class="side-sticky">
             <nav id="navi">
             <details open=""><summary>Pages</summary>
             <ul>
-                <li><a href="/">観る watch</a></li>
-                <li><a href="/reading.html">読む read</a></li>
-                <li><a href="/podcasts.html" aria-current="page">聴く listen</a></li>
-                <li><a href="/stats.html">統計 stats</a></li>
-                <li><a href="/about.html">私 about</a></li>
+                <li><a href="/course.html">course</a></li>
+                <li><a href="/">watch</a></li>
+                <li><a href="/reading.html">read</a></li>
+                <li><a href="/podcasts.html" aria-current="page">listen</a></li>
+                <li><a href="/grammar.html">grammar</a></li>
+                <li><a href="/review.html">review</a></li>
+                <li><a href="/settings.html">settings</a></li>
+                <li><a href="/about.html">about</a></li>
             </ul>
             </details>
             <details open=""><summary>Listen</summary>
@@ -50,20 +56,24 @@
             </ul>
             </details>
             </nav>
-            <p class="credits">dictionary: <a href="https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project" target="_blank" rel="noopener">JMdict</a> &amp; <a href="https://www.edrdg.org/wiki/index.php/KANJIDIC_Project" target="_blank" rel="noopener">KANJIDIC2</a> (EDRDG, CC BY-SA 4.0) · pitch accent: <a href="https://github.com/mifunetoshiro/kanjium" target="_blank" rel="noopener">Kanjium</a> (Wadoku, CC BY-SA 4.0)</p>
+            <p class="credits en-only">definitions: <a href="https://wordnet.princeton.edu" target="_blank" rel="noopener">WordNet</a> (Princeton) · pronunciation: <a href="https://github.com/cmusphinx/cmudict" target="_blank" rel="noopener">CMU Pronouncing Dictionary</a> · translations: <a href="https://en.wiktionary.org" target="_blank" rel="noopener">Wiktionary</a> (CC BY-SA 4.0) · recordings: <a href="https://commons.wikimedia.org" target="_blank" rel="noopener">Wikimedia Commons</a></p>
+            <p class="credits ja-only">dictionary: <a href="https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project" target="_blank" rel="noopener">JMdict</a> &amp; <a href="https://www.edrdg.org/wiki/index.php/KANJIDIC_Project" target="_blank" rel="noopener">KANJIDIC2</a> (EDRDG, CC BY-SA 4.0) · pitch accent: <a href="https://github.com/mifunetoshiro/kanjium" target="_blank" rel="noopener">Kanjium</a> (Wadoku, CC BY-SA 4.0)</p>
             </div>
         </aside>
         <main>
         <div id="content">
             <nav class="tabs" aria-label="pages">
-                <a class="tab" href="/">観る <small>watch</small></a>
-                <a class="tab" href="/reading.html">読む <small>read</small></a>
-                <a class="tab" href="/podcasts.html" aria-current="page">聴く <small>listen</small></a>
-                <a class="tab" href="/stats.html">統計 <small>stats</small></a>
-                <a class="tab" href="/about.html">私 <small>about</small></a>
+                <a class="tab" href="/course.html"><span class="ja-only">道 </span><small translate="no">course</small></a>
+                <a class="tab" href="/"><span class="ja-only">観る </span><small translate="no">watch</small></a>
+                <a class="tab" href="/reading.html"><span class="ja-only">読む </span><small translate="no">read</small></a>
+                <a class="tab" href="/podcasts.html" aria-current="page"><span class="ja-only">聴く </span><small translate="no">listen</small></a>
+                <a class="tab" href="/grammar.html"><span class="ja-only">文法 </span><small translate="no">grammar</small></a>
+                <a class="tab" href="/review.html"><span class="ja-only">復習 </span><small translate="no">review</small></a>
+                <a class="tab" href="/settings.html"><span class="ja-only">設定 </span><small translate="no">settings</small></a>
+                <a class="tab" href="/about.html"><span class="ja-only">私 </span><small translate="no">about</small></a>
             </nav>
 
-            <h1>聴く Podcasts</h1>
+            <h1><span class="ja-only">聴く </span>Podcasts</h1>
 
             <!-- PLAYER (shows once an episode is playing) -->
             <section id="pod-player" class="pod-player" hidden>
@@ -94,7 +104,7 @@
                         <input id="pod-transcript-file" type="file" accept=".srt,.vtt,.ass,.ssa,.txt" hidden>
                     </label>
                     <span class="sep"></span>
-                    <label>ふりがな
+                    <label class="ja-only">ふりがな
                         <select id="furigana-mode">
                             <option value="unknown">on words I don't know</option>
                             <option value="always">always</option>
@@ -103,6 +113,7 @@
                         </select>
                     </label>
                     <label title="underline words you don't know (red) and are learning (yellow)"><input id="color-words" type="checkbox" checked> colour words</label>
+                        <label title="underline grammar from the lessons (purple dots)"><input id="grammar-marks" type="checkbox" checked> underline grammar</label>
                 </div>
                 <div class="transcript-col pod-transcript-col">
                     <div class="transcript-head">
@@ -120,9 +131,16 @@
             <section id="pod-search-section">
                 <form id="pod-search" class="bubble search-bar">
                     <input id="pod-query" type="search" placeholder="search Japanese podcasts…" autocomplete="off">
-                    <button type="submit">探す</button>
+                    <button type="submit"><span class="ja-only">探す</span><span class="en-only">search</span></button>
                 </form>
-                <p class="suggest">try:
+                <p class="suggest en-only">try:
+                    <button class="chip" data-q="All Ears English">All Ears English</button>
+                    <button class="chip" data-q="Plain English">Plain English</button>
+                    <button class="chip" data-q="Hidden Brain">Hidden Brain</button>
+                    <button class="chip" data-q="This American Life">This American Life</button>
+                    <button class="chip" data-q="Stuff You Should Know">Stuff You Should Know</button>
+                </p>
+                <p class="suggest ja-only">try:
                     <button class="chip" data-q="Nihongo con Teppei">Nihongo con Teppei</button>
                     <button class="chip" data-q="すこやか日本語">すこやか日本語</button>
                     <button class="chip" data-q="ゆる言語学ラジオ">ゆる言語学ラジオ</button>

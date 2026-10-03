@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Japanese akko</title>
     <link href="/style.css" rel="stylesheet" type="text/css" media="all">
+    <script type="module" src="/scripts/site.js"></script>
     <script type="module" src="/scripts/pages/watch.js"></script>
 </head>
 <body class="watch-page">
@@ -15,21 +16,26 @@
               /images/header.png 800w
             " src="/images/header.png">
         -->
-        <marquee style="margin-bottom:1em;" scrollamount="4">SITE BY: AKKO ・ 毎日見る ・ SITE BY: AKKO ・ 字幕は日本語で ・ SITE BY: AKKO ・ 分からなくても大丈夫 ・ SITE BY: AKKO ・  SITE BY: AKKO ・  SITE BY: AKKO ・ SITE BY: AKKO ・i might be narcisist</marquee>
+        <marquee class="en-only" style="margin-bottom:1em;" scrollamount="4">SITE BY: AKKO • a little every day • SITE BY: AKKO • it's okay not to understand everything • SITE BY: AKKO • just keep listening • SITE BY: AKKO • i might be narcisist</marquee>
+        <marquee class="ja-only" style="margin-bottom:1em;" scrollamount="4">SITE BY: AKKO ・ 毎日見る ・ SITE BY: AKKO ・ 字幕は日本語で ・ SITE BY: AKKO ・ 分からなくても大丈夫 ・ SITE BY: AKKO ・  SITE BY: AKKO ・  SITE BY: AKKO ・ SITE BY: AKKO ・i might be narcisist</marquee>
     </header>
     <div id="container">
         <div class="flex">
         <aside id="sidebar">
-            <div id="bio" class="note">Welcome! Use nyaa.si for video files...</div>
+            <div class="note en-only">Welcome! Load a video and its English subtitles, then click any word you don't know.</div>
+            <div id="bio" class="note ja-only">Welcome! Use nyaa.si for video files...</div>
             <div class="side-sticky">
             <nav id="navi">
             <details open=""><summary>Pages</summary>
             <ul>
-                <li><a href="/" aria-current="page">観る watch</a></li>
-                <li><a href="/reading.html">読む read</a></li>
-                <li><a href="/podcasts.html">聴く listen</a></li>
-                <li><a href="/stats.html">統計 stats</a></li>
-                <li><a href="/about.html">私 about</a></li>
+                <li><a href="/course.html">course</a></li>
+                <li><a href="/" aria-current="page">watch</a></li>
+                <li><a href="/reading.html">read</a></li>
+                <li><a href="/podcasts.html">listen</a></li>
+                <li><a href="/grammar.html">grammar</a></li>
+                <li><a href="/review.html">review</a></li>
+                <li><a href="/settings.html">settings</a></li>
+                <li><a href="/about.html">about</a></li>
             </ul>
             </details>
             <details open=""><summary>Watch</summary>
@@ -52,13 +58,9 @@
                 <li><kbd>1</kbd>–<kbd>4</kbd> new / learning / known / ignore the word under the mouse</li>
             </ul>
             </details>
-            <details open=""><summary>Data</summary>
-            <ul class="nav-quiet">
-                <li><a href="#backup-section">backup / restore</a></li>
-            </ul>
-            </details>
             </nav>
-            <p class="credits">dictionary: <a href="https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project" target="_blank" rel="noopener">JMdict</a> &amp; <a href="https://www.edrdg.org/wiki/index.php/KANJIDIC_Project" target="_blank" rel="noopener">KANJIDIC2</a> (EDRDG, CC BY-SA 4.0) · pitch accent: <a href="https://github.com/mifunetoshiro/kanjium" target="_blank" rel="noopener">Kanjium</a> (Wadoku, CC BY-SA 4.0)</p>
+            <p class="credits en-only">definitions: <a href="https://wordnet.princeton.edu" target="_blank" rel="noopener">WordNet</a> (Princeton) · pronunciation: <a href="https://github.com/cmusphinx/cmudict" target="_blank" rel="noopener">CMU Pronouncing Dictionary</a> · translations: <a href="https://en.wiktionary.org" target="_blank" rel="noopener">Wiktionary</a> (CC BY-SA 4.0) · recordings: <a href="https://commons.wikimedia.org" target="_blank" rel="noopener">Wikimedia Commons</a></p>
+            <p class="credits ja-only">dictionary: <a href="https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project" target="_blank" rel="noopener">JMdict</a> &amp; <a href="https://www.edrdg.org/wiki/index.php/KANJIDIC_Project" target="_blank" rel="noopener">KANJIDIC2</a> (EDRDG, CC BY-SA 4.0) · pitch accent: <a href="https://github.com/mifunetoshiro/kanjium" target="_blank" rel="noopener">Kanjium</a> (Wadoku, CC BY-SA 4.0)</p>
             </div>
         </aside>
         <main>
@@ -69,19 +71,31 @@
 
             <!-- SEARCH -->
             <section id="search-section">
-                <h1>アニメ Immersion <small class="h1-note">| (CHECK THE KEYS SECTION BEFORE USING )</small></h1>
+                <h1><span class="ja-only">アニメ Immersion</span><span class="en-only">Watch</span> <small class="h1-note">| (CHECK THE KEYS SECTION BEFORE USING )</small></h1>
                 <div id="continue" class="continue" hidden>
-                    <h3 class="continue-title">続きから <small>continue watching</small></h3>
+                    <h3 class="continue-title"><span class="ja-only">続きから </span><small>continue watching</small></h3>
                     <div id="continue-list" class="continue-list"></div>
                 </div>
                 <h2 class="dashed-heading">Add subtitles</h2>
-                <ol class="flow-steps" aria-label="how it works">
+                <div class="note settings-note en-only" data-i18n="watch-en-hint">
+                    <p>Load a video below, then its English subtitles with <b>own subtitle file</b> (.srt / .ass / .vtt). Free English subtitles: <a href="https://www.opensubtitles.org" target="_blank" rel="noopener">OpenSubtitles</a>, <a href="https://subdl.com" target="_blank" rel="noopener">SubDL</a>. Many video files already have English subtitles inside; a tool like MKVToolNix can save them as .srt.</p>
+                    <p>For an American accent, try sitcoms and dramas (<i>Friends</i>, <i>The Office</i>, <i>Modern Family</i>), animated films and YouTube.</p>
+                </div>
+                <form id="os-form" class="bubble search-bar os-form en-only">
+                    <input id="os-query" type="search" placeholder="search English subtitles… (e.g. Friends, Inception)" autocomplete="off">
+                    <input id="os-season" type="number" min="1" placeholder="season" title="season (for shows)">
+                    <input id="os-episode" type="number" min="1" placeholder="episode" title="episode (for shows)">
+                    <button type="submit">search</button>
+                </form>
+                <p id="os-status" class="status en-only"></p>
+                <ul id="os-results" class="file-list os-results en-only" translate="no"></ul>
+                <ol class="flow-steps ja-only" aria-label="how it works">
                     <li><b>①</b> 探す search</li>
                     <li><b>②</b> pick the show</li>
                     <li><b>③</b> pick a Japanese subtitle</li>
                     <li><b>④</b> 観る watch</li>
                 </ol>
-                <form id="search-form" class="bubble search-bar">
+                <form id="search-form" class="bubble search-bar ja-only">
                     <select id="search-kind" class="search-kind" aria-label="what to search" title="anime come from AniList + kitsunekko; films and dramas from JP-Subtitles on GitHub">
                         <option value="anime">アニメ anime</option>
                         <option value="film">映画・ドラマ films &amp; dramas</option>
@@ -173,7 +187,7 @@
                             <div id="sub-overlay" class="sub-overlay" lang="ja"></div>
                             <div id="sub2-overlay" class="sub2-overlay"></div>
                             <div id="comp-badge" class="comp-badge" hidden></div>
-                            <p id="stage-empty" class="stage-empty">load a video file or link ↑<br>then pick japanese subs from the search</p>
+                            <p id="stage-empty" class="stage-empty">load a video file or link ↑<br><span class="ja-only">then pick japanese subs from the search</span><span class="en-only">then add its English subtitle file</span></p>
                         </div>
 
                         <div class="toolbar player-toolbar">
@@ -185,7 +199,7 @@
                                 <button id="transcript-toggle" class="transcript-toggle" aria-pressed="true" title="show / hide the transcript next to the video">transcript</button>
                             </div>
                             <details class="player-settings" data-remember="akko-player-settings-open">
-                                <summary title="subtitle look, timing, furigana and pausing">字幕 settings</summary>
+                                <summary title="subtitle look, timing, furigana and pausing"><span class="ja-only">字幕 </span><span class="en-only">subtitle </span>settings</summary>
                                 <div class="player-settings-body">
                                     <div class="settings-group">
                                         <span class="settings-label">subtitles</span>
@@ -198,7 +212,7 @@
                                         </span>
                                         <button id="sync-here" title="make the next subtitle line start right now">sync to now</button>
                                         <label class="size">size <input id="sub-size" type="range" min="16" max="48" value="28"></label>
-                                        <label>ふりがな
+                                        <label class="ja-only">ふりがな
                                             <select id="furigana-mode">
                                                 <option value="unknown">on words I don't know</option>
                                                 <option value="always">always</option>
@@ -207,6 +221,7 @@
                                             </select>
                                         </label>
                                         <label title="underline words you don't know (red) and are learning (yellow)"><input id="color-words" type="checkbox" checked> colour words</label>
+                        <label title="underline grammar from the lessons (purple dots)"><input id="grammar-marks" type="checkbox" checked> underline grammar</label>
                                     </div>
                                     <div class="settings-group">
                                         <span class="settings-label">behaviour</span>
@@ -247,7 +262,7 @@
                         <span id="anki-status" class="anki-status">not connected</span>
                     </summary>
                     <div class="anki-body">
-                        <p class="hint">Needs Anki open with the <a href="https://ankiweb.net/shared/info/2055492159" target="_blank" rel="noopener">AnkiConnect</a> add-on (code <code>2055492159</code>).</p>
+                        <p class="hint" data-i18n="anki-hint">Needs Anki open with the <a href="https://ankiweb.net/shared/info/2055492159" target="_blank" rel="noopener">AnkiConnect</a> add-on (code <code>2055492159</code>).</p>
                         <div class="row"><button id="anki-connect">connect</button></div>
                         <label class="row">deck <select id="anki-deck"></select></label>
                         <label class="row">note type <select id="anki-model"></select></label>
@@ -264,22 +279,6 @@
                         <p id="anki-msg" class="status dark"></p>
                     </div>
                 </details>
-            </section>
-
-            <!-- BACKUP -->
-            <section id="backup-section" class="quiet-section">
-                <h3 class="quiet-heading">Backup</h3>
-                <div class="backup">
-                    <p class="hint">Everything is saved in this browser only. Clearing site data, or switching browser or computer, loses it, so keep a backup file.</p>
-                    <p id="backup-summary" class="backup-summary"></p>
-                    <div class="backup-actions">
-                        <button id="backup-export">⬇ download backup</button>
-                        <label class="btn">⬆ restore from backup
-                            <input id="backup-import" type="file" accept=".json,application/json" hidden>
-                        </label>
-                    </div>
-                    <p id="backup-msg" class="status dark"></p>
-                </div>
             </section>
 
             <div id="popup" class="popup" hidden></div>

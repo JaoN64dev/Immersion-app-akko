@@ -11,9 +11,11 @@ import { plainText } from "./words/render.js";
 import { morae, pattern, isHigh } from "./words/pitch.js";
 import * as mining from "./mining.js";
 import * as anki from "./anki/client.js";
+import { lessonMap } from "./grammar/lessons.js";
+import { target, nativeLang, NATIVE_LANGUAGES } from "./core/target.js";
 
 const popup = $("#popup");
-let ctx = null;   // { word, lemma, sentence, info, resume } for the open popup
+let ctx = null;   // { word, lemma, sentence, info, grammar, resume } for the open popup
 
 const hooks = {
     onOpen: () => null,          // returns something handed back to onClose (e.g. "was playing")
@@ -25,26 +27,29 @@ export const setPopupHooks = (h) => Object.assign(hooks, h);
 export const isOpen = () => !popup.hidden;
 
 // word = what was clicked (食べられなかった), lemma = its dictionary form (食べる) if known,
-// info = what it came from ({source, time, videoName, cueStart, cueEnd}) for mined cards
-async function lookup(word, { sentence = "", anchor, lemma, info = {} }) {
+// info = what it came from ({source, time, videoName, cueStart, cueEnd}) for mined cards,
+// grammar = ids of the grammar lessons the word is part of
+async function lookup(word, { sentence = "", anchor, lemma, info = {}, grammar = [] }) {
     const resume = hooks.onOpen();
-    ctx = { word, lemma, sentence, info, resume };
+    ctx = { word, lemma, sentence, info, grammar, resume };
 
     // in full screen only the full-screen element is visible, so the popup has to live inside it
     const host = document.fullscreenElement || home;
     if (popup.parentElement !== host) host.appendChild(popup);
     place(anchor);
     popup.hidden = false;
-    popup.innerHTML = `<div class="popup-head"><b lang="ja">${escapeHtml(word)}</b><button class="close" title="close">✕</button></div><p class="muted">辞書を引いています…</p>`;
+    popup.innerHTML = `<div class="popup-head"><b lang="${target()}">${escapeHtml(word)}</b><button class="close" title="close">✕</button></div><p class="muted">${target() === "en" ? "looking up…" : "辞書を引いています…"}</p>`;
 
     try {
         const qs = new URLSearchParams();
         [...new Set([lemma, word].filter(Boolean))].forEach((q) => qs.append("q", q));
         qs.set("form", word);                    // so the server can explain the conjugation
-        const result = await getJson("/api/dict?" + qs);
+        qs.set("lang", target());
+        qs.set("native", nativeLang());          // English words: translations into your language
+        const [result, lessons] = await Promise.all([getJson("/api/dict?" + qs), grammar.length ? lessonMap() : null]);
         if (!ctx || ctx.word !== word) return;   // another lookup started
         if (!ctx.lemma) ctx.lemma = result.query;
-        render(word, result);
+        render(word, { ...result, grammar: grammar.map((id) => lessons.get(id)).filter(Boolean) });
     } catch (err) {
         popup.querySelector("p").textContent = "lookup failed: " + err.message;
     }
@@ -100,7 +105,7 @@ function kanjiHtml(list) {
     const open = store.get(KANJI_OPEN, false);
     return `<details class="kanji-box"${open ? " open" : ""}>
         <summary>漢字 <small>${list.map((k) => escapeHtml(k.char)).join(" ")}</small></summary>
-        <ul class="kanji-list">${list.map((k) => `
+        <ul class="kanji-list" translate="no">${list.map((k) => `
             <li>
                 <span class="kanji-char" lang="ja">${escapeHtml(k.char)}</span>
                 <div>
@@ -114,10 +119,47 @@ function kanjiHtml(list) {
     </details>`;
 }
 
+// ---------- grammar ----------
+
+// the grammar lessons this word is part of, linking to the lesson (new tab: the video keeps its place)
+function grammarHtml(list) {
+    if (!list.length) return "";
+    return `<div class="grammar-box"><span class="grammar-box-label">${target() === "en" ? "grammar" : "文法 grammar"}</span>${list.map((l) => `
+        <a href="/grammar.html#${encodeURIComponent(l.id)}" target="_blank" rel="noopener" title="open the lesson">
+            <b lang="${target()}">${escapeHtml(l.title)}</b>${l.meaning ? ` <small>${escapeHtml(l.meaning)}</small>` : ""}
+        </a>`).join("")}</div>`;
+}
+
+// ---------- English entries ----------
+
+// An English word: American IPA + recording, translations into your language (Settings),
+// then English definitions
+function englishEntryHtml(e, i) {
+    const native = nativeLang();
+    const tr = (e.tr || []).slice(0, 4).map((s) =>
+        `<li><b lang="${native === "cmn" ? "zh" : native}">${escapeHtml(s.words.join(", "))}</b>${s.gloss ? ` <small>${escapeHtml(s.gloss)}</small>` : ""}</li>`).join("");
+    const defs = e.senses.slice(0, 8).map((s) =>
+        `<li><small>${escapeHtml(s.pos.join(", "))}</small> ${escapeHtml(s.gloss.join("; "))}${s.example ? ` <i class="def-example">“${escapeHtml(s.example)}”</i>` : ""}</li>`).join("");
+    return `<div class="entry">
+        <div class="entry-head">
+            <span class="headword" lang="en">${escapeHtml(e.word)}</span>
+            ${e.reading ? `<span class="reading ipa">${escapeHtml(e.reading)}</span>` : ""}
+            ${e.audio ? `<button class="say" data-src="${escapeHtml(e.audio)}" title="listen (American)">🔊</button>` : ""}
+            ${e.common ? `<span class="tag">common</span>` : ""}
+            <button class="mine" data-i="${i}">+ mine</button>
+        </div>
+        ${tr ? `<div class="translations" translate="no"><span class="tr-lang">${escapeHtml(NATIVE_LANGUAGES[native] || native)}</span><ol>${tr}</ol></div>` : ""}
+        ${defs ? `<ol class="defs" translate="no" lang="en">${defs}</ol>` : ""}
+        ${!tr && !defs ? `<p class="muted">no definition found (the definitions and translations need an internet connection).</p>` : ""}
+    </div>`;
+}
+
 // ---------- drawing ----------
 
-function render(word, { entries, inflection, kanji }) {
+function render(word, { entries, inflection, kanji, grammar = [] }) {
+    const en = target() === "en";
     const body = entries.length ? entries.map((e, i) => {
+        if (en) return englishEntryHtml(e, i);
         const senses = e.senses.slice(0, 5).map((s) =>
             `<li>${escapeHtml(s.gloss.join("; "))}`
             + (s.pos.length ? ` <small>${escapeHtml(s.pos.join(", "))}</small>` : "")
@@ -131,16 +173,20 @@ function render(word, { entries, inflection, kanji }) {
                 <button class="mine" data-i="${i}">+ mine</button>
             </div>
             ${e.forms.length ? `<div class="forms" lang="ja">also: ${escapeHtml(e.forms.join("、"))}</div>` : ""}
-            <ol>${senses}</ol>
+            <ol translate="no">${senses}</ol>
         </div>`;
     }).join("") : `<p class="muted">no dictionary entry for this. try selecting a longer or shorter bit of text.</p>`;
 
     const lemma = ctx && ctx.lemma;
-    popup.innerHTML = `<div class="popup-head"><b lang="ja">${escapeHtml(word)}</b>
-        ${lemma && lemma !== word ? `<span class="lemma" lang="ja">→ ${escapeHtml(lemma)}</span>` : ""}
-        <a href="https://jisho.org/search/${encodeURIComponent(lemma || word)}" target="_blank" rel="noopener">jisho ↗</a>
+    const link = en
+        ? `<a href="https://www.merriam-webster.com/dictionary/${encodeURIComponent(lemma || word)}" target="_blank" rel="noopener">Merriam-Webster ↗</a>`
+        : `<a href="https://jisho.org/search/${encodeURIComponent(lemma || word)}" target="_blank" rel="noopener">jisho ↗</a>`;
+    popup.innerHTML = `<div class="popup-head"><b lang="${target()}">${escapeHtml(word)}</b>
+        ${lemma && lemma.toLowerCase() !== word.toLowerCase() ? `<span class="lemma" lang="${target()}">→ ${escapeHtml(lemma)}</span>` : ""}
+        ${link}
         <button class="close" title="close">✕</button></div>
         ${inflectionHtml(lemma || word, inflection)}
+        ${grammarHtml(grammar)}
         ${lemma ? statusButtons(lemma) : ""}${body}${kanjiHtml(kanji)}`;
 
     popup.querySelectorAll(".mine").forEach((btn) => btn.addEventListener("click", () =>
@@ -148,6 +194,7 @@ function render(word, { entries, inflection, kanji }) {
     // remember whether the kanji section is open
     const box = popup.querySelector(".kanji-box");
     if (box) box.addEventListener("toggle", () => store.set(KANJI_OPEN, box.open));
+    popup.querySelectorAll(".say").forEach((b) => b.addEventListener("click", () => new Audio(b.dataset.src).play().catch(() => {})));
 }
 
 async function mineEntry(entry, btn) {
@@ -161,6 +208,10 @@ async function mineEntry(entry, btn) {
         else setWordStatus(lemma, "learning");
     }
     const c = ctx || {};
+    // an English word's card gets your translation first, then the English definition
+    if (entry.tr && entry.tr.length) {
+        entry = { ...entry, senses: [{ pos: [], gloss: [[...new Set(entry.tr.slice(0, 2).flatMap((s) => s.words.slice(0, 3)))].slice(0, 4).join(", ")], misc: [] }, ...entry.senses] };
+    }
     const ok = await mining.mine(entry, { word: c.word, sentence: c.sentence, info: c.info || {}, media: hooks.media(c.info || {}) });
     if (auto) btn.textContent = ok ? "✓ in Anki" : "✓ mined (Anki failed)";
 }
@@ -213,7 +264,8 @@ export function enableWordClicks(container, lineSelector, contextFor = () => ({}
         if (selected && lineEl.contains(sel.anchorNode)) {
             lookup(selected, { sentence, info: c.info, anchor: { getBoundingClientRect: () => range.getBoundingClientRect() } });
         } else if (w) {
-            lookup(plainText(w), { sentence, info: c.info, anchor: w, lemma: w.dataset.b });
+            const grammar = w.dataset.gr ? w.dataset.gr.split(" ") : [];
+            lookup(plainText(w), { sentence, info: c.info, anchor: w, lemma: w.dataset.b, grammar });
         }
     });
 }

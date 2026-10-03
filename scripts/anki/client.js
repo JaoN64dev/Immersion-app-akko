@@ -228,9 +228,10 @@ async function captureMedia(item, media, wantShot, wantAudio) {
     return out;
 }
 
-// Pronunciation of the word itself, found by the server (JapanesePod101, then Lingua Libre)
+// Pronunciation of the word itself, found by the server (JapanesePod101, then Lingua Libre;
+// for English, dictionaryapi.dev)
 const fetchWordAudio = (item) => {
-    const params = new URLSearchParams({ word: item.word, reading: item.reading || "" });
+    const params = new URLSearchParams({ word: item.word, reading: item.reading || "", lang: item.lang || "ja" });
     (item.forms || []).forEach((f) => params.append("form", f));
     return getJson(`/api/audio?${params}`);
 };

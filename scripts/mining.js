@@ -7,6 +7,8 @@ import { $ } from "./core/dom.js";
 import { store, escapeHtml, download } from "./core/utils.js";
 import { idbAll, idbPut, idbPutMany, idbDelete, idbReplace } from "./core/idb.js";
 import * as anki from "./anki/client.js";
+import { t } from "./i18n.js";
+import { target, ofTarget } from "./core/target.js";
 
 const OLD_KEY = "akko-mined";
 const PAGE = 100;                  // cards drawn at a time on the Watch page
@@ -30,7 +32,8 @@ async function readAll() {
         await idbPutMany("mined", old.map((m, i) => ({ ...m, id: m.id || `old-${m.added || 0}-${i}` })));
     }
     if (old !== null) store.remove(OLD_KEY);
-    return (await idbAll("mined")).sort((a, b) => b.added - a.added);
+    // only the words of the language being learnt (scripts/core/target.js)
+    return (await idbAll("mined")).filter(ofTarget).sort((a, b) => b.added - a.added);
 }
 
 export function loadMined() {
@@ -74,6 +77,7 @@ export async function mine(entry, ctx) {
         cueStart: info.cueStart ?? null,
         cueEnd: info.cueEnd ?? null,
         translation: info.translation || "",
+        lang: target(),
         added,
     };
     mined.unshift(item);
@@ -138,10 +142,11 @@ export function initList({ media } = {}) {
         }
     });
     $("#clear-mined").addEventListener("click", async () => {
-        if (!mined.length || !confirm(`delete all ${mined.length} mined words?`)) return;
+        if (!mined.length || !confirm(t(`delete all ${mined.length} mined words?`))) return;
         mined.length = 0;
         renderMined();
-        await idbReplace("mined", []).catch(() => {});
+        // keep the other language's words
+        await idbAll("mined").then((all) => idbReplace("mined", all.filter((m) => !ofTarget(m)))).catch(() => {});
         announce();
     });
     more.addEventListener("click", () => { shown += PAGE; renderMined(); });

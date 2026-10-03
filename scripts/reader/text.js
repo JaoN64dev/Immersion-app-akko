@@ -1,6 +1,10 @@
 // Reading a saved text: paragraphs with clickable words, furigana, % known, and the
 // reading position remembered. Long books are split into words in batches, starting
 // where you left off, so the page is usable right away.
+//
+// Big books stay fast: only the paragraphs near what's on screen are drawn as clickable words
+// (an IntersectionObserver swaps them in and out); the rest stay plain text. The % known still
+// covers the whole book, and is recalculated at most a few times a second.
 
 import { $ } from "../core/dom.js";
 import { store, escapeHtml } from "../core/utils.js";
@@ -9,10 +13,12 @@ import { tokenize, tokensHtml, recolor, comprehension, sentenceAround } from "..
 import { bindWordDisplay } from "../words/display.js";
 import { watchHover } from "../words/hover.js";
 import { enableWordClicks } from "../popup.js";
-import { updateText } from "./library.js";
+import { readingOf, saveReading } from "./library.js";
+import { understood } from "../core/target.js";
 
 const BATCH = 150;             // paragraphs per /api/tokenize request
 const SETTINGS = "akko-reader";
+const NEAR = "1500px";         // how far beyond the visible part paragraphs get clickable words
 
 const ui = {
     section: $("#reader-section"), text: $("#reader-text"), title: $("#reader-title"),
@@ -24,23 +30,30 @@ let rec = null;                // the open text
 let tokens = [];               // tokens per paragraph (undefined until analysed)
 let job = 0;                   // bumps when another text opens, so old batches are dropped
 let onClose = () => {};
+const near = new Set();        // paragraphs on or near the screen
+const drawn = new Set();       // paragraphs currently drawn as clickable words
+let observer = null;
 
 export const isOpen = () => rec !== null;
 
 export function openText(text) {
     job++;
-    rec = text;
+    rec = { ...text, position: readingOf(text).position };
     tokens = new Array(text.paragraphs.length);
+    near.clear();
+    drawn.clear();
     ui.title.textContent = text.title;
     ui.text.innerHTML = text.paragraphs.map((p, i) => `<p data-i="${i}">${escapeHtml(p)}</p>`).join("");
     ui.section.hidden = false;
+    watchParagraphs();
     renderStats();
-    requestAnimationFrame(() => goTo(text.position || 0));
+    requestAnimationFrame(() => goTo(rec.position));
     tokenizeAll(job);
 }
 
 function close() {
     job++;
+    if (observer) observer.disconnect();
     rec = null;
     ui.section.hidden = true;
     ui.text.innerHTML = "";
@@ -54,6 +67,31 @@ function goTo(i) {
     const y = window.scrollY;
     p.scrollIntoView({ block: "start", inline: "start", behavior: "instant" });
     window.scrollTo({ top: y, behavior: "instant" });
+}
+
+// ---------- drawing only what's near the screen ----------
+
+function draw(i) {
+    if (drawn.has(i) || !tokens[i]) return;
+    ui.text.children[i].innerHTML = tokensHtml(tokens[i], { offsets: true });
+    drawn.add(i);
+}
+
+function undraw(i) {
+    if (!drawn.has(i)) return;
+    ui.text.children[i].textContent = rec.paragraphs[i];
+    drawn.delete(i);
+}
+
+function watchParagraphs() {
+    if (observer) observer.disconnect();
+    observer = new IntersectionObserver((entries) => {
+        for (const e of entries) {
+            const i = Number(e.target.dataset.i);
+            if (e.isIntersecting) { near.add(i); draw(i); } else { near.delete(i); undraw(i); }
+        }
+    }, { root: ui.text, rootMargin: NEAR });
+    for (const p of ui.text.children) observer.observe(p);
 }
 
 // ---------- splitting into words ----------
@@ -71,11 +109,11 @@ async function tokenizeAll(myJob) {
         if (myJob !== job) return;
         batch.forEach((t, k) => {
             tokens[s + k] = t;
-            ui.text.children[s + k].innerHTML = tokensHtml(t, { offsets: true });
+            if (near.has(s + k)) draw(s + k);
         });
-        renderStats();
+        statsSoon();
     }
-    savePct();
+    statsSoon();
 }
 
 // ---------- % known ----------
@@ -92,14 +130,20 @@ function renderStats() {
     ui.stats.textContent = `${c.unknown} unknown words` + (analysed < 100 ? ` · analysing ${analysed}%` : "");
     ui.badge.hidden = false;
     ui.badge.className = "comp-badge inline " + pctLevel(c.pct);
-    ui.badge.innerHTML = `<b>${c.pct}%</b> 理解`;
+    ui.badge.innerHTML = `<b>${c.pct}%</b> ${understood()}`;
     ui.badge.title = `you know ${c.known} of the ${c.total} words in this text (ignored words don't count)`;
-    return c.pct;
+    // once the whole text is analysed, the library shows its %
+    if (done.length === tokens.length && c.pct !== readingOf(rec).pct) saveReading(rec.id, { pct: c.pct });
 }
 
-function savePct() {
-    const done = tokens.filter(Boolean);
-    if (rec && done.length === tokens.length) updateText(rec.id, { pct: comprehension(done).pct });
+// counting a whole book takes a moment, so it runs at most every half second
+let statsTimer = null;
+function statsSoon() {
+    if (statsTimer) return;
+    statsTimer = setTimeout(() => {
+        statsTimer = null;
+        if (rec) renderStats();
+    }, 500);
 }
 
 // ---------- reading position ----------
@@ -115,7 +159,7 @@ function trackPosition() {
     rec.position = Number(p.dataset.i);
     clearTimeout(saveTimer);
     const { id, position } = rec;
-    saveTimer = setTimeout(() => updateText(id, { position }), 600);
+    saveTimer = setTimeout(() => saveReading(id, { position }), 600);
 }
 
 // ---------- settings ----------
@@ -154,8 +198,7 @@ export function init({ onBack }) {
 
     window.addEventListener("akko-words-changed", () => {
         if (!rec) return;
-        recolor(ui.text);
-        renderStats();
-        savePct();
+        recolor(ui.text);         // only the drawn paragraphs have words to recolour
+        statsSoon();
     });
 }

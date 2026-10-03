@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>道 Japanese akko</title>
+    <link href="/style.css" rel="stylesheet" type="text/css" media="all">
+    <script type="module" src="/scripts/site.js"></script>
+    <script type="module" src="/scripts/pages/course.js"></script>
+</head>
+<body>
+    <header>
+        <marquee class="en-only" style="margin-bottom:1em;" scrollamount="4">SITE BY: AKKO • a little every day • SITE BY: AKKO • it's okay not to understand everything • SITE BY: AKKO • just keep listening • SITE BY: AKKO • i might be narcisist</marquee>
+        <marquee class="ja-only" style="margin-bottom:1em;" scrollamount="4">SITE BY: AKKO ・ 千里の道も一歩から ・ SITE BY: AKKO ・ 毎日少しずつ ・ SITE BY: AKKO ・ 分からなくても大丈夫 ・ SITE BY: AKKO ・ i might be narcisist</marquee>
+    </header>
+    <div id="container">
+        <div class="flex">
+        <aside id="sidebar">
+            <div class="note en-only">I`m akko. this is the path I'd follow from zero: the sounds, words, a bit of grammar, then as much English as possible.</div>
+            <div id="bio" class="note ja-only">I`m akko. this is the path I'd follow from zero: kana, words, a bit of grammar, then as much Japanese as possible.</div>
+            <div class="side-sticky">
+            <nav id="navi">
+            <details open=""><summary>Pages</summary>
+            <ul>
+                <li><a href="/course.html" aria-current="page">course</a></li>
+                <li><a href="/">watch</a></li>
+                <li><a href="/reading.html">read</a></li>
+                <li><a href="/podcasts.html">listen</a></li>
+                <li><a href="/grammar.html">grammar</a></li>
+                <li><a href="/review.html">review</a></li>
+                <li><a href="/settings.html">settings</a></li>
+                <li><a href="/about.html">about</a></li>
+            </ul>
+            </details>
+            <details open=""><summary>Steps</summary>
+            <ul id="course-nav" class="course-nav"></ul>
+            </details>
+            </nav>
+            </div>
+        </aside>
+        <main>
+        <div id="content">
+            <nav class="tabs" aria-label="pages">
+                <a class="tab" href="/course.html" aria-current="page"><span class="ja-only">道 </span><small translate="no">course</small></a>
+                <a class="tab" href="/"><span class="ja-only">観る </span><small translate="no">watch</small></a>
+                <a class="tab" href="/reading.html"><span class="ja-only">読む </span><small translate="no">read</small></a>
+                <a class="tab" href="/podcasts.html"><span class="ja-only">聴く </span><small translate="no">listen</small></a>
+                <a class="tab" href="/grammar.html"><span class="ja-only">文法 </span><small translate="no">grammar</small></a>
+                <a class="tab" href="/review.html"><span class="ja-only">復習 </span><small translate="no">review</small></a>
+                <a class="tab" href="/settings.html"><span class="ja-only">設定 </span><small translate="no">settings</small></a>
+                <a class="tab" href="/about.html"><span class="ja-only">私 </span><small translate="no">about</small></a>
+            </nav>
+
+            <h1><span class="ja-only">道 </span>How to learn Japanese</h1>
+
+            <div id="course-problems" class="note grammar-problems" hidden></div>
+
+            <section class="note course-overview">
+                <div id="course-summary" class="course-summary"></div>
+                <div class="course-bar" aria-hidden="true"><i id="course-bar"></i></div>
+            </section>
+
+            <ol id="course-steps" class="course-steps">
+                <li class="muted">loading the course…</li>
+            </ol>
+
+            <section id="course-howto" class="quiet-section">
+                <h3 class="quiet-heading">Change the course</h3>
+                <div class="note about-note" data-i18n="course-howto">
+                    <p>Each step is a Markdown file in the <code>course</code> folder of the app. Edit a file to change a step, or copy <code>course/_template.md</code> to add one. Changes show up when you reload this page.</p>
+                    <p>A step's <code>goal:</code> lines (words known, grammar level, words mined, characters read, manga pages, hours) are checked against what you've done in the app. <code>course/README.md</code> explains every option.</p>
+                </div>
+            </section>
+        </div>
+        </main>
+        </div>
+    </div>
+</body>
+</html>

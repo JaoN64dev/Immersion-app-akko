@@ -8,8 +8,9 @@ import { pctLevel } from "./words/status.js";
 import { loadSubtitleText, setOffset } from "./player/cues.js";
 import { reopen } from "./player/video.js";
 import * as subs2 from "./player/subs2.js";
+import { keyFor, understood } from "./core/target.js";
 
-export const KEY = "akko-progress";
+export const KEY = keyFor("akko-progress");
 const SUB_PREFIX = "akko-subtext:";
 const SUB2_PREFIX = "akko-subtext2:";    // 2nd subs (translation)
 const KEEP = 40;          // videos remembered
@@ -120,7 +121,7 @@ function renderRow() {
             <div class="info">
                 <b lang="ja">${escapeHtml(title)}</b>
                 <span>${ep !== null ? `ep ${ep} · ` : ""}${when}</span>
-                ${r.pct != null ? `<span class="pct ${pctLevel(r.pct)}" title="words you knew last time">${r.pct}% 理解</span>` : ""}
+                ${r.pct != null ? `<span class="pct ${pctLevel(r.pct)}" title="words you knew last time">${r.pct}% ${understood()}</span>` : ""}
                 <div class="bar"><i style="width:${pct}%"></i></div>
             </div>
             <button class="forget" title="forget this">✕</button>
