@@ -1,7 +1,7 @@
 {
   "name": "akko",
   "productName": "akko",
-  "version": "1.0.0",
+  "version": "1.5.0",
   "description": "Learn Japanese or English by immersion: watch, read and listen with a pop-up dictionary, grammar lessons and Anki mining.",
   "main": "electron/main.js",
   "author": "akko (JaoN64Dev)",

@@ -57,9 +57,9 @@ Problems in a step file (an unknown goal, a missing title…) are listed at the 
 
 The steps for people learning English are in `course-en/`, in the same format. The `grammar` goal uses the English levels there (`goal: grammar A1`).
 
-### Translating the English course
+### Translating a course
 
-People learning English read the course in their own language (Settings → "Your language"). Each translation is a folder inside `course-en/` named with the same language code as that setting (`pt`, `es`, `ja`, `fr`, `de`, `cmn`…), with one file per step, named like the English one:
+Both courses can be read in the learner's own language (Settings → "Your language"). Each translation is a folder inside `course/` (the Japanese course) or `course-en/` (the English one) named with the same language code as that setting (`pt`, `es`, `ja`, `fr`, `de`, `cmn`…), with one file per step, named like the English one:
 
 ```markdown
 ---
@@ -73,4 +73,4 @@ goal: words 500 | conhecer suas primeiras 500 palavras
 The step's text, translated.
 ```
 
-Only the title, summary, when, text and goal labels come from the translation. The order and the goals themselves stay in the English file. A step that isn't translated shows in English. Portuguese (`pt`), Spanish (`es`) and Japanese (`ja`) are included.
+Only the title, summary, when, text and goal labels come from the translation. The order and the goals themselves stay in the English file. A step that isn't translated shows in English. Keep the goal lines the same as in the English file (same kinds and numbers, same order); `npm run check-lessons` tells you if they don't match. Included: the Japanese course in Portuguese (`course/pt`) and Spanish (`course/es`); the English course in Portuguese, Spanish and Japanese (`course-en/pt`, `/es`, `/ja`).

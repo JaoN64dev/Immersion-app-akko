@@ -36,7 +36,7 @@ The **desktop app** (`electron/main.js`, built with `npm run dist`) is the same 
 | `scripts/` (other folders) | Shared browser code, grouped by feature (`words/`, `player/`, `reader/`, `podcasts/`, `anki/`, `grammar/`, `core/`) |
 | `scripts/lang/ja.js` | The Japanese translation of the interface |
 | `grammar/`, `grammar-en/` | Grammar lessons as Markdown, Japanese and English |
-| `course/`, `course-en/` | Course steps as Markdown; `course-en/pt`, `/es`, `/ja` are translations |
+| `course/`, `course-en/` | Course steps as Markdown; `course/pt`, `/es` and `course-en/pt`, `/es`, `/ja` are translations |
 | `data/` | Dictionary files (`dict.json`, `kanji.json`, `accents.txt`), and things the server saves: `ocr/`, `english-online.json`, `opensubtitles.json` |
 | `tools/` | `check-lessons.js` (`npm run check-lessons`) |
 | `tests/` | automated tests (`npm test`) |

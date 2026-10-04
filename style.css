@@ -30,24 +30,6 @@
   --extra7: #ffbef0;
 }
 
-/* nunito-600 - latin */
-@font-face {
-  font-display: swap;
-  font-family: 'Nunito';
-  font-style: normal;
-  src: url('/fonts/nunito-v31-latin-600.woff2') format('woff2'),
-       url('/fonts/nunito-v31-latin-600.ttf') format('truetype');
-}
-/* nunito-900 - latin */
-@font-face {
-  font-display: swap;
-  font-family: 'Nunito';
-  font-style: normal;
-  font-weight: bold;
-  src: url('/fonts/nunito-v31-latin-900.woff2') format('woff2'),
-       url('/fonts/nunito-v31-latin-900.ttf') format('truetype');
-}
-
 html {scroll-behavior: smooth;}
 ::selection {
   background: var(--link-color);
@@ -59,7 +41,7 @@ html {scroll-behavior: smooth;}
 }
 
 body {
-  font-family: 'Nunito', Verdana, sans-serif;
+  font-family: 'Nunito', Verdana, sans-serif;     /* Nunito if it's installed on the computer */
   font-size: 16px;
   line-height: 1.5;
   margin: 0;

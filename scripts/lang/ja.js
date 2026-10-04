@@ -473,6 +473,8 @@ export default {
         "English definitions": "英英（英語の定義）",
         "Your language, for translations of English words": "英単語の翻訳に使うあなたの言語",
         "(none, English definitions only)": "（なし。英語の定義だけ）",
+        "Your language, for the course (Portuguese and Spanish so far)": "あなたの言語（コースの言語。今はポルトガル語とスペイン語）",
+        "(none: the course in English)": "（なし。コースは英語）",
         "no definition found (the definitions and translations need an internet connection).": "定義が見つかりませんでした（定義と翻訳にはインターネット接続が必要です）。",
         "listen (American)": "発音を聞く（アメリカ英語）",
         "道 How to learn English": "道 英語の学び方",

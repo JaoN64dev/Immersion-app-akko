@@ -64,6 +64,27 @@ test('the course: one per language, translated steps keep the English goals', ()
   assert.deepEqual(words(es).goals.map((g) => [g.kind, g.target]), words(en).goals.map((g) => [g.kind, g.target]));
 });
 
+test('the Japanese course comes in Portuguese and Spanish, with every step and goal label translated', () => {
+  const ja = call(course.router, '/', { lang: 'ja' }).body.steps;
+  for (const native of ['pt', 'es']) {
+    const { steps, problems } = call(course.router, '/', { lang: 'ja', native }).body;
+    assert.deepEqual(problems, [], native);
+    assert.deepEqual(steps.map((s) => s.id), ja.map((s) => s.id), `${native}: same steps, same order`);
+    steps.forEach((s, i) => {
+      assert.equal(s.translated, true, `${native}/${s.id} is translated`);
+      assert.notEqual(s.title, ja[i].title, `${native}/${s.id}: title`);
+      assert.deepEqual(s.goals.map((g) => [g.kind, g.target ?? g.level]), ja[i].goals.map((g) => [g.kind, g.target ?? g.level]), `${native}/${s.id}: same goals`);
+      s.goals.forEach((g, k) => assert.notEqual(g.label, ja[i].goals[k].label, `${native}/${s.id}: goal label translated`));
+    });
+  }
+  // links into the app are kept
+  const pt = call(course.router, '/', { lang: 'ja', native: 'pt' }).body.steps.find((s) => s.id === 'grammar-basics');
+  assert.match(pt.body, /\/grammar\.html#te-iru/);
+  // Settings lists the languages each course is translated into
+  assert.deepEqual(call(course.router, '/languages', { lang: 'ja' }).body.languages, ['es', 'pt']);
+  assert.deepEqual(call(course.router, '/languages', { lang: 'en' }).body.languages, ['es', 'ja', 'pt']);
+});
+
 test('every lesson and course file passes npm run check-lessons', () => {
   const run = spawnSync(process.execPath, [path.join(__dirname, '..', 'tools', 'check-lessons.js')], { encoding: 'utf8', timeout: 120000 });
   assert.equal(run.status, 0, run.stdout.split('\n').filter((l) => l.includes('✗')).join('\n'));

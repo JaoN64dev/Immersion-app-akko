@@ -59,6 +59,7 @@ app.get('/grammar.html', file('grammar.html'));
 app.get('/course.html', file('course.html'));
 app.get('/about.html', file('about.html'));
 app.get('/style.css', file('style.css'));
+app.get('/favicon.ico', file('electron/icon.png'));     // the browser tab's icon: the app icon
 for (const dir of ['scripts', 'images', 'fonts', 'node_modules/@ffmpeg']) {
   app.use('/' + dir, express.static(path.join(__dirname, dir)));
 }

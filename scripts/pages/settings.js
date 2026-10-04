@@ -19,11 +19,22 @@ for (const b of document.querySelectorAll("[data-target]")) {
     });
 }
 
-// your language: translations in the English word popup
+// your language: translations in the English word popup, and the course in your language (both courses)
 const native = $("#native-lang");
-native.innerHTML = `<option value="">(none, English definitions only)</option>`
-    + Object.entries(NATIVE_LANGUAGES).map(([code, name]) => `<option value="${code}">${name}</option>`).join("");
-native.value = nativeLang();
+const showLanguages = (codes) => {
+    native.innerHTML = `<option value="">${target() === "en" ? "(none, English definitions only)" : "(none: the course in English)"}</option>`
+        + codes.map((code) => `<option value="${code}">${NATIVE_LANGUAGES[code] || code}</option>`).join("");
+    native.value = nativeLang();
+};
+if (target() === "en") showLanguages(Object.keys(NATIVE_LANGUAGES));
+else {
+    // learning Japanese, it's only for the course: list the languages it's translated into
+    // (and the one already picked in English mode, so it isn't lost)
+    showLanguages([]);
+    getJson("/api/course/languages?lang=ja")
+        .then(({ languages }) => showLanguages([...new Set([...languages, nativeLang()].filter(Boolean))]))
+        .catch(() => showLanguages(Object.keys(NATIVE_LANGUAGES)));
+}
 native.addEventListener("input", () => setNative(native.value));
 
 // interface language: applied in place

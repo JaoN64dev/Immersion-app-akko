@@ -67,8 +67,9 @@ function checkTranslations() {
 function checkCourse() {
   const course = require('../server/course');
   const handler = course.router.stack.find((l) => l.route && l.route.path === '/').route.stack[0].handle;
-  for (const [lang, native] of [['ja', ''], ['en', ''], ...fs.readdirSync(path.join(ROOT, 'course-en'), { withFileTypes: true })
-    .filter((d) => d.isDirectory()).map((d) => ['en', d.name])]) {
+  const translationsOf = (lang, dir) => fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })
+    .filter((d) => d.isDirectory()).map((d) => [lang, d.name]);
+  for (const [lang, native] of [['ja', ''], ['en', ''], ...translationsOf('ja', 'course'), ...translationsOf('en', 'course-en')]) {
     handler({ query: { lang, native } }, {
       json: ({ steps, problems }) => {
         console.log(`\ncourse${lang === 'en' ? '-en' : ''}${native ? '/' + native : ''}: ${steps.length} steps`);

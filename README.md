@@ -9,7 +9,7 @@ An immersion app for learning **Japanese** or **American English**, on your own 
 - **Listen** to podcasts with transcripts.
 - **Click any word** to see its dictionary entry, kanji and pitch accent, plus any **dictionaries you add** (Yomitan format: Jitendex, monolingual dictionaries…). Hover a word and press 1–4 to mark it new / learning / known / ignored; the app colours words by how well you know them.
 - Send words to **Anki** as flashcards.
-- Follow the **course**: a step-by-step path from the basics to immersion, built on the AJATT idea, with goals the app checks for you.
+- Follow the **course**: a step-by-step path from the basics to immersion, built on the AJATT idea, with goals the app checks for you. The Japanese course is also in **Portuguese and Spanish** (Settings → Your language).
 - Study **grammar** with short lessons and quizzes (Japanese N5–N1, English A1–C1). Grammar you've studied is underlined in subtitles and texts.
 - **Settings**: the language you learn, the interface language (English / 日本語), display options, stats and backup.
 

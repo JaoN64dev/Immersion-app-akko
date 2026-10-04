@@ -18,17 +18,17 @@ Files: open `grammar/` and look for `level: N2` or `level: N1` at the top. For e
 
 N5 to N3 are worth a quick read too, especially the quizzes.
 
-### 2. Portuguese (Brazil): `course-en/pt/` and `grammar-en/pt/`
+### 2. Portuguese (Brazil): `course-en/pt/`, `grammar-en/pt/` and `course/pt/`
 
-8 course steps and 38 lessons, written in Brazilian Portuguese for learners of English.
+8 course steps and 38 lessons, written in Brazilian Portuguese for learners of English, plus the 8 steps of the Japanese course (`course/pt/`) for Brazilians learning Japanese.
 
 - Natural Brazilian Portuguese? (not Portugal's: *celular*, *ônibus*, *você*)
 - Are the tips about mistakes Brazilians make in English right? (e.g. adding an "i" sound at the end of words, "tem" for "there is", "moro aqui há dez anos")
 - Do the example translations match the English sentence's meaning and tone?
 
-### 3. Spanish: `course-en/es/` and `grammar-en/es/`
+### 3. Spanish: `course-en/es/`, `grammar-en/es/` and `course/es/`
 
-8 course steps and 38 lessons. **Decision needed:** the Spanish leans towards Spain (*móvil*, *coche*, *conducir*, *coger el autobús*, *tarta*, *quedar con alguien*, *deberes*). Most Spanish-speaking learners are in Latin America. Either:
+8 course steps and 38 lessons for learners of English, plus the 8 steps of the Japanese course (`course/es/`). The Japanese course is written in neutral Spanish (*celular*, *videojuegos*, no *vosotros*), so it already works for Latin America. **Decision needed** for the English course and lessons: the Spanish leans towards Spain (*móvil*, *coche*, *conducir*, *coger el autobús*, *tarta*, *quedar con alguien*, *deberes*). Most Spanish-speaking learners are in Latin America. Either:
 
 - switch to a neutral Latin American Spanish (*celular*, *carro/auto*, *manejar*, *tomar el autobús*, *pastel*, *tarea*), or
 - keep Spain's Spanish and add a separate folder for the other one (a language code such as `es-419` would need a small code change; ask before doing this).

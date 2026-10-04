@@ -2,14 +2,17 @@
 // (learning English); see course/README.md
 //
 //   GET /api/course[?lang=en][&native=pt]   -> {steps: [...], problems: [...]}
+//   GET /api/course/languages[?lang=en]     -> {languages: ["es", "pt"]}: the translations there are
 //
-// The English course can be translated: course-en/pt/<step>.md (any language code) replaces the
-// title, summary, when and text of that step for people whose language is pt. The order and the
-// goals stay in the English file. Untranslated steps are shown in English.
+// Both courses can be translated: course/pt/<step>.md or course-en/pt/<step>.md (any language code)
+// replaces the title, summary, when, text and goal labels of that step for people whose language
+// is pt (Settings → Your language). The order and the goals stay in the English file. Untranslated
+// steps are shown in English.
 //
 // Edits show up on the next page load without restarting the server (server/mdfolder.js).
 // Steps can have `goal:` lines that the course page checks against what you've done in the app.
 
+const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const { splitFrontMatter, one, folder } = require('./mdfolder');
@@ -64,19 +67,23 @@ function build(files) {
 }
 const loaders = Object.fromEntries(Object.entries(DIRS).map(([lang, dir]) => [lang, folder(path.join(__dirname, '..', dir), dir, build)]));
 
-// course-en/pt, course-en/es…: made on first use
+// course/pt, course-en/es…: made on first use
 const translations = {};
 function translated(lang, native) {
-  if (lang !== 'en' || !/^[a-z]{2,3}$/.test(native)) return null;
+  if (!/^[a-z]{2,3}$/.test(native)) return null;
   const dir = `${DIRS[lang]}/${native}`;
   translations[dir] ||= folder(path.join(__dirname, '..', dir), dir, build);
   return translations[dir]();
 }
 
+// do a translation's goal lines match the English file's (same kinds and targets, same order)?
+const sameGoals = (a, b) => a.length === b.length
+  && a.every((g, i) => g.kind === b[i].kind && (g.target ?? g.level) === (b[i].target ?? b[i].level));
+
 // the step in the learner's language, keeping the English file's order and goals
 function localize(step, t) {
   if (!t) return step;
-  const goals = t.goals.length === step.goals.length
+  const goals = sameGoals(t.goals, step.goals)
     ? step.goals.map((g, i) => ({ ...g, label: t.goals[i].label || g.label }))     // translated goal labels
     : step.goals;
   // a translation without its own title (parseStep falls back to the file name) keeps the English one
@@ -85,13 +92,24 @@ function localize(step, t) {
 
 const router = express.Router();
 
+// which translations a course has (its language-code folders), for Settings → Your language
+router.get('/languages', (req, res) => {
+  const dir = path.join(__dirname, '..', DIRS[req.query.lang === 'en' ? 'en' : 'ja']);
+  const languages = fs.readdirSync(dir, { withFileTypes: true })
+    .filter((d) => d.isDirectory() && /^[a-z]{2,3}$/.test(d.name)).map((d) => d.name).sort();
+  res.json({ languages });
+});
+
 router.get('/', (req, res) => {
   const lang = req.query.lang === 'en' ? 'en' : 'ja';
   const { items, problems } = loaders[lang]();
   const tr = translated(lang, String(req.query.native || ''));
   const byId = new Map(((tr && tr.items) || []).map((s) => [s.id, s]));
   const steps = items.map((s) => localize(s, byId.get(s.id)));
-  res.json({ steps: steps.map(({ problems: _, hidden: __, ...s }) => s), problems: [...problems, ...((tr && tr.problems) || [])] });
+  // a translation's goal lines must match the English file's, or their labels can't be used
+  const mismatched = items.filter((s) => byId.has(s.id) && !sameGoals(byId.get(s.id).goals, s.goals))
+    .map((s) => ({ file: `${DIRS[lang]}/${req.query.native}/${s.id}.md`, problem: "its goal lines don't match the English file's (same kinds and numbers, same order): the labels stay in English" }));
+  res.json({ steps: steps.map(({ problems: _, hidden: __, ...s }) => s), problems: [...problems, ...((tr && tr.problems) || []), ...mismatched] });
 });
 
 module.exports = { router };
