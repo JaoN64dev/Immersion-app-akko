@@ -55,7 +55,9 @@ async function startMode() {
     defaultId: 0,
     cancelId: 2,
     noLink: true,
+    // ticked: asked once, then akko opens the same way (the welcome screen greets you each time)
     checkboxLabel: 'Remember my choice (change it later in the akko menu)',
+    checkboxChecked: true,
   });
   if (response === 2) return null;
   const mode = response === 1 ? 'browser' : 'window';
@@ -98,19 +100,6 @@ function openWindow() {
     webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true },
   });
 
-  // Links to other sites open in your normal browser; the app's own pages stay in the window
-  const isOurs = (link) => link.startsWith(url + '/') || link === url;
-  win.webContents.setWindowOpenHandler(({ url: link }) => {
-    if (isOurs(link)) return { action: 'allow' };
-    if (/^https?:\/\//.test(link)) shell.openExternal(link);
-    return { action: 'deny' };
-  });
-  win.webContents.on('will-navigate', (event, link) => {
-    if (isOurs(link)) return;
-    event.preventDefault();
-    if (/^https?:\/\//.test(link)) shell.openExternal(link);
-  });
-
   win.loadURL(url);
   win.on('closed', () => {
     win = null;
@@ -120,6 +109,46 @@ function openWindow() {
 }
 
 const openBrowser = () => shell.openExternal(url);
+
+// ---------- links (every window: the main one, and any a link opens) ----------
+//
+//   <a href="/grammar.html" target="_blank">            akko page  -> a new akko window
+//   <a href="https://jisho.org" target="_blank">        other site -> your normal browser
+//   <a href="https://jisho.org" target="akko-window">   other site -> a new window inside akko
+//
+// A site opened inside akko can be browsed freely in its window. It runs like in a browser tab:
+// no access to your computer, and akko's server refuses changes from it (server/guard.js).
+
+const IN_APP = 'akko-window';
+const isOurs = (link) => link === url || link.startsWith(url + '/');
+const isWeb = (link) => /^https?:\/\//.test(link);
+const siteWindows = new WeakSet();          // windows showing another site, opened with akko-window
+
+const windowOptions = (width, height) => ({
+  width, height, icon: ICON, autoHideMenuBar: true,
+  webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true },
+});
+
+app.on('web-contents-created', (event, contents) => {
+  contents.setWindowOpenHandler(({ url: link, frameName }) => {
+    if (isOurs(link)) return { action: 'allow', overrideBrowserWindowOptions: windowOptions(1200, 850) };
+    if (frameName === IN_APP && isWeb(link)) return { action: 'allow', overrideBrowserWindowOptions: windowOptions(1100, 800) };
+    // a site opened inside akko (nyaa.si…) opening more windows, ads included: they stay inside
+    // akko too, so they can't open tabs in your normal browser
+    if (siteWindows.has(contents) && isWeb(link)) return { action: 'allow', overrideBrowserWindowOptions: windowOptions(1100, 800) };
+    if (isWeb(link)) shell.openExternal(link);
+    return { action: 'deny' };
+  });
+  contents.on('did-create-window', (child, { url: link }) => {
+    if (!isOurs(link)) siteWindows.add(child.webContents);
+  });
+  // akko's own windows stay on akko: a plain link to another site goes to your browser
+  contents.on('will-navigate', (e, link) => {
+    if (siteWindows.has(contents) || isOurs(link)) return;
+    e.preventDefault();
+    if (isWeb(link)) shell.openExternal(link);
+  });
+});
 
 // ---------- browser mode: an icon in the tray keeps the server running ----------
 
@@ -192,6 +221,7 @@ function buildMenu() {
     {
       label: 'Help',
       submenu: [
+        { label: 'Check for updates', click: () => checkForUpdate({ quiet: false }) },
         { label: 'Project page', click: () => shell.openExternal('https://github.com/JaoN64dev/japaneselocalwebapp') },
       ],
     },
@@ -230,7 +260,57 @@ app.whenReady().then(async () => {
     openWindow();
   }
   app.on('activate', () => { if (mode === 'browser') openBrowser(); else openWindow(); });
+  setTimeout(() => checkForUpdate({ quiet: true }), 5000);
 });
+
+// ---------- is there a newer akko? ----------
+// Asks GitHub for the newest release, at most once a day (or when you pick Help → Check for
+// updates). Nothing is installed: it offers to open the download page. AKKO_UPDATE_URL points it
+// somewhere else (for testing).
+
+const RELEASES = 'https://github.com/JaoN64dev/japaneselocalwebapp/releases/latest';
+const UPDATE_URL = process.env.AKKO_UPDATE_URL || 'https://api.github.com/repos/JaoN64dev/japaneselocalwebapp/releases/latest';
+const DAY = 24 * 3600e3;
+
+// "v1.10.0" > "1.9.2"
+function newer(a, b) {
+  const nums = (v) => String(v).replace(/^v/i, '').split(/[.+-]/).slice(0, 3).map((n) => parseInt(n, 10) || 0);
+  const [x, y] = [nums(a), nums(b)];
+  for (let i = 0; i < 3; i++) if (x[i] !== y[i]) return x[i] > y[i];
+  return false;
+}
+
+async function checkForUpdate({ quiet }) {
+  const config = readConfig();
+  if (quiet && config.lastUpdateCheck && Date.now() - config.lastUpdateCheck < DAY) return;
+  let latest;
+  try {
+    const res = await fetch(UPDATE_URL, { headers: { 'User-Agent': 'akko/' + app.getVersion(), Accept: 'application/vnd.github+json' } });
+    if (!res.ok) throw new Error(res.status === 404 ? 'no releases published yet' : `GitHub answered ${res.status}`);
+    latest = await res.json();
+  } catch (err) {
+    if (!quiet) dialog.showMessageBox({ type: 'info', message: "Couldn't check for updates", detail: err.message });
+    return;
+  }
+  saveConfig({ lastUpdateCheck: Date.now() });
+  const version = String(latest.tag_name || '').replace(/^v/i, '');
+  if (!version || !newer(version, app.getVersion()) || (quiet && config.skipVersion === version)) {
+    if (!quiet) dialog.showMessageBox({ type: 'info', message: 'You have the newest akko', detail: `Version ${app.getVersion()}.` });
+    return;
+  }
+  const { response } = await dialog.showMessageBox({
+    type: 'info',
+    title: 'akko',
+    message: `akko ${version} is out`,
+    detail: `You have ${app.getVersion()}. Download the new installer from the release page and run it: your words and progress are kept.`,
+    buttons: ['Open the download page', 'Later', 'Skip this version'],
+    defaultId: 0,
+    cancelId: 1,
+    noLink: true,
+  });
+  if (response === 0) shell.openExternal(latest.html_url || RELEASES);
+  if (response === 2) saveConfig({ skipVersion: version });
+}
 
 // Without a tray icon, closing the last window ends everything (except on macOS, as usual there).
 // With one (browser mode), the server keeps running until "Quit akko".

@@ -23,7 +23,7 @@
         <div class="flex">
         <aside id="sidebar">
             <div class="note en-only">Welcome! Load a video and its English subtitles, then click any word you don't know.</div>
-            <div id="bio" class="note ja-only">Welcome! Use nyaa.si for video files...</div>
+            <div id="bio" class="note ja-only" data-i18n="watch-bio">Welcome! Get video files from <a href="https://nyaa.si" target="akko-window">nyaa.si</a>…</div>
             <div class="side-sticky">
             <nav id="navi">
             <details open=""><summary>Pages</summary>
@@ -70,6 +70,8 @@
             </nav>
 
             <!-- SEARCH -->
+
+            <a class="en-only" href="https://1337x.la/" target="akko-window">Download videos....</a>
             <section id="search-section">
                 <h1><span class="ja-only">アニメ Immersion</span><span class="en-only">Watch</span> <small class="h1-note">| (CHECK THE KEYS SECTION BEFORE USING )</small></h1>
                 <div id="continue" class="continue" hidden>
@@ -166,6 +168,12 @@
                 <div id="audio-bar" class="bubble audio-bar" hidden>
                     <label>audio <select id="audio-track"></select></label>
                     <span id="audio-status" class="audio-status"></span>
+                </div>
+                <div id="filesub-bar" class="bubble audio-bar" hidden>
+                    <label>subtitles in the video file <select id="filesub-track"></select></label>
+                    <button id="filesub-main" type="button">use as subtitles</button>
+                    <button id="filesub-2nd" type="button">as 2nd subtitles</button>
+                    <span id="filesub-status" class="audio-status"></span>
                 </div>
                 <div id="sub2-bar" class="bubble sub2-bar" hidden>
                     <span>2nd subs: <b id="sub2-name"></b></span>

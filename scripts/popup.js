@@ -121,6 +121,21 @@ function kanjiHtml(list) {
 
 // ---------- the dictionaries you added (Settings → Dictionaries) ----------
 
+// rank badges from the frequency lists (e.freq: [{title, value}]): "JPDB 1234"; lower = more common
+function freqHtml(e) {
+    return (e.freq || []).map((f) => `<span class="tag freq" title="${escapeHtml(f.title)}: how common the word is (lower = more common)">${escapeHtml(f.title.split(/[\s_[(]/)[0].slice(0, 12))} ${escapeHtml(f.value)}</span>`).join("");
+}
+
+// an added dictionary's entry, ready for mining: its meanings as plain text
+function minable(e) {
+    const box = document.createElement("div");
+    box.innerHTML = e.html.join(" ");
+    box.querySelectorAll(".yd-extra-info, .yd-attribution, .yd-tag").forEach((x) => x.remove());   // examples, credits, labels
+    const items = [...box.querySelectorAll(".yd-glossary li")].map((li) => li.textContent.trim()).filter(Boolean);
+    const text = (items.length ? items.join("; ") : box.textContent).replace(/\s+/g, " ").trim().slice(0, 300);
+    return { word: e.word, reading: e.reading || e.word, forms: [], pitch: [], senses: [{ gloss: [text], pos: [], misc: [] }] };
+}
+
 const MORE_CLOSED = "akko-dict-closed";      // titles of the ones you folded away
 
 // e.html is already made safe by the server (server/dictionaries.js: plain formatting tags only)
@@ -128,13 +143,14 @@ function moreHtml(more) {
     if (!more || !more.length) return "";
     const closed = store.get(MORE_CLOSED, []);
     const lang = target();
-    return more.map((d) => `<details class="more-dict"${closed.includes(d.title) ? "" : " open"} data-title="${escapeHtml(d.title)}">
+    return more.map((d, di) => `<details class="more-dict"${closed.includes(d.title) ? "" : " open"} data-title="${escapeHtml(d.title)}">
         <summary translate="no">${escapeHtml(d.title)}</summary>
-        ${d.entries.map((e) => `<div class="more-entry">
+        ${d.entries.map((e, ei) => `<div class="more-entry">
             <div class="entry-head">
                 <span class="headword" lang="${lang}">${escapeHtml(e.word)}</span>
                 ${e.reading ? `<span class="reading" lang="${lang}">${escapeHtml(e.reading)}</span>` : ""}
                 ${e.tags.slice(0, 6).map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join("")}
+                <button class="mine more-mine" data-d="${di}" data-e="${ei}" title="mine it with this dictionary's meaning">+ mine</button>
             </div>
             <ol class="more-gloss" translate="no" lang="${lang}">${e.html.map((h) => `<li>${h}</li>`).join("")}</ol>
         </div>`).join("")}
@@ -167,7 +183,7 @@ function englishEntryHtml(e, i) {
             <span class="headword" lang="en">${escapeHtml(e.word)}</span>
             ${e.reading ? `<span class="reading ipa">${escapeHtml(e.reading)}</span>` : ""}
             ${e.audio ? `<button class="say" data-src="${escapeHtml(e.audio)}" title="listen (American)">🔊</button>` : ""}
-            ${e.common ? `<span class="tag">common</span>` : ""}
+            ${e.common ? `<span class="tag">common</span>` : ""}${freqHtml(e)}
             <button class="mine" data-i="${i}">+ mine</button>
         </div>
         ${tr ? `<div class="translations" translate="no"><span class="tr-lang">${escapeHtml(NATIVE_LANGUAGES[native] || native)}</span><ol>${tr}</ol></div>` : ""}
@@ -191,7 +207,7 @@ function render(word, { entries, inflection, kanji, grammar = [], more = [] }) {
             <div class="entry-head">
                 <span class="headword" lang="ja">${escapeHtml(e.word)}</span>
                 ${readingHtml(e)}
-                ${e.common ? `<span class="tag">common</span>` : ""}
+                ${e.common ? `<span class="tag">common</span>` : ""}${freqHtml(e)}
                 <button class="mine" data-i="${i}">+ mine</button>
             </div>
             ${e.forms.length ? `<div class="forms" lang="ja">also: ${escapeHtml(e.forms.join("、"))}</div>` : ""}
@@ -211,8 +227,10 @@ function render(word, { entries, inflection, kanji, grammar = [], more = [] }) {
         ${grammarHtml(grammar)}
         ${lemma ? statusButtons(lemma) : ""}${body}${moreHtml(more)}${kanjiHtml(kanji)}`;
 
-    popup.querySelectorAll(".mine").forEach((btn) => btn.addEventListener("click", () =>
+    popup.querySelectorAll(".mine:not(.more-mine)").forEach((btn) => btn.addEventListener("click", () =>
         mineEntry(entries[Number(btn.dataset.i)], btn)));
+    popup.querySelectorAll(".more-mine").forEach((btn) => btn.addEventListener("click", () =>
+        mineEntry(minable(more[Number(btn.dataset.d)].entries[Number(btn.dataset.e)]), btn)));
     // remember whether the kanji section is open
     const box = popup.querySelector(".kanji-box");
     if (box) box.addEventListener("toggle", () => store.set(KANJI_OPEN, box.open));

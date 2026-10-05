@@ -4,13 +4,14 @@ An immersion app for learning **Japanese** or **American English**, on your own 
 
 ![The grammar page: click a word in an example sentence to see its dictionary entry, the grammar it's part of, and its status](images/screenshot.png)
 
-- **Watch** videos with subtitles. Search Japanese subtitles (kitsunekko, JP-Subtitles) or English ones (OpenSubtitles), or load your own.
+- **Watch** videos with subtitles. Search Japanese subtitles (kitsunekko, JP-Subtitles) or English ones (OpenSubtitles), load your own, or use the ones **inside the video file** (.mkv), no website needed.
 - **Read** books (EPUB, text) and manga.
 - **Listen** to podcasts with transcripts.
-- **Click any word** to see its dictionary entry, kanji and pitch accent, plus any **dictionaries you add** (Yomitan format: Jitendex, monolingual dictionaries…). Hover a word and press 1–4 to mark it new / learning / known / ignored; the app colours words by how well you know them.
+- **Click any word** to see its dictionary entry, kanji and pitch accent, plus any **dictionaries you add** (Yomitan format: Jitendex, monolingual dictionaries…) and how common the word is (frequency lists like JPDB). Hover a word and press 1–4 to mark it new / learning / known / ignored; the app colours words by how well you know them.
 - Send words to **Anki** as flashcards.
-- Follow the **course**: a step-by-step path from the basics to immersion, built on the AJATT idea, with goals the app checks for you. The Japanese course is also in **Portuguese and Spanish** (Settings → Your language).
+- Follow the **course**: a step-by-step path from the basics to immersion, built on the AJATT idea, with goals the app checks for you. The Japanese course and the N5 grammar lessons are also in **Portuguese and Spanish** (Settings → Your language).
 - Study **grammar** with short lessons and quizzes (Japanese N5–N1, English A1–C1). Grammar you've studied is underlined in subtitles and texts.
+- A **welcome screen** each time you open akko: pick today's language, see today's minutes and your streak.
 - **Settings**: the language you learn, the interface language (English / 日本語), display options, stats and backup.
 
 You choose Japanese or English on the first visit, and can switch in Settings. Each language keeps its own words and progress. Lessons and the course are Markdown files you can edit or add to (see [grammar/README.md](grammar/README.md) and [course/README.md](course/README.md)).
@@ -108,7 +109,9 @@ Words can't be looked up until these lines appear.
 
 ## More dictionaries
 
-In **Settings → Dictionaries**, press **add a dictionary (.zip)** and pick a dictionary in **Yomitan format**, the same files [Yomitan](https://yomitan.wiki/) uses: for example [Jitendex](https://jitendex.org) or a monolingual Japanese dictionary (or, when learning English, an English one or one into your language). It shows in the word popup under the built-in dictionary. Add as many as you like, then turn them on or off, put them in order, or remove them in the same list. Adding a newer version of one replaces the old one. Frequency, pitch accent and kanji-only dictionaries aren't supported yet.
+In **Settings → Dictionaries**, press **add a dictionary (.zip)** and pick a dictionary in **Yomitan format**, the same files [Yomitan](https://yomitan.wiki/) uses: for example [Jitendex](https://jitendex.org) or a monolingual Japanese dictionary (or, when learning English, an English one or one into your language). It shows in the word popup under the built-in dictionary. Add as many as you like, then turn them on or off, put them in order, or remove them in the same list. Adding a newer version of one replaces the old one. **+ mine** on an entry uses that dictionary's meaning for the Anki card.
+
+**Frequency lists** (Yomitan format, e.g. JPDB or Innocent Corpus) are added the same way: each word in the popup then shows its rank (lower = more common), which tells you what's worth learning first. Pitch accent and kanji-only dictionaries aren't supported yet.
 
 **A newer built-in dictionary:** in **Settings → Dictionaries** (Japanese mode), press **download the newest**, or add a `jmdict-eng-….json.zip` (words) or `kanjidic2-en-….json.zip` (kanji) from [jmdict-simplified](https://github.com/scriptin/jmdict-simplified/releases). It's used right away, no restart, and your words and progress aren't touched. (Running from the code, this replaces `data/dict.json` / `data/kanji.json`, so git will show them as changed.)
 

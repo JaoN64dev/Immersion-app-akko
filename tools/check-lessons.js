@@ -54,13 +54,15 @@ function checkLessons(lang, find) {
 
 // grammar-en/pt, /es…: each translated lesson must match an English one, with the same examples
 function checkTranslations() {
-  const dir = path.join(ROOT, 'grammar-en');
-  for (const code of fs.readdirSync(dir, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name)) {
-    const english = grammar.lessons('en').problems.length;
-    const { items, problems } = grammar.lessons('en', code);
-    const translated = items.filter((l) => l.translated).length;
-    console.log(`\ngrammar-en/${code}: ${translated} of ${items.length} lessons translated`);
-    problems.slice(english).forEach((p) => fail(`grammar-en/${p.file}: ${p.problem}`));
+  for (const [lang, folder] of [['ja', 'grammar'], ['en', 'grammar-en']]) {
+    const dir = path.join(ROOT, folder);
+    for (const code of fs.readdirSync(dir, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name)) {
+      const main = grammar.lessons(lang).problems.length;
+      const { items, problems } = grammar.lessons(lang, code);
+      const translated = items.filter((l) => l.translated).length;
+      console.log(`\n${folder}/${code}: ${translated} of ${items.length} lessons translated`);
+      problems.slice(main).forEach((p) => fail(`${folder}/${p.file}: ${p.problem}`));
+    }
   }
 }
 

@@ -1,6 +1,8 @@
 // Dual-audio files. Browsers can't switch audio tracks, so ffmpeg.wasm copies the chosen
 // track out of the file. It plays in a hidden <audio> kept in sync with the video,
 // and the video's own sound is turned down to zero.
+// The same look at the file also finds the subtitle tracks inside it: player/file-subs.js
+// lists them, and extractSubtitle() copies one out.
 
 import { $, el } from "../core/dom.js";
 import { escapeHtml } from "../core/utils.js";
@@ -72,13 +74,14 @@ async function run(args, onProgress) {
 }
 
 // "Stream #0:1[0x2](jpn): Audio: aac (LC), 48000 Hz, stereo, fltp (default)" + following "title : ..." lines
-export function parseStreams(lines) {
+// kind: "Audio" or "Subtitle"; n counts only that kind (ffmpeg's 0:a:n / 0:s:n)
+export function parseStreams(lines, kind = "Audio") {
     const out = [];
     let cur = null;
     for (const line of lines) {
         const m = line.match(/Stream #\d+:\d+(?:\[\w+\])?(?:\((\w+)\))?: (\w+): (\w+)(.*)/);
         if (m) {
-            cur = m[2] === "Audio"
+            cur = m[2] === kind
                 ? { n: out.length, lang: m[1] || "und", codec: m[3], title: "", isDefault: /\(default\)/.test(m[4]) }
                 : null;
             if (cur) out.push(cur);
@@ -88,6 +91,30 @@ export function parseStreams(lines) {
         if (t) cur.title = t[1].trim();
     }
     return out;
+}
+
+// ---------- subtitle tracks in the file ----------
+
+// text subtitles ffmpeg can turn into .srt / keep as .ass; picture ones (PGS, DVD) can't be read as text
+const TEXT_SUBS = new Set(["subrip", "srt", "ass", "ssa", "webvtt", "mov_text", "text"]);
+export const isTextSubtitle = (t) => TEXT_SUBS.has(t.codec);
+
+const subListeners = [];
+// fn(tracks) is called when a file's subtitle tracks are known ([] when a new video starts)
+export const onSubtitleTracks = (fn) => subListeners.push(fn);
+const tellSubs = (subs) => subListeners.forEach((fn) => { try { fn(subs); } catch (err) { console.warn(err); } });
+
+// Copy subtitle track n out of the open file -> {text, ext}
+export async function extractSubtitle(n, codec) {
+    if (!file) throw new Error("no video file is open");
+    if (busy) throw new Error("still working on an audio track, try again in a moment");
+    const keepAss = codec === "ass" || codec === "ssa";
+    const out = `/sub${n}.${keepAss ? "ass" : "srt"}`;
+    const { code } = await run(["-hide_banner", "-i", `/in/${file.name}`, "-map", `0:s:${n}`, "-c:s", keepAss ? "copy" : "srt", out]);
+    if (code !== 0) throw new Error("ffmpeg couldn't read that subtitle track");
+    const data = await ffmpeg.readFile(out);
+    await ffmpeg.deleteFile(out);
+    return { text: new TextDecoder().decode(data), ext: keepAss ? "ass" : "srt" };
 }
 
 function label(t) {
@@ -107,6 +134,7 @@ export async function load(f, preferred) {
         const { lines } = await run(["-hide_banner", "-i", `/in/${f.name}`]);   // exits with an error, but prints the streams
         if (myJob !== job) return;
         tracks = parseStreams(lines);
+        tellSubs(parseStreams(lines, "Subtitle"));
     } catch (err) {
         console.warn("audio probe failed", err);
         return;
@@ -196,6 +224,7 @@ function useOriginal() {
 // A different video is being loaded: drop everything, stop any extraction
 export function reset() {
     job++;
+    tellSubs([]);
     if (busy && ffmpeg) { ffmpeg.terminate(); ffmpeg = null; busy = false; }
     if (ffmpeg && file) ffmpeg.unmount("/in").catch(() => {});
     useOriginal();

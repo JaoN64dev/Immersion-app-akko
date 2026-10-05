@@ -1,7 +1,9 @@
 // More dictionaries, next to the built-in JMdict: Yomitan-format .zip files (Jitendex, 新明解,
 // 大辞泉, English dictionaries…). Each shows in the word popup under JMdict, in your order.
+// Frequency lists (JPDB, Innocent Corpus…, Yomitan term_meta banks) add a rank badge to each
+// entry instead.
 //
-//   GET    /api/dictionaries              -> the list (title, revision, entries, language, on/off)
+//   GET    /api/dictionaries              -> the list (title, revision, entries, language, kind, on/off)
 //   POST   /api/dictionaries/:id {enabled} -> turn one on or off
 //   POST   /api/dictionaries/order {ids}   -> new order
 //   DELETE /api/dictionaries/:id          -> remove one
@@ -97,6 +99,29 @@ function entryFrom(row, format) {
   return entry;
 }
 
+// A frequency row (term_meta_bank, Yomitan): [term, "freq", data], data being 1234, "1234",
+// {value, displayValue} or {reading, frequency: any of those}. -> {e, r?, v (to sort), f (to show)}
+function freqValue(data) {
+  if (typeof data === 'number') return { v: data, f: String(data) };
+  if (typeof data === 'string') { const n = parseFloat(data); return { v: Number.isNaN(n) ? Infinity : n, f: data }; }
+  if (data && typeof data === 'object' && 'value' in data) {
+    const v = Number(data.value);
+    return { v: Number.isNaN(v) ? Infinity : v, f: String(data.displayValue ?? data.value) };
+  }
+  return null;
+}
+
+function freqFrom(row) {
+  if (!Array.isArray(row) || typeof row[0] !== 'string' || !row[0] || row[1] !== 'freq') return null;
+  const data = row[2];
+  const withReading = data && typeof data === 'object' && 'frequency' in data;
+  const value = freqValue(withReading ? data.frequency : data);
+  if (!value) return null;
+  const entry = { e: row[0], ...value };
+  if (withReading && typeof data.reading === 'string' && data.reading !== row[0]) entry.r = data.reading;
+  return entry;
+}
+
 // ---------- adding one ----------
 
 // Is this zip a Yomitan dictionary? (index.json at the top, and term_bank files)
@@ -120,11 +145,16 @@ async function importZip(buf, lang = 'ja') {
   try { info = JSON.parse(zip.getEntry('index.json').getData().toString('utf8')); } catch { info = null; }
   if (!info || typeof info.title !== 'string' || !info.title.trim()) throw new Error("this dictionary's index.json is missing or has no title");
   const format = Number(info.format || info.version || 3);
-  const banks = zip.getEntries().filter((e) => /^term_bank_\d+\.json$/.test(e.entryName))
+  const bankFiles = (re) => zip.getEntries().filter((e) => re.test(e.entryName))
     .sort((a, b) => bankNumber(a.entryName) - bankNumber(b.entryName));
+  // definitions (term banks), or else a frequency list (term_meta banks with "freq" rows)
+  let banks = bankFiles(/^term_bank_\d+\.json$/);
+  const kind = banks.length ? 'terms' : 'freq';
+  if (kind === 'freq') banks = bankFiles(/^term_meta_bank_\d+\.json$/);
   if (!banks.length) {
-    throw new Error('this dictionary has no word definitions: frequency, pitch accent and kanji dictionaries aren\'t supported yet');
+    throw new Error('this dictionary has no word definitions or frequencies: pitch accent and kanji dictionaries aren\'t supported yet');
   }
+  const convert = kind === 'terms' ? (row) => entryFrom(row, format) : freqFrom;
 
   const title = info.title.trim().slice(0, 100);
   readList();
@@ -152,12 +182,13 @@ async function importZip(buf, lang = 'ja') {
       if (!Array.isArray(rows)) continue;
       const lines = [];
       for (const row of rows) {
-        const entry = entryFrom(row, format);
+        const entry = convert(row);
         if (!entry) continue;
         const line = Buffer.from(JSON.stringify(entry) + '\n');
         lines.push(line);
         add(entry.e, offset, line.length);
-        if (entry.r) add(entry.r, offset, line.length);
+        // a frequency belongs to the word; its reading only says which reading
+        if (entry.r && kind === 'terms') add(entry.r, offset, line.length);
         offset += line.length;
         count++;
       }
@@ -172,10 +203,11 @@ async function importZip(buf, lang = 'ja') {
   fs.closeSync(out);
   if (!count) {
     fs.rmSync(tmp, { recursive: true, force: true });
-    throw new Error('no entries with definitions were found in this dictionary');
+    throw new Error(kind === 'terms' ? 'no entries with definitions were found in this dictionary'
+      : 'no frequencies were found in this dictionary (pitch accent dictionaries aren\'t supported yet)');
   }
   const dictLang = /^en/i.test(info.sourceLanguage || '') ? 'en' : /^ja/i.test(info.sourceLanguage || '') ? 'ja' : lang;
-  const meta = { id, title, revision: String(info.revision || ''), lang: dictLang, count, enabled: true, source };
+  const meta = { id, title, revision: String(info.revision || ''), lang: dictLang, kind, count, enabled: true, source };
   writeIndex(tmp, index);
   fs.writeFileSync(path.join(tmp, 'info.json'), JSON.stringify({ ...meta, author: info.author || '', url: info.url || '', attribution: info.attribution || '' }));
 
@@ -259,7 +291,7 @@ function read(o, at, len) {
 function lookup(candidates, lang) {
   const found = [];
   for (const d of readList()) {
-    if (!d.enabled || d.lang !== lang) continue;
+    if (!d.enabled || d.lang !== lang || d.kind === 'freq') continue;
     let o;
     try { o = open(d.id); } catch (err) { console.error(`dictionaries: ${d.title}:`, err.message); continue; }
     for (const q of candidates) {
@@ -280,7 +312,27 @@ function lookup(candidates, lang) {
 
 // ---------- routes ----------
 
-const shown = () => readList().map(({ id, title, revision, lang, count, enabled }) => ({ id, title, revision, lang, count, enabled }));
+// The frequency lists that are on, for each word: words = [{word, reading}] -> for each word
+// [{title, value}] (value as the list shows it, e.g. "1234" or "1234㋕"), the best one per list
+function frequencies(words, lang) {
+  const lists = readList().filter((d) => d.enabled && d.lang === lang && d.kind === 'freq');
+  if (!lists.length) return words.map(() => []);
+  return words.map(({ word, reading }) => lists.flatMap((d) => {
+    let o;
+    try { o = open(d.id); } catch { return []; }
+    const at = find(o, word);
+    if (!at) return [];
+    let best = null;
+    for (let i = 0; i < at.length; i += 2) {
+      const e = read(o, at[i], at[i + 1]);
+      if (e.r && reading && e.r !== reading) continue;
+      if (!best || e.v < best.v) best = e;
+    }
+    return best ? [{ title: d.title, value: best.f }] : [];
+  }));
+}
+
+const shown = () => readList().map(({ id, title, revision, lang, kind, count, enabled }) => ({ id, title, revision, lang, kind: kind || 'terms', count, enabled }));
 
 router.get('/', (req, res) => res.json({ dictionaries: shown() }));
 
@@ -312,4 +364,4 @@ router.delete('/:id', (req, res) => {
   res.json({ dictionaries: shown() });
 });
 
-module.exports = { router, lookup, importZip, isYomitan, contentHtml };
+module.exports = { router, lookup, frequencies, importZip, isYomitan, contentHtml };

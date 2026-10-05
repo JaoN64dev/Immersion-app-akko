@@ -3,7 +3,7 @@
 
 import { $ } from "../core/dom.js";
 import { getJson, postJson } from "../core/utils.js";
-import { target, setTarget, nativeLang, setNative, NATIVE_LANGUAGES } from "../core/target.js";
+import { target, setTarget, nativeLang, setNative, NATIVE_LANGUAGES, welcomeOn, setWelcome } from "../core/target.js";
 import { lang, setLang, t } from "../i18n.js";
 import { bindWordDisplay } from "../words/display.js";
 import * as backup from "../backup.js";
@@ -118,7 +118,9 @@ function showList(all) {
             <button class="down" title="move down"${i < added.length - 1 ? "" : " disabled"}>↓</button>
             <button class="remove" title="remove">✕</button>`;
         li.querySelector("b").textContent = d.title;
-        li.querySelector("small").textContent = `${d.revision ? d.revision + " · " : ""}${num(d.count)} entries`;
+        li.querySelector("small").textContent = d.kind === "freq"
+            ? `frequency list · ${num(d.count)} words`
+            : `${d.revision ? d.revision + " · " : ""}${num(d.count)} entries`;
         li.querySelector("input").addEventListener("change", (e) => changeList(postJson(`/api/dictionaries/${encodeURIComponent(d.id)}`, { enabled: e.target.checked })));
         li.querySelector(".up").addEventListener("click", () => move(i, -1));
         li.querySelector(".down").addEventListener("click", () => move(i, 1));
@@ -195,6 +197,11 @@ dict.update.addEventListener("click", () => {
 setButtons(false);
 refreshDictionary();
 refreshList();
+
+// the welcome screen each time akko opens (scripts/site.js)
+const welcomeBox = $("#welcome-on");
+welcomeBox.checked = welcomeOn();
+welcomeBox.addEventListener("change", () => setWelcome(welcomeBox.checked));
 
 bindWordDisplay($("#furigana-mode"), $("#color-words"));
 backup.init();

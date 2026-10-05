@@ -22,7 +22,7 @@ akko is two programs that run on your own computer:
 
 Start the server with `npm start` (or `start-akko.bat` on Windows, which also opens the browser). It listens on `http://127.0.0.1:3000`, only reachable from your own computer. Websites open in your browser can still send requests to it, so `server/guard.js` answers only at 127.0.0.1 / localhost (against DNS rebinding) and refuses POST/PUT/DELETE whose `Origin` is another site (tested in `tests/guard.test.js`).
 
-The **desktop app** (`electron/main.js`, built with `npm run dist`) is the same thing in a window. It sets `AKKO_DATA` to a folder in the user profile, copies the bundled dictionary files there on the first start, calls `start(3417)` from `server.js`, and opens a window on that address. The port never changes, because the window's storage (words, books…) belongs to the address. Links to other sites open in the normal browser. On each start it asks (a native dialog, before the server starts) whether to open the **app window** or the **browser**, unless `--browser` / `--window` is given or a choice was remembered (`desktop.json` in the user profile; the akko menu → When akko starts). In **browser mode** no window opens: the app shows a tray icon, keeps the server running and opens the address in the default browser. `npm run desktop` runs it from the code (through `electron/run.js`, which removes `ELECTRON_RUN_AS_NODE`: VS Code terminals set it, and it stops Electron from opening a window).
+The **desktop app** (`electron/main.js`, built with `npm run dist`) is the same thing in a window. It sets `AKKO_DATA` to a folder in the user profile, copies the bundled dictionary files there on the first start, calls `start(3417)` from `server.js`, and opens a window on that address. The port never changes, because the window's storage (words, books…) belongs to the address. Links to other sites open in the normal browser, unless the link says `target="akko-window"`: then the site opens in a new window inside akko (sandboxed like a browser tab, and free to browse); `target="_blank"` on an akko page opens a new akko window. These rules apply to every window (`web-contents-created` in `electron/main.js`). New windows that a site opened this way asks for (ads, pop-ups) stay inside akko too, so they never reach the normal browser. Once a day, and from Help → Check for updates, the app asks GitHub for the newest release and offers to open its download page (`checkForUpdate`; nothing is installed automatically; `AKKO_UPDATE_URL` points it elsewhere for testing). On each start it asks (a native dialog, before the server starts) whether to open the **app window** or the **browser**, unless `--browser` / `--window` is given or a choice was remembered (`desktop.json` in the user profile; the akko menu → When akko starts). In **browser mode** no window opens: the app shows a tray icon, keeps the server running and opens the address in the default browser. `npm run desktop` runs it from the code (through `electron/run.js`, which removes `ELECTRON_RUN_AS_NODE`: VS Code terminals set it, and it stops Electron from opening a window).
 
 ## Folders
 
@@ -129,6 +129,8 @@ The matches come back as token ranges. The tokenizer maps them onto the words it
 
 JMdict and KANJIDIC2 can be replaced while the app runs, from **Settings → Dictionary**: `POST /api/dictionary/upload` (the file as the body: a jmdict-simplified `jmdict-eng-….json.zip` or `kanjidic2-en-….json.zip`, or the `.json` inside) or `POST /api/dictionary/update` (downloads the newest of both from jmdict-simplified's GitHub releases). The file is checked, squeezed like on the first start, written next to the old one and renamed over it, then swapped in memory (`useDict`); English mode's reverse index (`buildVocab`) rebuilds because it remembers which dictionary it was built from. `GET /api/dictionary` says what's installed. Tested in `tests/dictionary-install.test.js`.
 
+**Frequency lists** are Yomitan zips with `term_meta_bank` files and no `term_bank`: stored the same way (one line per word: value to sort `v`, value to show `f`, reading `r`), listed with `kind: "freq"`; `/api/dict` adds `freq: [{title, value}]` to each entry (`frequencies()`), shown as badges in the popup. An added dictionary's entry can be mined: the popup turns its glossary into plain text (`minable()` in `scripts/popup.js`).
+
 **Dictionaries you add** (`server/dictionaries.js`): Yomitan-format zips go through the same upload route, which recognizes them (`index.json` + `term_bank_*.json`) and calls `importZip`. Each one is stored in `<data>/dictionaries/<id>/`: `terms.jsonl` (one entry per line, its meanings already turned into safe HTML: only plain formatting tags, no attributes except `yd-*` classes from Yomitan's `data` names and `lang`; no links, images, scripts or styles), `keys.txt` (every word and reading, sorted) and `index.bin` (where each key's lines are). A lookup halves the sorted keys to find the word and reads only those lines, so Jitendex (440,000 entries, 230 MB on disk) costs about 35 MB of memory and a lookup takes a few milliseconds. `/api/dict` adds them as `more: [{title, entries}]`, for each dictionary that's on, in the order of `list.json`, only for the language you're learning; the popup shows them under JMdict (`moreHtml` in `scripts/popup.js`). A newer version replaces the old one when its `indexUrl` (or else its title) matches. Tested in `tests/yomitan.test.js`.
 
 **English** (`server/english.js` → `entryFor`):
@@ -161,6 +163,14 @@ JMdict and KANJIDIC2 can be replaced while the app runs, from **Settings → Dic
 
 `reader/text.js` puts the whole book in the page as plain paragraphs. An `IntersectionObserver` turns only the paragraphs on or near the screen into clickable words, and turns them back into plain text when they're far away. The whole book is still split into words in the background (in batches of 150 paragraphs) so the "% understood" covers all of it. That % is recalculated at most twice a second. The reading position and % live in the small `akko-reading` record, so scrolling never rewrites the book in IndexedDB.
 
+## Subtitles inside the video file
+
+`scripts/player/file-subs.js`: when a local video is opened, `player/dual-audio.js` already asks ffmpeg.wasm for the file's streams; the subtitle ones are passed on (`onSubtitleTracks`). Text formats (srt, ass, vtt…) are listed in a bar on the Watch page; picture formats (PGS, DVD) can't be read as text and are left out. `extractSubtitle()` copies one track out (ass kept as ass, the rest turned into srt) and it's loaded like a subtitle file, as the main or 2nd subtitles. If no subtitles are loaded yet, a track in the language you're learning is used right away (skipping "Signs & Songs" tracks).
+
+## The welcome screen and "today"
+
+`scripts/site.js` shows the welcome screen once each time akko is opened (`sessionStorage`, and not when the page was opened from another akko page), unless it's turned off (`welcome: false` in akko-settings). `scripts/core/today.js` counts time per day: every 15 seconds, 15 seconds are added if a video or audio is playing, or the Read page is in front and was used in the last minute. Saved as `akko-days` / `akko-days-en`; the streak counts days with at least a minute.
+
 ## Where things are saved
 
 **In the browser** (per site, lost if you clear site data, hence the backup):
@@ -174,6 +184,7 @@ JMdict and KANJIDIC2 can be replaced while the app runs, from **Settings → Dic
 | `akko-podcasts` / `-en`, `akko-podcast-progress` / `-en` | saved podcasts, episode positions |
 | `akko-grammar` / `-en`, `akko-course` / `-en`, `akko-review` / `-en` | lessons learned, course steps done, review dates |
 | `akko-manga` | manga positions |
+| `akko-days` / `-en` | seconds with the language per day (welcome screen: today, streak) |
 | IndexedDB `akko` → `texts`, `mined` | books (whole), mined words |
 
 `scripts/backup.js` downloads every `akko-*` key and both IndexedDB stores as one JSON file, and restores it.

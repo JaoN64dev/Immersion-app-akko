@@ -140,11 +140,38 @@ test('a newer version with a dated title (like Jitendex) replaces the old one, m
   assert.deepEqual(dated.map((d) => d.title), ['Dated [2026-10-01]']);
 });
 
-test('frequency, pitch and kanji-only dictionaries are refused with a reason', async () => {
-  const freq = zipOf({ 'index.json': { title: 'Freq', revision: '1', format: 3 }, 'term_meta_bank_1.json': [['猫', 'freq', 100]] });
+test('a frequency list adds a rank to each entry (all of Yomitan\'s value formats)', async () => {
+  const freq = zipOf({
+    'index.json': { title: 'JPDB v2 Frequency', revision: '1', format: 3 },
+    'term_meta_bank_1.json': [
+      ['猫', 'freq', { reading: 'ねこ', frequency: { value: 1500, displayValue: '1500㋕' } }],
+      ['猫', 'freq', { reading: 'ねこま', frequency: 90000 }],
+      ['犬', 'freq', 2000],
+      ['鳥', 'freq', '3000'],
+      ['鳥', 'pitch', { reading: 'とり', pitches: [{ position: 0 }] }],       // not a frequency: skipped
+    ],
+  });
   const { status, body } = await upload(freq);
+  assert.equal(status, 200);
+  assert.equal(body.installed[0].count, 4);
+  assert.equal((await list()).find((d) => d.title === 'JPDB v2 Frequency').kind, 'freq');
+
+  const r = await popup('猫');
+  assert.deepEqual(r.entries[0].freq, [{ title: 'JPDB v2 Frequency', value: '1500㋕' }], 'the rank for its reading (ねこ), as the list shows it');
+  assert.ok(!r.more.some((d) => d.title === 'JPDB v2 Frequency'), 'a frequency list is not a definitions block');
+
+  const { frequencies } = dictionaries;
+  assert.deepEqual(frequencies([{ word: '犬', reading: 'いぬ' }, { word: '鳥', reading: 'とり' }, { word: '魚', reading: 'さかな' }], 'ja'),
+    [[{ title: 'JPDB v2 Frequency', value: '2000' }], [{ title: 'JPDB v2 Frequency', value: '3000' }], []]);
+});
+
+test('pitch accent and kanji-only dictionaries are refused with a reason', async () => {
+  const pitch = zipOf({ 'index.json': { title: 'Pitch', revision: '1', format: 3 }, 'term_meta_bank_1.json': [['猫', 'pitch', { reading: 'ねこ', pitches: [{ position: 1 }] }]] });
+  const { status, body } = await upload(pitch);
   assert.equal(status, 400);
-  assert.match(body.error, /no word definitions/);
+  assert.match(body.error, /no frequencies|pitch accent/);
+  const kanji = zipOf({ 'index.json': { title: 'Kanji', revision: '1', format: 3 }, 'kanji_bank_1.json': [['猫', 'ビョウ', 'ねこ', '', ['cat'], {}]] });
+  assert.match((await upload(kanji)).body.error, /no word definitions or frequencies/);
   const noTitle = zipOf({ 'index.json': { revision: '1' }, 'term_bank_1.json': [] });
   assert.match((await upload(noTitle)).body.error, /no title/);
 });

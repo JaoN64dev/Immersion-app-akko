@@ -574,7 +574,10 @@ router.get('/dict', asyncRoute(async (req, res) => {
   // more: entries from the dictionaries you added (Settings → Dictionaries), under JMdict's
   const withMore = (result, lang) => {
     const words = [...new Set([...qs, ...(result.entries || []).slice(0, 2).map((e) => e.word)])];
-    return { ...result, more: dictionaries.lookup(lang === 'en' ? words.map((w) => w.toLowerCase()).concat(words) : words, lang) };
+    // and each entry's rank in the frequency lists you added
+    const entries = result.entries || [];
+    const freq = dictionaries.frequencies(entries.map((e) => ({ word: lang === 'en' ? e.word.toLowerCase() : e.word, reading: lang === 'en' ? '' : e.reading })), lang);
+    return { ...result, entries: entries.map((e, i) => (freq[i].length ? { ...e, freq: freq[i] } : e)), more: dictionaries.lookup(lang === 'en' ? words.map((w) => w.toLowerCase()).concat(words) : words, lang) };
   };
   if (req.query.lang === 'en') {
     if (!ready.dict) return res.status(503).json({ error: ready.error || 'dictionary still loading' });

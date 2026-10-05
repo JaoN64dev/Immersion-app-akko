@@ -1,5 +1,5 @@
 // The language you're learning: "ja" (Japanese) or "en" (American English).
-// Saved in "akko-settings" as target; chosen on the first visit (scripts/site.js) and in Settings.
+// Saved in "akko-settings" as target; chosen on the welcome screen (scripts/site.js) and in Settings.
 //
 // Each language keeps its own known words, lessons, course and progress. Japanese keeps the
 // original storage names (so nothing saved before changes); English adds "-en" to them.
@@ -26,6 +26,12 @@ export const ofTarget = (rec) => (rec.lang || "ja") === target();
 
 export function setTarget(lang) {
     store.set(SETTINGS, { ...store.get(SETTINGS, {}), target: lang });
+}
+
+// the welcome screen each time akko opens (scripts/site.js): on unless turned off
+export const welcomeOn = () => store.get(SETTINGS, {}).welcome !== false;
+export function setWelcome(on) {
+    store.set(SETTINGS, { ...store.get(SETTINGS, {}), welcome: !!on });
 }
 
 // ---------- your own language (translations of English words) ----------

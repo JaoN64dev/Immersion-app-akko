@@ -193,21 +193,22 @@ function matchAt(rule, tokens, i, matches) {
 
 const router = express.Router();
 
-// ---------- translations of the English lessons ----------
+// ---------- translations of the lessons ----------
 //
-// grammar-en/pt/<lesson>.md (any language code) gives a lesson's title, meaning, explanation and
-// the translations of its examples ("- English sentence = tradução") in that language, and can
-// replace its quiz. Level, order, detect rules and the English examples stay in the English file.
+// grammar-en/pt/<lesson>.md or grammar/pt/<lesson>.md (any language code) gives a lesson's title,
+// meaning, explanation and the translations of its examples ("- example sentence = tradução") in
+// that language, and can replace its quiz. Level, order, detect rules and the example sentences
+// themselves stay in the main file.
 
 const translations = {};
 function translated(lang, native) {
-  if (lang !== 'en' || !/^[a-z]{2,3}$/.test(native || '')) return null;
-  const dir = `${DIRS.en}/${native}`;
+  if (!/^[a-z]{2,3}$/.test(native || '')) return null;
+  const dir = `${DIRS[lang]}/${native}`;
   translations[dir] ||= folder(path.join(__dirname, '..', dir), dir, (files) => {
     const items = [];
     const problems = [];
     for (const { file, id, text } of files) {
-      const t = parseLesson(id, text, 'en');
+      const t = parseLesson(id, text, lang);
       t.problems.forEach((p) => problems.push({ file, problem: p }));
       items.push(t);
     }

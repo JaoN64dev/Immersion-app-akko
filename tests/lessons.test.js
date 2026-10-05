@@ -64,6 +64,23 @@ test('the course: one per language, translated steps keep the English goals', ()
   assert.deepEqual(words(es).goals.map((g) => [g.kind, g.target]), words(en).goals.map((g) => [g.kind, g.target]));
 });
 
+test('the N5 grammar lessons come in Portuguese and Spanish: examples kept, quiz answers unchanged', () => {
+  const ja = grammar.lessons('ja').items;
+  for (const native of ['pt', 'es']) {
+    const { items } = grammar.lessons('ja', native);
+    for (const l of items.filter((x) => x.level === 'N5')) {
+      const orig = ja.find((x) => x.id === l.id);
+      assert.equal(l.translated, true, `${native}/${l.id}`);
+      assert.notEqual(l.meaning, orig.meaning, `${native}/${l.id}: meaning translated`);
+      assert.deepEqual(l.examples.map((e) => e.ja), orig.examples.map((e) => e.ja), `${native}/${l.id}: same Japanese examples`);
+      l.examples.forEach((e, i) => assert.notEqual(e.en, orig.examples[i].en, `${native}/${l.id}: example ${i + 1} translated`));
+      assert.deepEqual(l.quiz.map((q) => q.answers), orig.quiz.map((q) => q.answers), `${native}/${l.id}: same quiz answers`);
+    }
+    // other levels stay in English for now
+    assert.equal(items.find((x) => x.id === 'zaru-wo-enai').translated, undefined);
+  }
+});
+
 test('the Japanese course comes in Portuguese and Spanish, with every step and goal label translated', () => {
   const ja = call(course.router, '/', { lang: 'ja' }).body.steps;
   for (const native of ['pt', 'es']) {

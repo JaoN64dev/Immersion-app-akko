@@ -117,9 +117,9 @@ Problems in a lesson file (a rule it can't read, a `see:` that points nowhere…
 
 For example `have|has|'ve + [pp]` finds the present perfect, and `~be + going + to + [base]` finds "be going to".
 
-### Translating the English lessons
+### Translating lessons
 
-People learning English read the lessons in their own language (Settings → "Your language"). Each translation is a folder inside `grammar-en/` named with that language's code (`pt`, `es`, `ja`, `fr`, `de`, `cmn`…), with one file per lesson, named like the English one:
+Lessons can be read in the learner's own language (Settings → "Your language"). Each translation is a folder inside `grammar-en/` (English lessons) or `grammar/` (Japanese lessons) named with that language's code (`pt`, `es`, `ja`, `fr`, `de`, `cmn`…), with one file per lesson, named like the English one:
 
 ```markdown
 ---
@@ -134,10 +134,10 @@ The explanation, in that language.
 - I've already seen this movie. = Já vi este filme.
 ```
 
-- Each example line repeats the **English sentence exactly** as in the English file, then ` = ` and its translation.
+- Each example line repeats the **example sentence exactly** as in the main file (English or Japanese), then ` = ` and its translation.
 - The title, meaning and explanation replace the English ones. A `## Quiz` section, if there is one, replaces the quiz.
 - Level, order, detect rules and the English examples stay in the English file, so they're set in one place.
 - A lesson that isn't translated shows in English.
 - `npm run check-lessons` reports translated examples that don't match the English file.
 
-Portuguese (`pt`), Spanish (`es`) and Japanese (`ja`) are included.
+Included: the English lessons in Portuguese (`pt`), Spanish (`es`) and Japanese (`ja`); the Japanese **N5** lessons in Portuguese and Spanish (`grammar/pt`, `grammar/es`). A `## Quiz` in a translation must keep the same answers, in the same order; only the questions change.

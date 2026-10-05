@@ -96,6 +96,23 @@ test('English sentences: abbreviations and initials do not end them', () => {
     }
 });
 
+const today = await import('../scripts/core/today.js');
+
+test("today's minutes and the streak, per language", () => {
+    const at = (day, h = 12) => new Date(`2026-10-${day}T${String(h).padStart(2, '0')}:00:00`);
+    today.addSeconds('ja', 600, at('01'));
+    today.addSeconds('ja', 30, at('02'));            // under a minute: doesn't count for the streak
+    today.addSeconds('ja', 120, at('03'));
+    today.addSeconds('ja', 300, at('04'));
+    today.addSeconds('ja', 60, at('04', 20));
+    assert.equal(today.secondsOn('ja', '2026-10-04'), 360);
+    assert.equal(today.streak('ja', at('04')), 2, '3rd and 4th');
+    assert.equal(today.streak('ja', at('05')), 2, 'nothing yet on the 5th: the streak is still alive');
+    assert.equal(today.streak('ja', at('06')), 0, 'a day missed');
+    assert.equal(today.streak('en', at('04')), 0, 'English keeps its own');
+    assert.equal(today.dayOf(at('04', 23)), '2026-10-04', 'local date, not UTC');
+});
+
 const { markdown } = await import('../scripts/grammar/markdown.js');
 
 test('lesson Markdown: headings, lists, tables, notes, inline styles', () => {

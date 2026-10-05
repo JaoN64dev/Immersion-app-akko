@@ -1372,7 +1372,7 @@ main .step-done.on {background: var(--extra4); border-color: #2e7d32; color: #1b
 /* things that only work for one language */
 body.target-en .ja-only, body:not(.target-en) .en-only {display: none !important;}
 
-/* first visit: what do you want to learn? */
+/* welcome screen (each time akko opens): welcome + what do you want to learn? */
 .target-chooser {position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 16px; background: #00000099;}
 .target-card {width: min(640px, 100%); background: var(--post-bg); color: #333; border-radius: 16px; padding: 1.4em 1.6em; box-shadow: 4px 4px 16px var(--border-shadow); outline: 2px dashed var(--border-color); outline-offset: -.6em;}
 .target-card h2 {margin: 0 0 .8em; text-align: center; color: var(--dark-link-color); line-height: 1.4;}
@@ -1388,6 +1388,12 @@ body.target-en .ja-only, body:not(.target-en) .en-only {display: none !important
 .target-options span {font-weight: bold;}
 .target-options small {color: var(--visited-link-color); text-align: center;}
 .target-later {margin: 1em 0 0; text-align: center; font-size: .85em; color: var(--visited-link-color);}
+.welcome-text {margin: -.3em 0 1em; text-align: center;}
+.welcome-ask {margin: 0 0 .6em; text-align: center; font-weight: bold;}
+.welcome-today {margin: -.4em 0 1em; text-align: center; font-weight: bold; color: var(--dark-link-color);}
+.target-options button.current {border-color: var(--highlight); box-shadow: 0 0 0 3px var(--extra3);}
+.target-options em {font-style: normal; font-size: .8em; font-weight: bold; color: var(--dark-link-color); background: var(--extra3); border-radius: 1em; padding: 0 .6em;}
+.welcome-again {display: block; margin: .8em 0 0; text-align: center; font-size: .8em; color: var(--visited-link-color); cursor: pointer;}
 
 /* settings page */
 .settings-note {color: #333; font-size: .95em; padding: .8em 1.4em; margin-bottom: 1em;}
