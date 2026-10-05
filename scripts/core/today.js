@@ -1,7 +1,7 @@
 // Time with the language, day by day: for "today" and the streak on the welcome screen.
 // Loaded on every page (scripts/site.js). Every 15 seconds it counts 15 seconds if you're
-// watching or listening (a video or audio is playing), or reading (on the Read page, with the
-// page in front and the mouse, keyboard or scrolling used in the last minute).
+// watching or listening (a video or audio is playing), or reading or reviewing (on the Read or
+// Review page, with the page in front and the mouse, keyboard or scrolling used in the last minute).
 //
 // Saved per language you learn: "akko-days" (Japanese) / "akko-days-en": {"2026-10-05": seconds}.
 
@@ -9,7 +9,7 @@ import { store } from "./utils.js";
 import { target } from "./target.js";
 
 const TICK = 15;                       // seconds
-const IDLE = 60e3;                     // reading counts while you did something in the last minute
+const IDLE = 60e3;                     // reading and reviewing count while you did something in the last minute
 const KEEP_DAYS = 400;
 export const STREAK_MIN = 60;          // a day counts for the streak after a minute
 
@@ -51,7 +51,8 @@ export function addSeconds(lang, seconds, now = new Date()) {
 
 let lastAction = 0;
 const playing = () => [...document.querySelectorAll("video, audio")].some((m) => !m.paused && !m.ended && m.readyState > 2);
-const reading = () => location.pathname === "/reading.html" && document.visibilityState === "visible"
+const ACTIVE_PAGES = ["/reading.html", "/review.html"];
+const studying = () => ACTIVE_PAGES.includes(location.pathname) && document.visibilityState === "visible"
     && Date.now() - lastAction < IDLE;
 
 export function start() {
@@ -60,6 +61,6 @@ export function start() {
         addEventListener(type, () => { lastAction = Date.now(); }, { passive: true, capture: true });
     }
     setInterval(() => {
-        if (playing() || reading()) addSeconds(target(), TICK);
+        if (playing() || studying()) addSeconds(target(), TICK);
     }, TICK * 1000);
 }

@@ -57,7 +57,7 @@ export default {
         "previous / next lesson": "前 / 次のレッスン",
 
         // ---------- watch: search + subtitles ----------
-        "| (CHECK THE KEYS SECTION BEFORE USING )": "| (使う前に「キー」の説明を見てね)",
+        "| see Keys before you start": "| 使う前に「キー」を見てね",
         "continue watching": "前回の続き",
         "Add subtitles": "字幕を追加",
         "探す search": "探す",

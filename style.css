@@ -1316,7 +1316,7 @@ main .quiz-typed input {font: inherit; font-size: 1.05em; padding: .2em .6em; bo
 .lesson-nav a:hover {text-decoration: underline;}
 
 @container (max-width: 700px) {
-  .grammar-layout {grid-template-columns: 1fr;}
+  .grammar-layout {grid-template-columns: minmax(0, 1fr);}
   .grammar-side {position: static; max-height: none;}
   .grammar-list {max-height: 40vh;}
 }
@@ -1362,7 +1362,7 @@ main .step-done.on {background: var(--extra4); border-color: #2e7d32; color: #1b
 
 @container (max-width: 560px) {
   .course-step summary {flex-wrap: wrap;}
-  main .step-when {max-width: none;}
+  main .step-when {max-width: 100%; white-space: normal;}
 }
 
 /* =========================================================

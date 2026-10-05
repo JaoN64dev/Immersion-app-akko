@@ -169,7 +169,7 @@ JMdict and KANJIDIC2 can be replaced while the app runs, from **Settings → Dic
 
 ## The welcome screen and "today"
 
-`scripts/site.js` shows the welcome screen once each time akko is opened (`sessionStorage`, and not when the page was opened from another akko page), unless it's turned off (`welcome: false` in akko-settings). `scripts/core/today.js` counts time per day: every 15 seconds, 15 seconds are added if a video or audio is playing, or the Read page is in front and was used in the last minute. Saved as `akko-days` / `akko-days-en`; the streak counts days with at least a minute.
+`scripts/site.js` shows the welcome screen once each time akko is opened (`sessionStorage`, and not when the page was opened from another akko page), unless it's turned off (`welcome: false` in akko-settings). `scripts/core/today.js` counts time per day: every 15 seconds, 15 seconds are added if a video or audio is playing, or the Read or Review page is in front and was used in the last minute. Saved as `akko-days` / `akko-days-en`; the streak counts days with at least a minute.
 
 ## Where things are saved
 
