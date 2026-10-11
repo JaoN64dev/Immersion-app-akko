@@ -11,6 +11,8 @@ import { watchHover } from "../words/hover.js";
 import { markdown } from "../grammar/markdown.js";
 import { loadLessons, loadLesson, allProgress, lessonProgress, saveProgress } from "../grammar/lessons.js";
 import { keyFor, target } from "../core/target.js";
+import { saySentence } from "../core/say.js";
+import { toast } from "../core/toast.js";
 
 const VIEW = keyFor("akko-grammar-view");      // {level, hideTranslations, last}
 
@@ -111,7 +113,7 @@ function renderLesson(l) {
         ${l.examples.length ? `
         <h3 class="lesson-heading">${target() === "en" ? "Examples" : "例文 <small>examples</small>"}</h3>
         <ol class="lesson-examples">${l.examples.map((e, i) => `
-            <li><span class="ex-ja" lang="${target()}" data-i="${i}">${plainHtml(e.ja)}</span>${e.en ? `<span class="ex-en" translate="no">${escapeHtml(e.en)}</span>` : ""}</li>`).join("")}
+            <li>${target() === "ja" ? `<button type="button" class="ex-say" data-i="${i}" title="hear it" aria-label="hear it">▶</button>` : ""}<span class="ex-ja" lang="${target()}" data-i="${i}">${plainHtml(e.ja)}</span>${e.en ? `<span class="ex-en" translate="no">${escapeHtml(e.en)}</span>` : ""}</li>`).join("")}
         </ol>
         ${l.rules.length ? `<p class="lesson-detect" id="lesson-detect" title="${escapeHtml("detect: " + l.rules.join("\ndetect: "))}">checking the detect rules…</p>` : ""}` : ""}
 
@@ -132,6 +134,8 @@ function renderLesson(l) {
         renderLesson(l);
         renderList();
     });
+    ui.lesson.querySelectorAll(".ex-say").forEach((b) => b.addEventListener("click", () =>
+        saySentence(l.examples[Number(b.dataset.i)].ja).catch((err) => toast(err.message, true))));
     if (l.quiz.length) renderQuiz(l);
     if (l.examples.length) tokenizeExamples(l, job);
 }

@@ -16,9 +16,24 @@
               /images/header.png 800w
             " src="/images/header.png">
         -->
-        <marquee class="en-only" style="margin-bottom:1em;" scrollamount="4">SITE BY: AKKO • a little every day • SITE BY: AKKO • it's okay not to understand everything • SITE BY: AKKO • just keep listening • SITE BY: AKKO • i might be narcisist</marquee>
-        <marquee class="ja-only" style="margin-bottom:1em;" scrollamount="4">SITE BY: AKKO ・ 毎日見る ・ SITE BY: AKKO ・ 字幕は日本語で ・ SITE BY: AKKO ・ 分からなくても大丈夫 ・ SITE BY: AKKO ・  SITE BY: AKKO ・  SITE BY: AKKO ・ SITE BY: AKKO ・i might be narcisist</marquee>
+        <marquee class="en-only" scrollamount="2">SITE BY: AKKO • a little every day • SITE BY: AKKO • it's okay not to understand everything • SITE BY: AKKO • just keep listening • SITE BY: AKKO • i might be narcisist</marquee>
+        <marquee class="ja-only" scrollamount="2">SITE BY: AKKO ・ 毎日見る ・ SITE BY: AKKO ・ 字幕は日本語で ・ SITE BY: AKKO ・ 分からなくても大丈夫 ・ SITE BY: AKKO ・  SITE BY: AKKO ・  SITE BY: AKKO ・ SITE BY: AKKO ・i might be narcisist</marquee>
     </header>
+    <nav class="topbar" aria-label="pages">
+        <button type="button" class="menu-btn" aria-expanded="false" aria-controls="sidebar" aria-label="this page's menu">&#9776;</button>
+        <a class="brand" href="/" translate="no">akko</a>
+        <div class="topbar-tabs">
+            <a class="tab" href="/course.html"><span class="ja-only">道 </span><small translate="no">course</small></a>
+            <a class="tab" href="/" aria-current="page"><span class="ja-only">観る </span><small translate="no">watch</small></a>
+            <a class="tab" href="/reading.html"><span class="ja-only">読む </span><small translate="no">read</small></a>
+            <a class="tab" href="/podcasts.html"><span class="ja-only">聴く </span><small translate="no">listen</small></a>
+            <a class="tab ja-only" href="/listening.html"><span class="ja-only">聴解 </span><small translate="no">drills</small></a>
+            <a class="tab" href="/grammar.html"><span class="ja-only">文法 </span><small translate="no">grammar</small></a>
+            <a class="tab" href="/review.html"><span class="ja-only">復習 </span><small translate="no">review</small></a>
+            <a class="tab" href="/settings.html"><span class="ja-only">設定 </span><small translate="no">settings</small></a>
+            <a class="tab" href="/about.html"><span class="ja-only">私 </span><small translate="no">about</small></a>
+        </div>
+    </nav>
     <div id="container">
         <div class="flex">
         <aside id="sidebar">
@@ -26,18 +41,6 @@
             <div id="bio" class="note ja-only" data-i18n="watch-bio">Welcome! Get video files from <a href="https://nyaa.si" target="akko-window">nyaa.si</a>…</div>
             <div class="side-sticky">
             <nav id="navi">
-            <details open=""><summary>Pages</summary>
-            <ul>
-                <li><a href="/course.html">course</a></li>
-                <li><a href="/" aria-current="page">watch</a></li>
-                <li><a href="/reading.html">read</a></li>
-                <li><a href="/podcasts.html">listen</a></li>
-                <li><a href="/grammar.html">grammar</a></li>
-                <li><a href="/review.html">review</a></li>
-                <li><a href="/settings.html">settings</a></li>
-                <li><a href="/about.html">about</a></li>
-            </ul>
-            </details>
             <details open=""><summary>Watch</summary>
             <ul>
                 <li><a href="#search-section">search</a></li>
@@ -47,6 +50,7 @@
             </details>
             <details><summary>Keys</summary>
             <ul class="keys">
+                <li><kbd>?</kbd> all the keys of this page</li>
                 <li><kbd>space</kbd> play / pause</li>
                 <li><kbd>A</kbd> previous line</li>
                 <li><kbd>S</kbd> replay line</li>
@@ -54,6 +58,9 @@
                 <li><kbd>H</kbd> hide subs</li>
                 <li><kbd>T</kbd> 2nd subs: when paused / always / off</li>
                 <li><kbd>F</kbd> full screen</li>
+                <li><kbd>K</kbd> skip the intro (or jump 85 s)</li>
+                <li><kbd>I</kbd> mark where the intro starts / ends</li>
+                <li><kbd>N</kbd> next episode (open several files at once, or drag them in)</li>
                 <li><kbd>[</kbd> <kbd>]</kbd> sub delay</li>
                 <li><kbd>1</kbd>–<kbd>4</kbd> new / learning / known / ignore the word under the mouse</li>
             </ul>
@@ -65,9 +72,6 @@
         </aside>
         <main>
         <div id="content">
-            <nav class="tabs" aria-label="pages">
-       
-            </nav>
 
             <!-- SEARCH -->
 
@@ -153,7 +157,7 @@
 
                 <div class="bubble source-bar">
                     <label class="btn">video file
-                        <input id="video-file" type="file" accept="video/*,.mkv" hidden>
+                        <input id="video-file" type="file" accept="video/*,.mkv" multiple hidden>
                     </label>
                     <form id="url-form" class="url-form">
                         <input id="video-url" type="url" placeholder="or paste a direct video link (.mp4 / .webm / .m3u8)">
@@ -187,6 +191,12 @@
                     <button id="sub2-remove" title="remove the 2nd subs">✕</button>
                 </div>
                 <p id="now-playing" class="status"></p>
+                <div id="playlist-bar" class="playlist-bar bubble" hidden>
+                    <button id="playlist-prev" type="button" title="previous episode">⏮</button>
+                    <select id="playlist-list" aria-label="episodes"></select>
+                    <button id="playlist-next" type="button" title="next episode (N)">next ⏭</button>
+                    <label title="when an episode ends, play the next one"><input id="playlist-auto" type="checkbox"> play the next one by itself</label>
+                </div>
                 <p id="resume-note" class="status resume-note" hidden></p>
 
                 <div class="player-layout">
@@ -208,7 +218,7 @@
                                 <button id="transcript-toggle" class="transcript-toggle" aria-pressed="true" title="show / hide the transcript next to the video">transcript</button>
                             </div>
                             <details class="player-settings" data-remember="akko-player-settings-open">
-                                <summary title="subtitle look, timing, furigana and pausing"><span class="ja-only">字幕 </span><span class="en-only">subtitle </span>settings</summary>
+                                <summary title="subtitle look, timing, furigana, pausing and skipping openings"><span class="ja-only">字幕 </span><span class="en-only">subtitle </span>settings</summary>
                                 <div class="player-settings-body">
                                     <div class="settings-group">
                                         <span class="settings-label">subtitles</span>
@@ -236,7 +246,9 @@
                                         <span class="settings-label">behaviour</span>
                                         <label title="pause at the end of every line"><input id="auto-pause" type="checkbox"> auto-pause</label>
                                         <label title="pause while the mouse is on a subtitle line"><input id="hover-pause" type="checkbox" checked> pause on hover</label>
+                                        <label title="skip anime openings and endings without asking, when their exact times are known (AniSkip)"><input id="auto-skip" type="checkbox"> skip openings by itself</label>
                                     </div>
+                                    <p id="skip-status" class="skip-status"></p>
                                 </div>
                             </details>
                         </div>
@@ -280,6 +292,7 @@
                         <label class="check"><input id="anki-auto" type="checkbox"> send to Anki when I mine a word</label>
                         <label class="check"><input id="anki-audio" type="checkbox" checked> record the line's audio (replays the line once)</label>
                         <label class="check"><input id="anki-word-audio" type="checkbox" checked> add the word's pronunciation (JapanesePod101 / Lingua Libre)</label>
+                        <label class="check ja-only"><input id="anki-spoken" type="checkbox" checked> no recording (mined from a book or lesson): the sentence said by a voice (VOICEVOX / your computer's)</label>
                         <label class="check"><input id="anki-shot" type="checkbox" checked> add a screenshot</label>
                         <div class="row import-row">
                             <button id="anki-import">import known words from this deck</button>

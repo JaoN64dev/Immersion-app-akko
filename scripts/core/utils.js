@@ -90,3 +90,27 @@ export function episodeOf(name) {
     const m = all.pop() || clean.match(/0*(\d{1,3})(?!\d)/);
     return m ? Number(m[1]) : null;
 }
+
+// the show's name in a video file name (for finding the show, e.g. its opening times)
+// "[SubsPlease] Sousou no Frieren - 05 (1080p).mkv" -> "Sousou no Frieren"
+export function titleFromFile(name) {
+    return name
+        .replace(/\.[a-z0-9]{2,4}$/i, "")
+        .replace(/\[[^\]]*\]|\([^)]*\)|【[^】]*】/g, " ")
+        .replace(/\b(19|20)\d{2}\b|\b\d{3,4}p\b|\bx26[45]\b|\bhevc\b|\bbd(rip)?\b|\bweb(-?dl|rip)?\b|\bv\d\b/gi, " ")
+        .replace(/(?:\s[-–_]\s*|\s)(?:e|ep\.?|episode|#)?\s*\d{1,4}(?:v\d)?\s*$/i, " ")
+        .replace(/\b(?:s\d{1,2})?e\d{1,4}\b.*$/i, " ")
+        .replace(/\bs\d{1,2}\b|\bseason\s*\d{1,2}\b|\b\d{1,2}(?:st|nd|rd|th)\s+season\b/gi, " ")
+        .replace(/第\s*\d+\s*話.*$/, " ")
+        .replace(/[_.]+/g, " ")
+        .replace(/\s+[-–]\s*$/, "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .replace(/^\d+$/, "");           // "01.mkv": no name at all
+}
+
+// the season in a file name ("S03E12", "S2 - 06", "Season 2", "2nd Season"), or null
+export function seasonFromFile(name) {
+    const m = name.match(/\bs(\d{1,2})(?=e\d|\b)|\bseason\s*(\d{1,2})\b|\b(\d{1,2})(?:st|nd|rd|th)\s+season\b/i);
+    return m ? Number(m[1] || m[2] || m[3]) : null;
+}

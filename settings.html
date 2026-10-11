@@ -10,27 +10,30 @@
 </head>
 <body>
     <header>
-        <marquee class="en-only" style="margin-bottom:1em;" scrollamount="4">SITE BY: AKKO • a little every day • SITE BY: AKKO • it's okay not to understand everything • SITE BY: AKKO • just keep listening • SITE BY: AKKO • i might be narcisist</marquee>
-        <marquee class="ja-only" style="margin-bottom:1em;" scrollamount="4">SITE BY: AKKO ・ 毎日少しずつ ・ SITE BY: AKKO ・ 積み重ね ・ SITE BY: AKKO ・ i might be narcisist</marquee>
+        <marquee class="en-only" scrollamount="2">SITE BY: AKKO • a little every day • SITE BY: AKKO • it's okay not to understand everything • SITE BY: AKKO • just keep listening • SITE BY: AKKO • i might be narcisist</marquee>
+        <marquee class="ja-only" scrollamount="2">SITE BY: AKKO ・ 毎日少しずつ ・ SITE BY: AKKO ・ 積み重ね ・ SITE BY: AKKO ・ i might be narcisist</marquee>
     </header>
+    <nav class="topbar" aria-label="pages">
+        <button type="button" class="menu-btn" aria-expanded="false" aria-controls="sidebar" aria-label="this page's menu">&#9776;</button>
+        <a class="brand" href="/" translate="no">akko</a>
+        <div class="topbar-tabs">
+            <a class="tab" href="/course.html"><span class="ja-only">道 </span><small translate="no">course</small></a>
+            <a class="tab" href="/"><span class="ja-only">観る </span><small translate="no">watch</small></a>
+            <a class="tab" href="/reading.html"><span class="ja-only">読む </span><small translate="no">read</small></a>
+            <a class="tab" href="/podcasts.html"><span class="ja-only">聴く </span><small translate="no">listen</small></a>
+            <a class="tab ja-only" href="/listening.html"><span class="ja-only">聴解 </span><small translate="no">drills</small></a>
+            <a class="tab" href="/grammar.html"><span class="ja-only">文法 </span><small translate="no">grammar</small></a>
+            <a class="tab" href="/review.html"><span class="ja-only">復習 </span><small translate="no">review</small></a>
+            <a class="tab" href="/settings.html" aria-current="page"><span class="ja-only">設定 </span><small translate="no">settings</small></a>
+            <a class="tab" href="/about.html"><span class="ja-only">私 </span><small translate="no">about</small></a>
+        </div>
+    </nav>
     <div id="container">
         <div class="flex">
         <aside id="sidebar">
             <div id="bio" class="note">I`m akko. everything about the app in one place: what you're learning, how it looks, your data and your stats.</div>
             <div class="side-sticky">
             <nav id="navi">
-            <details open=""><summary>Pages</summary>
-            <ul>
-                <li><a href="/course.html">course</a></li>
-                <li><a href="/">watch</a></li>
-                <li><a href="/reading.html">read</a></li>
-                <li><a href="/podcasts.html">listen</a></li>
-                <li><a href="/grammar.html">grammar</a></li>
-                <li><a href="/review.html">review</a></li>
-                <li><a href="/settings.html" aria-current="page">settings</a></li>
-                <li><a href="/about.html">about</a></li>
-            </ul>
-            </details>
             <details open=""><summary>Settings</summary>
             <ul>
                 <li><a href="#learning-section">language you learn</a></li>
@@ -40,6 +43,7 @@
                 <li><a href="#stats-section">your stats</a></li>
                 <li><a href="#dictionary-section">dictionaries</a></li>
                 <li><a href="#backup-section">backup / restore</a></li>
+                <li><a href="#phone-section">use on your phone</a></li>
             </ul>
             </details>
             </nav>
@@ -47,16 +51,6 @@
         </aside>
         <main>
         <div id="content">
-            <nav class="tabs" aria-label="pages">
-                <a class="tab" href="/course.html"><span class="ja-only">道 </span><small translate="no">course</small></a>
-                <a class="tab" href="/"><span class="ja-only">観る </span><small translate="no">watch</small></a>
-                <a class="tab" href="/reading.html"><span class="ja-only">読む </span><small translate="no">read</small></a>
-                <a class="tab" href="/podcasts.html"><span class="ja-only">聴く </span><small translate="no">listen</small></a>
-                <a class="tab" href="/grammar.html"><span class="ja-only">文法 </span><small translate="no">grammar</small></a>
-                <a class="tab" href="/review.html"><span class="ja-only">復習 </span><small translate="no">review</small></a>
-                <a class="tab" href="/settings.html" aria-current="page"><span class="ja-only">設定 </span><small translate="no">settings</small></a>
-                <a class="tab" href="/about.html"><span class="ja-only">私 </span><small translate="no">about</small></a>
-            </nav>
 
             <h1><span class="ja-only">設定 </span>Settings</h1>
 
@@ -115,6 +109,13 @@
                     <label title="underline words you don't know (red) and are learning (yellow)"><input id="color-words" type="checkbox" checked> colour words</label>
                     <label title="underline grammar from the lessons (purple dots)"><input id="grammar-marks" type="checkbox" checked> underline grammar</label>
                     <label title="welcome, and which language to learn, each time you open akko"><input id="welcome-on" type="checkbox" checked> welcome screen when akko opens</label>
+                    <label>theme
+                        <select id="theme-pick">
+                            <option value="auto">like the computer</option>
+                            <option value="light">light</option>
+                            <option value="dark">dark</option>
+                        </select>
+                    </label>
                 </div>
             </section>
 
@@ -127,11 +128,36 @@
                 <h3 class="stats-heading">Words you know</h3>
                 <div id="stats-words" class="note stats-note"></div>
 
+                <h3 class="stats-heading">Time with the language <small style="font-weight:normal">(last 30 days)</small></h3>
+                <div id="stats-time" class="note stats-note stats-chart"></div>
+
                 <h3 class="stats-heading">Mining activity <small style="font-weight:normal">(last 30 days)</small></h3>
                 <div id="stats-mining" class="note stats-note stats-chart"></div>
 
                 <h3 class="stats-heading">Recent activity</h3>
                 <ul id="stats-recent" class="stats-recent"></ul>
+            </section>
+
+            <!-- PHONE: the same akko from a phone or tablet on the home Wi-Fi (server/lan.js) -->
+            <section id="phone-section">
+                <h2 class="dashed-heading">Use akko on your phone</h2>
+                <div class="note settings-note phone-note">
+                    <p>Open akko on a phone or tablet on the same Wi-Fi, for reading in bed or watching on the sofa. It's off until you turn it on; a device then needs the PIN below, once.</p>
+                    <label class="phone-switch"><input id="phone-on" type="checkbox"> let devices on my Wi-Fi use akko</label>
+                    <div id="phone-details" class="phone-details" hidden>
+                        <div class="phone-qr" id="phone-qr" aria-hidden="true"></div>
+                        <div>
+                            <p>On the phone, open <b id="phone-address" translate="no">…</b> (or scan the code), then type the PIN:</p>
+                            <p class="phone-pin" id="phone-pin" translate="no">······</p>
+                            <p class="muted" id="phone-devices"></p>
+                            <div class="backup-actions">
+                                <button type="button" id="phone-new-pin">new PIN (signs every device out)</button>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="hint">The first time, Windows may ask whether akko can use the network: allow it on <b>private networks</b>. The phone keeps its own words and progress, like another browser: move them with Backup / Restore.</p>
+                    <p id="phone-msg" class="status dark"></p>
+                </div>
             </section>
 
             <!-- DICTIONARIES: the built-in JMdict + KANJIDIC2 (Japanese), and Yomitan dictionaries you add (both languages) -->
@@ -165,6 +191,16 @@
                         </label>
                     </div>
                     <p id="backup-msg" class="status dark"></p>
+                    <div class="auto-backup">
+                        <h3>Automatic backups</h3>
+                        <p class="hint">Every 3 days, a backup is saved by itself on this computer; the last 10 are kept.</p>
+                        <div class="backup-actions">
+                            <label><input id="auto-backup-on" type="checkbox" checked> make them</label>
+                            <button id="auto-backup-now" type="button">back up now</button>
+                        </div>
+                        <ul id="auto-backup-list" class="auto-backup-list"></ul>
+                        <p class="hint">Kept in <code id="auto-backup-folder" translate="no">…</code></p>
+                    </div>
                 </div>
             </section>
         </div>

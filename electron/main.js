@@ -11,7 +11,7 @@
 
 const path = require('path');
 const fs = require('fs');
-const { app, BrowserWindow, shell, dialog, Menu, Tray, nativeImage } = require('electron');
+const { app, BrowserWindow, shell, dialog, Menu, Tray, nativeImage, screen, nativeTheme } = require('electron');
 
 // Its own port, so the desktop app and `npm start` (3000) can run at the same time.
 // Never change it: the pages' storage belongs to this address, so a new port = empty app.
@@ -88,16 +88,30 @@ function openWindow() {
     win.focus();
     return;
   }
+  // where the window was last time (if that's still on a screen), its size, and the zoom
+  const last = readConfig().window || {};
+  const onScreen = last.bounds && screen.getAllDisplays().some((d) => {
+    const a = d.workArea, b = last.bounds;
+    return b.x < a.x + a.width - 100 && b.x + b.width > a.x + 100 && b.y >= a.y - 10 && b.y < a.y + a.height - 100;
+  });
   win = new BrowserWindow({
     width: 1400,
     height: 900,
+    ...(onScreen ? last.bounds : {}),
     minWidth: 800,
     minHeight: 600,
     title: 'akko',
     icon: ICON,
     autoHideMenuBar: true,
-    backgroundColor: '#ffffff',
+    backgroundColor: nativeTheme.shouldUseDarkColors ? '#14151a' : '#ffffff',      // no white flash in dark mode
     webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true },
+  });
+
+  if (last.maximized) win.maximize();
+  const zoom = Number(last.zoom) || 0;
+  if (zoom) win.webContents.once('did-finish-load', () => win.webContents.setZoomLevel(zoom));
+  win.on('close', () => {
+    saveConfig({ window: { bounds: win.getNormalBounds(), maximized: win.isMaximized(), zoom: win.webContents.getZoomLevel() } });
   });
 
   win.loadURL(url);
@@ -298,19 +312,59 @@ async function checkForUpdate({ quiet }) {
     if (!quiet) dialog.showMessageBox({ type: 'info', message: 'You have the newest akko', detail: `Version ${app.getVersion()}.` });
     return;
   }
+  // the installed app can update itself; the portable one (and a copy run from the code) can't
+  const canInstall = app.isPackaged && process.platform === 'win32' && !process.env.PORTABLE_EXECUTABLE_DIR;
   const { response } = await dialog.showMessageBox({
     type: 'info',
     title: 'akko',
     message: `akko ${version} is out`,
-    detail: `You have ${app.getVersion()}. Download the new installer from the release page and run it: your words and progress are kept.`,
-    buttons: ['Open the download page', 'Later', 'Skip this version'],
+    detail: canInstall
+      ? `You have ${app.getVersion()}. akko can download it and install it when you restart: your words and progress are kept.`
+      : `You have ${app.getVersion()}. Download the new version from the release page: your words and progress are kept.`,
+    buttons: [canInstall ? 'Update' : 'Open the download page', 'Later', 'Skip this version'],
     defaultId: 0,
     cancelId: 1,
     noLink: true,
   });
-  if (response === 0) shell.openExternal(latest.html_url || RELEASES);
   if (response === 2) saveConfig({ skipVersion: version });
+  if (response !== 0) return;
+  if (!canInstall) { shell.openExternal(latest.html_url || RELEASES); return; }
+  installUpdate(latest).catch((err) => {
+    if (win) win.setProgressBar(-1);
+    dialog.showMessageBox({ type: 'info', message: "Couldn't update by itself", detail: `${err.message}\n\nThe release page has the installer.`, buttons: ['Open the download page', 'Close'], noLink: true })
+      .then(({ response: r }) => { if (r === 0) shell.openExternal(latest.html_url || RELEASES); });
+  });
 }
+
+// Download the new installer from the GitHub release (electron-updater reads the release's
+// latest.yml, which "npm run dist" makes) with progress on the taskbar button, then offer to
+// restart into it. If you don't, it installs the next time akko quits.
+async function installUpdate(latest) {
+  const { autoUpdater } = require('electron-updater');
+  autoUpdater.autoDownload = false;
+  autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.on('download-progress', (p) => { if (win) win.setProgressBar(p.percent / 100); });
+  const found = await autoUpdater.checkForUpdates();
+  if (!found || !found.updateInfo || !newer(found.updateInfo.version, app.getVersion())) {
+    throw new Error(`the release ${latest.tag_name || ''} has no update file (latest.yml) yet`);
+  }
+  await autoUpdater.downloadUpdate();
+  if (win) win.setProgressBar(-1);
+  const { response } = await dialog.showMessageBox({
+    type: 'info',
+    title: 'akko',
+    message: `akko ${found.updateInfo.version} is ready`,
+    detail: 'Restart now to use it, or it will be installed the next time you quit akko.',
+    buttons: ['Restart now', 'Later'],
+    defaultId: 0,
+    cancelId: 1,
+    noLink: true,
+  });
+  if (response === 0) autoUpdater.quitAndInstall(true, true);       // quietly, then start akko again
+}
+
+// VOICEVOX's engine, if akko started it, stops with akko (server/voicevox.js)
+app.on('will-quit', () => { try { require('../server/voicevox').stop(); } catch { /* server never loaded */ } });
 
 // Without a tray icon, closing the last window ends everything (except on macOS, as usual there).
 // With one (browser mode), the server keeps running until "Quit akko".

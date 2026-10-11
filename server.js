@@ -11,6 +11,11 @@
 //   - /api/course   the learning path from ./course/*.md                  server/course.js
 //   - /api/opensubs English subtitles from OpenSubtitles (your API key)   server/opensubtitles.js
 //   - /api/dictionaries  Yomitan dictionaries you added (Settings)        server/dictionaries.js
+//   - /api/listening 聴解 listening exercises from ./listening/*.md        server/listening.js
+//   - /api/speech   Japanese speech, VOICEVOX or Windows' voices          server/speech.js
+//   - /api/speech/voicevox  starts / installs VOICEVOX's engine            server/voicevox.js
+//   - /api/backups  automatic backups of what the pages saved               server/backups.js
+//   - /api/lan      using akko from a phone on the same Wi-Fi (off by default) server/lan.js
 
 const path = require('path');
 const express = require('express');
@@ -26,6 +31,11 @@ const course = require('./server/course');
 const opensubs = require('./server/opensubtitles');
 const { guard } = require('./server/guard');
 const dictionaries = require('./server/dictionaries');
+const listening = require('./server/listening');
+const speech = require('./server/speech');
+const voicevox = require('./server/voicevox');
+const backups = require('./server/backups');
+const lan = require('./server/lan');
 
 const hostname = '127.0.0.1';
 
@@ -46,6 +56,11 @@ app.use('/api/presence', discord.router);
 app.use('/api/grammar', grammar.router);
 app.use('/api/course', course.router);
 app.use('/api/opensubs', opensubs.router);
+app.use('/api/listening', listening.router);
+app.use('/api/backups', backups.router);
+app.use('/api/lan', lan.router);
+app.use('/api/speech/voicevox', voicevox.router);
+app.use('/api/speech', speech.router);
 
 // ---------- static site (only the files the pages need) ----------
 const file = (name) => (req, res) => res.sendFile(path.join(__dirname, name));
@@ -57,7 +72,9 @@ app.get('/review.html', file('review.html'));
 app.get('/stats.html', (req, res) => res.redirect('/settings.html#stats-section'));    // stats moved to settings
 app.get('/grammar.html', file('grammar.html'));
 app.get('/course.html', file('course.html'));
+app.get('/listening.html', file('listening.html'));
 app.get('/about.html', file('about.html'));
+app.get('/lan-login', lan.loginPage);
 app.get('/style.css', file('style.css'));
 app.get('/favicon.ico', file('electron/icon.png'));     // the browser tab's icon: the app icon
 for (const dir of ['scripts', 'images', 'fonts', 'node_modules/@ffmpeg']) {
@@ -74,6 +91,8 @@ function start(port = Number(process.env.AKKO_PORT) || 3000) {
       console.log('Server running at ' + url + '\n');
       dictionary.init();
       discord.init();
+      voicevox.start();          // natural voices for the listening drills, if VOICEVOX is here
+      lan.start(app, port);      // the phone / tablet address, if that's turned on
       resolve(url);
     });
     server.on('error', reject);

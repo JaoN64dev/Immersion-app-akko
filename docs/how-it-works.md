@@ -31,13 +31,14 @@ The **desktop app** (`electron/main.js`, built with `npm run dist`) is the same 
 | `server.js` | Starts Express, mounts the API routes, serves the pages and static folders. `start(port)` is exported for the desktop app |
 | `electron/` | The desktop app: `main.js` (window + server), `run.js` (`npm run desktop`), icons |
 | `server/` | One module per API (dictionary, English, grammar, subtitles…), see below |
-| `*.html` | One file per page: `index.html` (Watch), `reading.html`, `podcasts.html`, `grammar.html`, `course.html`, `review.html`, `settings.html`, `about.html` |
-| `scripts/pages/` | The entry script of each page (`watch.js`, `read.js`, `listen.js`, `grammar.js`, `course.js`, `review.js`, `settings.js`, `stats.js`) |
+| `*.html` | One file per page: `index.html` (Watch), `reading.html`, `podcasts.html`, `listening.html`, `grammar.html`, `course.html`, `review.html`, `settings.html`, `about.html` |
+| `scripts/pages/` | The entry script of each page (`watch.js`, `read.js`, `listen.js`, `listening.js`, `grammar.js`, `course.js`, `review.js`, `settings.js`, `stats.js`) |
 | `scripts/` (other folders) | Shared browser code, grouped by feature (`words/`, `player/`, `reader/`, `podcasts/`, `anki/`, `grammar/`, `core/`) |
 | `scripts/lang/ja.js` | The Japanese translation of the interface |
 | `grammar/`, `grammar-en/` | Grammar lessons as Markdown, Japanese and English |
+| `listening/` | 聴解 listening exercises as Markdown (Japanese only) |
 | `course/`, `course-en/` | Course steps as Markdown; `course/pt`, `/es` and `course-en/pt`, `/es`, `/ja` are translations |
-| `data/` | Dictionary files (`dict.json`, `kanji.json`, `accents.txt`), and things the server saves: `ocr/`, `english-online.json`, `opensubtitles.json` |
+| `data/` | Dictionary files (`dict.json`, `kanji.json`, `accents.txt`), and things the server saves: `ocr/`, `speech/`, `english-online.json`, `opensubtitles.json` |
 | `tools/` | `check-lessons.js` (`npm run check-lessons`) |
 | `tests/` | automated tests (`npm test`) |
 | `docs/` | this page, and [native-review.md](native-review.md) (what a native speaker should check) |
@@ -152,6 +153,7 @@ JMdict and KANJIDIC2 can be replaced while the app runs, from **Settings → Dic
 | Watch (`index.html`) | `pages/watch.js` | `player/*` (video, cues, render, settings, 2nd subtitles, dual audio via ffmpeg.wasm, full screen), `subtitles/browser.js` (kitsunekko / JP-Subtitles), `subtitles/opensubs.js` (OpenSubtitles), `search.js` (AniList), `progress.js` (resume), `mining.js`, `anki/panel.js` |
 | Read (`reading.html`) | `pages/read.js` | `reader/import.js` (.txt/.epub/.html/subtitles → paragraphs), `reader/library.js`, `reader/text.js`, `reader/manga.js` (+ mokuro OCR through `/api/ocr`) |
 | Listen (`podcasts.html`) | `pages/listen.js` | `podcasts/directory.js` (iTunes search, saved shows), `podcasts/feed.js` (RSS + transcripts through `/api/podcasts/fetch`), `podcasts/player.js` |
+| 聴解 Listening (`listening.html`, Japanese only) | `pages/listening.js` | `listening/speech.js` (audio from `/api/speech`, or the browser's voice), sets from `/api/listening` (`server/listening.js`), sentence drills from the grammar examples |
 | Grammar | `pages/grammar.js` | `grammar/lessons.js` (list from `/api/grammar`, each lesson from `/api/grammar/<id>` when opened), `grammar/markdown.js` (a small Markdown renderer) |
 | Course | `pages/course.js` | `/api/course` (`server/course.js`), `totals.js` to measure goals |
 | Review | `pages/review.js` | flashcards of "learning" words, dates in `akko-review` |
@@ -167,9 +169,17 @@ JMdict and KANJIDIC2 can be replaced while the app runs, from **Settings → Dic
 
 `scripts/player/file-subs.js`: when a local video is opened, `player/dual-audio.js` already asks ffmpeg.wasm for the file's streams; the subtitle ones are passed on (`onSubtitleTracks`). Text formats (srt, ass, vtt…) are listed in a bar on the Watch page; picture formats (PGS, DVD) can't be read as text and are left out. `extractSubtitle()` copies one track out (ass kept as ass, the rest turned into srt) and it's loaded like a subtitle file, as the main or 2nd subtitles. If no subtitles are loaded yet, a track in the language you're learning is used right away (skipping "Signs & Songs" tracks).
 
+## Listening exercises and speech
+
+`server/listening.js` reads `listening/*.md` (the sets that come with akko) and `<data folder>/listening/*.md` (your own, ids starting with `my-`; the folder is made on the first visit with the guide and template copied in), format: [listening/README.md](../listening/README.md). A question with `audio: file.mp3 [start-end]` plays that recording instead of the voices, served by `/api/listening/audio` only from the set's own folder and only if a question uses it. It also makes the 文 sentence drills from the grammar lessons' examples of a level. `server/voicevox.js` runs VOICEVOX's engine: on start it looks for one (akko's own download in `<data>/voicevox/engine`, the VOICEVOX installer's folder, winget's) and starts `run.exe` with no window unless that's turned off (`<data>/voicevox/akko.json`); the engine akko started stops with akko (process exit, Ctrl+C, the desktop app's `will-quit`). Its install route downloads the `windows-cpu` `.vvpp` (a zip) from VOICEVOX's latest GitHub release and unpacks it with Windows' `tar`; nothing of VOICEVOX ships with akko. The audio comes from `server/speech.js`, which has two engines: **VOICEVOX** (or AivisSpeech, same API), used when that program is open (it asks `127.0.0.1:50021` / `:10101`, or `AKKO_VOICEVOX`; `pickVoices` chooses a calm woman's, man's and narrator's voice, each a different speaker), and **Windows' own voices**, through one hidden PowerShell process (WinRT `SpeechSynthesizer`). Each line becomes a `.wav` saved in `data/speech/`, so it's made once. It's done on the server because the desktop app's window (Electron) has no voices of its own. `scripts/listening/speech.js` lists what can speak, best first: VOICEVOX, the browser's natural online voices (Edge, Chrome), Windows, other browser voices; the page's **voice** menu picks one. VOICEVOX's voices are credited under the exercise. The page also has 書き取り dictation (both sentences are split into words by `/api/tokenize` and compared by their reading in hiragana, so kana answers count), 復習 mistakes (`akko-listening-mistakes`), exam mode and a ▶ per line.
+
+## Skip intro
+
+`scripts/player/skip.js`: when a video loads, it works out the show (the one picked in the AniList search if the file name looks like it, else an AniList search for the name from `titleFromFile`, with `Season N` added from `seasonFromFile`) and the episode (`episodeOf`), then asks AniSkip (`api.aniskip.com/v2/skip-times/<MyAnimeList id>/<episode>`) for the opening and ending; answers are cached in `akko-skip-cache`. A button over the video offers the skip while one is playing (K presses it; "skip openings by itself" in the player settings skips each one once). Without AniSkip times, I marks an opening's start and end; it's kept per show in `akko-intros`, and the button then shows within a minute of that time and skips its length. K with nothing to skip jumps 85 s.
+
 ## The welcome screen and "today"
 
-`scripts/site.js` shows the welcome screen once each time akko is opened (`sessionStorage`, and not when the page was opened from another akko page), unless it's turned off (`welcome: false` in akko-settings). `scripts/core/today.js` counts time per day: every 15 seconds, 15 seconds are added if a video or audio is playing, or the Read or Review page is in front and was used in the last minute. Saved as `akko-days` / `akko-days-en`; the streak counts days with at least a minute.
+`scripts/site.js` shows the welcome screen once each time akko is opened (`sessionStorage`, and not when the page was opened from another akko page), unless it's turned off (`welcome: false` in akko-settings). `scripts/core/today.js` counts time per day: every 15 seconds, 15 seconds are added if a video or audio is playing, or the Read, Review or 聴解 page is in front and was used in the last minute. Saved as `akko-days` / `akko-days-en`; the streak counts days with at least a minute.
 
 ## Where things are saved
 
@@ -184,6 +194,8 @@ JMdict and KANJIDIC2 can be replaced while the app runs, from **Settings → Dic
 | `akko-podcasts` / `-en`, `akko-podcast-progress` / `-en` | saved podcasts, episode positions |
 | `akko-grammar` / `-en`, `akko-course` / `-en`, `akko-review` / `-en` | lessons learned, course steps done, review dates |
 | `akko-manga` | manga positions |
+| `akko-listening`, `akko-listening-mistakes`, `akko-listening-view` | best score per listening set, questions you got wrong, the page's settings (level, speed, voice…) |
+| `akko-skip`, `akko-skip-cache`, `akko-intros` | skip openings by itself, AniSkip answers, the openings you marked per show |
 | `akko-days` / `-en` | seconds with the language per day (welcome screen: today, streak) |
 | IndexedDB `akko` → `texts`, `mined` | books (whole), mined words |
 
@@ -196,6 +208,11 @@ JMdict and KANJIDIC2 can be replaced while the app runs, from **Settings → Dic
 | dictionary files | read-only after the first build |
 | `ocr/*.mokuro` | OCR results per manga volume |
 | `english-online.json` | cached Wiktionary / Commons answers |
+| `listening/` | your own listening sets and their recordings |
+| `voicevox/` | VOICEVOX's engine if akko downloaded it, and `akko.json` (start it with akko or not) |
+| `backups/akko-auto-*.json` | automatic backups (the last 10), sent by the pages every 3 days (`scripts/core/auto-backup.js`, `server/backups.js`) |
+| `lan.json` | phone / tablet access: on or off, the PIN, signed-in devices (hashed tokens) |
+| `speech/*.wav` | lines said by Windows' Japanese voices, made once (listening exercises) |
 | `opensubtitles.json` | your OpenSubtitles API key and login token, never the password |
 
 ## External services
@@ -212,6 +229,14 @@ JMdict and KANJIDIC2 can be replaced while the app runs, from **Settings → Dic
 | mokuro (local Python) | manga OCR | `pip install mokuro` |
 | Discord (local app) | Rich Presence | a Discord application id in `server/discord.js` |
 
+## Themes, backups, phones, updates
+
+- **Dark theme** (`scripts/core/theme.js`): colours are CSS variables; the dark set is at the end of `style.css`, used when the computer is dark ("auto", through `prefers-color-scheme`, no class) or when picked (`theme-dark` on `<html>`). `--card`, `--ink`, `--on-panel`… are the light/dark-sensitive ones; use them instead of fixed colours.
+- **Automatic backups**: every page calls `autoBackup.start()`; every 3 days one tab builds the same file as Settings → Backup (`scripts/core/backup-file.js`) and posts it to `/api/backups`, which keeps the last 10.
+- **Phones** (`server/lan.js`): off by default. When on, a second server listens on all addresses at port + 1; `server/guard.js` sends those requests through `lanGuard` (private addresses only, an IP address as Host, a sign-in cookie from the PIN) before the usual checks. `/api/lan` (settings, PIN) answers the computer only.
+- **Updates** (`electron/main.js`): the GitHub check decides whether there's a newer version; the installed app then uses electron-updater, which reads the release's `latest.yml` (made by `npm run dist`; upload it with the installer and its `.blockmap`).
+- **Hearing Japanese anywhere** (`scripts/core/say.js`): the popup's 🔊 / ▶ sentence and the grammar examples use the listening page's voices; Anki cards without a recorded line get `/api/speech` audio of the sentence.
+
 ## Tests
 
 `npm test` runs `tests/*.test.*` with Node's built-in test runner (no extra packages). It runs offline: `AKKO_OFFLINE=1` makes the English lookup skip Wiktionary and Commons.
@@ -221,6 +246,9 @@ JMdict and KANJIDIC2 can be replaced while the app runs, from **Settings → Dic
 | `tests/japanese.test.js` | kuromoji word grouping, dictionary forms, furigana, what counts as a word, grammar marks, JMdict lookups with conjugation, kanji and pitch accent |
 | `tests/english.test.js` | dictionary forms (irregular, suffix rules, context), contractions, function words, grammar marks including "not after" steps, offline lookups (WordNet, CMU IPA, Japanese from JMdict) |
 | `tests/lessons.test.js` | settings blocks, the lesson and course APIs, translations, and the whole `check-lessons` run |
+| `tests/voicevox.test.js` | installing VOICEVOX from a pretend release (terms required, download, unpack, found first), the "start it with akko" setting |
+| `tests/backups.test.js`, `tests/lan.test.js` | automatic backups (kept, pruned, only those files served); phone access (off by default, PIN, wrong-PIN limit, Host checks, the computer alone changes it) |
+| `tests/listening.test.js` | the listening file format and its error messages, the sets that come with akko (N5–N1, all valid and translated), sentence drills, and Windows speech to `.wav` (skipped without a Japanese voice) |
 | `tests/browser.test.mjs` | browser modules with a pretend localStorage: per-language storage keys, your-language default, word statuses, tokens to HTML, % understood, sentences, the Markdown renderer (including that it's safe), and the Japanese interface dictionary (no repeated keys, placeholders kept) |
 
 `scripts/package.json` (`"type": "module"`) lets Node load the browser modules; browsers ignore it.

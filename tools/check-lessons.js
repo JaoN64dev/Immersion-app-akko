@@ -1,7 +1,8 @@
-// Checks every grammar lesson (grammar/ and grammar-en/) and course step:
+// Checks every grammar lesson (grammar/ and grammar-en/), course step and listening set (listening/):
 //   - the files can be read (settings block, title, detect rules, quiz lines, see: links, goals)
 //   - each lesson's detect rules find the grammar in all of its own examples
 //   - every quiz question has an answer
+//   - every listening question has lines, 2 to 4 choices and one right answer
 //
 //   npm run check-lessons              (exits with 1 if something is wrong)
 //   npm run check-lessons -- --verbose (also lists examples that other lessons underline too)
@@ -81,6 +82,13 @@ function checkCourse() {
   }
 }
 
+function checkListening() {
+  const { items, problems } = require('../server/listening').load();
+  const questions = items.reduce((n, s) => n + s.questions.length, 0);
+  console.log(`\nlistening/: ${items.length} sets, ${questions} questions`);
+  problems.forEach((p) => fail(`listening/${p.file}: ${p.problem}`));
+}
+
 (async () => {
   const dict = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'dict.json'), 'utf8'));
   const ja = await tokenizerJa();
@@ -88,6 +96,7 @@ function checkCourse() {
   checkLessons('en', finderFor('en', null, dict));
   checkTranslations();
   checkCourse();
+  checkListening();
   console.log(failures ? `\n${failures} problem(s) found` : '\nall good');
   process.exit(failures ? 1 : 0);
 })().catch((err) => { console.error(err); process.exit(1); });

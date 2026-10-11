@@ -9,6 +9,7 @@ query ($q: String) {
   Page(perPage: 18) {
     media(search: $q, type: ANIME, sort: SEARCH_MATCH) {
       id
+      idMal
       title { romaji english native }
       synonyms
       coverImage { large }

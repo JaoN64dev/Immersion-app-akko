@@ -7,6 +7,7 @@ import { renderFiles } from "../subtitles/browser.js";
 import * as dualAudio from "./dual-audio.js";
 import * as progress from "../progress.js";
 import { setPresence, tickPresence } from "../core/presence.js";
+import * as playlist from "./playlist.js";
 
 const HLS_JS = "https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.20/hls.min.js";
 let hls = null;
@@ -18,7 +19,7 @@ function resetVideo() {
     dualAudio.reset();
 }
 
-function openFile(file) {
+export function openFile(file) {
     resetVideo();
     el.video.src = URL.createObjectURL(file);
     state.videoName = file.name;
@@ -81,9 +82,11 @@ export function reopen(rec) {
 }
 
 export function init() {
+    // one file, or several (a whole season: they become the playlist, scripts/player/playlist.js)
     el.videoFile.addEventListener("change", () => {
-        const file = el.videoFile.files[0];
-        if (file) openFile(file);
+        const files = [...el.videoFile.files];
+        if (files.length > 1) playlist.set(files);
+        else if (files[0]) { playlist.set([]); openFile(files[0]); }
     });
     el.urlForm.addEventListener("submit", (e) => {
         e.preventDefault();

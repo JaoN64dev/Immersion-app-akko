@@ -5,14 +5,20 @@ An immersion app for learning **Japanese** or **American English**, on your own 
 ![The grammar page: click a word in an example sentence to see its dictionary entry, the grammar it's part of, and its status](images/screenshot.png)
 
 - **Watch** videos with subtitles. Search Japanese subtitles (kitsunekko, JP-Subtitles) or English ones (OpenSubtitles), load your own, or use the ones **inside the video file** (.mkv), no website needed.
+- **Skip intro**: a button over the video skips anime openings and endings (exact times from [AniSkip](https://aniskip.com), found from the show and episode), or mark a show's opening once with **I** and akko offers to skip it in its other episodes. **K** skips, or jumps 85 s.
 - **Read** books (EPUB, text) and manga.
 - **Listen** to podcasts with transcripts.
 - **Click any word** to see its dictionary entry, kanji and pitch accent, plus any **dictionaries you add** (Yomitan format: Jitendex, monolingual dictionaries…) and how common the word is (frequency lists like JPDB). Hover a word and press 1–4 to mark it new / learning / known / ignored; the app colours words by how well you know them.
 - Send words to **Anki** as flashcards.
 - Follow the **course**: a step-by-step path from the basics to immersion, built on the AJATT idea, with goals the app checks for you. The Japanese course and the N5 grammar lessons are also in **Portuguese and Spanish** (Settings → Your language).
 - Study **grammar** with short lessons and quizzes (Japanese N5–N1, English A1–C1). Grammar you've studied is underlined in subtitles and texts.
+- Practise **listening** (Japanese, N5–N1), JLPT style: conversations with a question, quick replies, sentences from the grammar lessons, and **dictation** (type what you hear). Mistakes come back until you get them right; **exam mode** plays each question once. Every line is spoken: with [VOICEVOX](https://voicevox.hiroshiba.jp/) (free), in natural-sounding voices. Get it with one button on the 聴解 page, or install it yourself; akko starts it in the background whenever akko opens and closes it when akko quits. Otherwise lines are spoken by your computer's Japanese voices (on Windows: add Japanese in Settings → Time & language → Speech). The script shows afterwards with clickable words and a ▶ on each line. Add your own sets, with your own recordings if you like ([listening/README.md](listening/README.md)), and try the official JLPT samples from the page.
 - A **welcome screen** each time you open akko: pick today's language, see today's minutes and your streak.
-- **Settings**: the language you learn, the interface language (English / 日本語), display options, stats and backup.
+- **Hear any Japanese**: 🔊 plays a word and ▶ reads the whole sentence in the word popup, on every page; grammar examples have a ▶ too. Cards mined from books and lessons get the sentence's audio.
+- **Settings**: the language you learn, the interface language (English / 日本語), a **dark theme** (or like the computer), stats (time per day, listening scores…) and backup.
+- **Automatic backups** every 3 days, the last 10 kept on your computer; restore one from Settings → Backup.
+- **Use it on your phone or tablet** on the same Wi-Fi: turn it on in Settings, scan the QR code, type the PIN (off until you turn it on).
+- Press **?** on any page to see its keys.
 
 You choose Japanese or English on the first visit, and can switch in Settings. Each language keeps its own words and progress. Lessons and the course are Markdown files you can edit or add to (see [grammar/README.md](grammar/README.md) and [course/README.md](course/README.md)).
 
@@ -32,6 +38,7 @@ You can use akko either way; it's the same app.
 - **Desktop app** (easiest): download the installer (`akko-setup-<version>.exe`) or the version without install (`akko-portable-<version>.exe`) from the [Releases page](https://github.com/JaoN64dev/japaneselocalwebapp/releases) and open it. Nothing else to install: the dictionaries come inside.
   - **App window or your browser?** Each time akko starts, it asks how to open: in its own **app window**, or in **your browser** (akko then runs as an icon in the system tray, next to the clock; right-click it to open akko or quit). Tick **Remember my choice** to stop the question, and change it later in **akko → When akko starts**. Starting the app with `--browser` or `--window` skips the question.
   - The installers aren't code-signed, so Windows SmartScreen shows "Windows protected your PC" the first time: click **More info → Run anyway**.
+  - **Updates**: once a day (or Help → Check for updates) akko looks for a newer release. The installed app downloads it and installs it when you restart; the portable one opens the download page.
 - **Web server** (from the code): run it with Node.js and use it in your browser. Best if you want to change lessons or the code. See [Setup](#setup-web-server) below.
 
 The app window, your browser and the web server version each keep their own copy of your words and progress. To move them, use **Settings → Backup** in one and **Restore** in the other.

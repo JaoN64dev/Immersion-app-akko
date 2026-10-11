@@ -142,3 +142,25 @@ test('the Japanese interface dictionary has no repeated entries, and keeps its p
         for (const ph of en.match(/\{\w+\}/g) || []) assert.ok(jp.includes(ph), `"${en}": the Japanese lost ${ph}`);
     }
 });
+
+const utils = await import('../scripts/core/utils.js');
+
+test('video file names: the show, its season and the episode (for skipping openings)', () => {
+    const cases = [
+        ['[SubsPlease] Sousou no Frieren - 05 (1080p) [ABCD1234].mkv', 'Sousou no Frieren', null, 5],
+        ['[Anime Time] K-On!! - 01.mkv', 'K-On!!', null, 1],
+        ['[MTBB] K-ON! S2 - 06.mkv', 'K-ON!', 2, 6],
+        ['Shingeki no Kyojin S03E12 1080p WEB-DL.mkv', 'Shingeki no Kyojin', 3, 12],
+        ['[Erai-raws] Spy x Family - 12v2 [1080p][HEVC].mkv', 'Spy x Family', null, 12],
+        ['Kaguya-sama 2nd Season - 04.mkv', 'Kaguya-sama', 2, 4],
+        ['Mob Psycho 100 - 07.mkv', 'Mob Psycho 100', null, 7],
+        ['Bocchi.the.Rock.E03.1080p.mkv', 'Bocchi the Rock', null, 3],
+        ['進撃の巨人 第5話.mp4', '進撃の巨人', null, 5],
+        ['01.mkv', '', null, 1],
+    ];
+    for (const [name, title, season, ep] of cases) {
+        assert.equal(utils.titleFromFile(name), title, name);
+        assert.equal(utils.seasonFromFile(name), season, name);
+        assert.equal(utils.episodeOf(name), ep, name);
+    }
+});

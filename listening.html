@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>聴解 akko</title>
+    <link href="/style.css" rel="stylesheet" type="text/css" media="all">
+    <script type="module" src="/scripts/site.js"></script>
+    <script type="module" src="/scripts/pages/listening.js"></script>
+</head>
+<body>
+    <header>
+        <marquee scrollamount="2">SITE BY: AKKO ・ 耳を鍛えよう ・ SITE BY: AKKO ・ 何回聞いてもいい ・ SITE BY: AKKO ・ 分からなくても大丈夫 ・ SITE BY: AKKO ・ i might be narcisist</marquee>
+    </header>
+    <nav class="topbar" aria-label="pages">
+        <button type="button" class="menu-btn" aria-expanded="false" aria-controls="sidebar" aria-label="this page's menu">&#9776;</button>
+        <a class="brand" href="/" translate="no">akko</a>
+        <div class="topbar-tabs">
+            <a class="tab" href="/course.html"><span class="ja-only">道 </span><small translate="no">course</small></a>
+            <a class="tab" href="/"><span class="ja-only">観る </span><small translate="no">watch</small></a>
+            <a class="tab" href="/reading.html"><span class="ja-only">読む </span><small translate="no">read</small></a>
+            <a class="tab" href="/podcasts.html"><span class="ja-only">聴く </span><small translate="no">listen</small></a>
+            <a class="tab ja-only" href="/listening.html" aria-current="page"><span class="ja-only">聴解 </span><small translate="no">drills</small></a>
+            <a class="tab" href="/grammar.html"><span class="ja-only">文法 </span><small translate="no">grammar</small></a>
+            <a class="tab" href="/review.html"><span class="ja-only">復習 </span><small translate="no">review</small></a>
+            <a class="tab" href="/settings.html"><span class="ja-only">設定 </span><small translate="no">settings</small></a>
+            <a class="tab" href="/about.html"><span class="ja-only">私 </span><small translate="no">about</small></a>
+        </div>
+    </nav>
+    <div id="container">
+        <div class="flex">
+        <aside id="sidebar">
+            <div id="bio" class="note">I`m akko. listening practice, JLPT style: listen first, answer, then read what was said.</div>
+            <div class="side-sticky">
+            <nav id="navi">
+            <details open=""><summary>Listening</summary>
+            <ul>
+                <li><a href="#listen-sets">exercises</a></li>
+                <li><a href="#listen-howto">add your own</a></li>
+                <li><a href="https://www.jlpt.jp/e/samples/forlearners.html" target="akko-window">official JLPT samples</a></li>
+            </ul>
+            </details>
+            <details><summary>Keys</summary>
+            <ul class="keys">
+                <li><kbd>?</kbd> all the keys of this page</li>
+                <li><kbd>Space</kbd> play / stop</li>
+                <li><kbd>1</kbd>–<kbd>4</kbd> answer (when the mouse isn't on a word)</li>
+                <li><kbd>Enter</kbd> <kbd>→</kbd> next question</li>
+                <li><kbd>1</kbd>–<kbd>4</kbd> new / learning / known / ignore the word under the mouse</li>
+            </ul>
+            </details>
+            </nav>
+            <p class="credits">voices: <a href="https://voicevox.hiroshiba.jp/" target="_blank" rel="noopener">VOICEVOX</a> when it's open, else your computer's Japanese voices · dictionary: <a href="https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project" target="_blank" rel="noopener">JMdict</a> (EDRDG, CC BY-SA 4.0)</p>
+            </div>
+        </aside>
+        <main>
+        <div id="content">
+
+            <h1>聴解 Listening</h1>
+
+            <div id="listen-problems" class="note grammar-problems" hidden></div>
+            <div id="listen-voice" class="note settings-note" hidden></div>
+            <div id="listen-vv" class="note settings-note lq-vv" hidden></div>
+
+            <section id="listen-sets" class="grammar-layout">
+                <div class="grammar-side">
+                    <div id="listen-levels" class="grammar-levels" role="tablist" aria-label="level"></div>
+                    <p id="listen-progress" class="grammar-progress"></p>
+                    <div id="listen-list" class="grammar-list"></div>
+                    <a id="listen-official" class="listen-official" href="https://www.jlpt.jp/e/samples/forlearners.html" target="akko-window">公式 <b>N5</b> official JLPT sample test <small>real exam audio, on jlpt.jp</small></a>
+                </div>
+
+                <div class="grammar-main">
+                    <div class="toolbar grammar-tools">
+                        <label>speed
+                            <select id="listen-rate">
+                                <option value="0.75">slow (0.75×)</option>
+                                <option value="0.9">a bit slow (0.9×)</option>
+                                <option value="1">normal</option>
+                                <option value="1.15">fast (1.15×)</option>
+                            </select>
+                        </label>
+                        <label>voice
+                            <select id="listen-voice-pick" disabled><option value="auto">the best one here</option></select>
+                        </label>
+                        <label title="show what is said before you answer (easier)"><input id="listen-show-text" type="checkbox"> show the text</label>
+                        <label title="each question plays once, like the real JLPT"><input id="listen-exam" type="checkbox"> exam mode</label>
+                        <label>ふりがな
+                            <select id="furigana-mode">
+                                <option value="unknown">on words I don't know</option>
+                                <option value="always">always</option>
+                                <option value="hover">on hover</option>
+                                <option value="off">off</option>
+                            </select>
+                        </label>
+                        <label title="underline words you don't know (red) and are learning (yellow)"><input id="color-words" type="checkbox" checked> colour words</label>
+                    </div>
+                    <article id="listen-player" class="note grammar-lesson listen-player">
+                        <p class="muted">loading…</p>
+                    </article>
+                    <p id="listen-credit" class="listen-credit" translate="no" hidden></p>
+                </div>
+            </section>
+
+            <section id="listen-howto" class="quiet-section">
+                <h3 class="quiet-heading">Add your own exercises</h3>
+                <div class="note about-note" data-i18n="listening-howto">
+                    <p>Exercises are Markdown files. Put your own in the folder below (the guide <code>README.md</code> and a <code>_template.md</code> to copy are already in it). In the desktop app, <b>akko → Open the data folder</b> gets you there.</p>
+                    <p>Each <code>##</code> heading starts a question: <code>Q:</code> for the question, <code>男:</code> and <code>女:</code> for the lines, <code>-</code> for the choices, with <code>*</code> after the right one. Changes show up when you reload this page.</p>
+                    <p><b>Real recordings</b>: put an audio file (.mp3, .m4a, .wav…) next to your set and write <code>audio: file.mp3</code> in a question, or <code>audio: file.mp3 1:05-1:48</code> for just that part of it. It plays instead of the computer voice. Good for the official JLPT samples you download from jlpt.jp, or recordings of a friend reading the scripts. They stay on your computer.</p>
+                </div>
+                <p class="listen-folder-line">Your folder: <code id="listen-my-folder" class="listen-my-folder" translate="no">…</code></p>
+            </section>
+
+            <div id="popup" class="popup" hidden></div>
+        </div>
+        </main>
+        </div>
+    </div>
+</body>
+</html>

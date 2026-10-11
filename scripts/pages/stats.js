@@ -2,7 +2,8 @@
 // in this browser for the language being learnt — word knowledge, mining, watch/read/listen.
 // Read-only: nothing here is fetched from the server or sent anywhere.
 
-import { escapeHtml } from "../core/utils.js";
+import { escapeHtml, store } from "../core/utils.js";
+import * as today from "../core/today.js";
 import { target, learningEnglish } from "../core/target.js";
 import { wordStats, watchStats, mangaStats, podcastStats, textStats, minedStats, grammarStats } from "../totals.js";
 
@@ -37,7 +38,14 @@ function tile(value, label, sub) {
     return `<div class="note stats-note stat-tile"><b>${value}</b><span>${label}</span>${sub ? `<small>${escapeHtml(sub)}</small>` : ""}</div>`;
 }
 
-function renderTiles({ words, watch, manga, podcast, text, mined, grammar }) {
+// 聴解 drills (Japanese): sets tried, the average of the best scores, questions waiting in 復習
+function listeningStats() {
+    const scores = Object.values(store.get("akko-listening", {}));
+    const pct = scores.length ? Math.round(100 * scores.reduce((a, s) => a + s.best / s.total, 0) / scores.length) : 0;
+    return { tried: scores.length, pct, mistakes: Object.keys(store.get("akko-listening-mistakes", {})).length };
+}
+
+function renderTiles({ words, watch, manga, podcast, text, mined, grammar, listening, days }) {
     document.getElementById("stats-tiles").innerHTML = [
         tile(compact(words.known), "words known"),
         tile(compact(words.learning), "words learning"),
@@ -48,6 +56,9 @@ function renderTiles({ words, watch, manga, podcast, text, mined, grammar }) {
         tile(hoursText(watch.seconds), "time watching"),
         tile(hoursText(podcast.seconds), "time listening", podcast.count ? `${podcast.done} / ${podcast.count} episodes done` : ""),
         tile(compact(grammar.learned), "grammar lessons learned", grammar.passed ? `${grammar.passed} quizzes passed` : ""),
+        learningEnglish() ? "" : tile(compact(listening.tried), "listening sets tried",
+            [listening.tried ? `${listening.pct}% on average` : "", listening.mistakes ? `${listening.mistakes} to review` : ""].filter(Boolean).join(" · ")),
+        tile(hoursText(days.week), "this week", days.streak > 1 ? `${days.streak} days in a row` : ""),
     ].join("");
 }
 
@@ -94,11 +105,34 @@ function miningByDay(items, days = 30) {
 
 function renderMiningChart(items) {
     const el = document.getElementById("stats-mining");
-    const data = miningByDay(items);
     if (!items.length) {
         el.innerHTML = `<p class="stats-empty">nothing mined yet — click a word's dictionary entry and hit "+ mine".</p>`;
         return;
     }
+    renderDayChart(el, miningByDay(items), { label: "words mined per day", value: (n) => `${n} mined` });
+}
+
+// minutes with the language per day, the last 30 days (scripts/core/today.js)
+function timeByDay(days = 30) {
+    const out = [];
+    for (let i = days - 1; i >= 0; i--) {
+        const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() - i);
+        out.push({ date: d, count: Math.round(today.secondsOn(target(), today.dayOf(d)) / 60) });
+    }
+    return out;
+}
+
+function renderTimeChart() {
+    const el = document.getElementById("stats-time");
+    const data = timeByDay();
+    if (!data.some((d) => d.count)) {
+        el.innerHTML = `<p class="stats-empty">nothing yet: time counts while you watch, listen, read, review or do listening drills.</p>`;
+        return;
+    }
+    renderDayChart(el, data, { label: "minutes with the language per day", value: (n) => `${n} min` });
+}
+
+function renderDayChart(el, data, { label, value }) {
     const w = 600, h = 140, padB = 18, padT = 10;
     const max = Math.max(1, ...data.map((d) => d.count));
     const chartH = h - padB - padT;
@@ -113,7 +147,7 @@ function renderMiningChart(items) {
     }).join("");
 
     el.innerHTML = `
-        <svg viewBox="0 0 ${w} ${h}" class="mining-svg" role="img" aria-label="words mined per day, last ${data.length} days">
+        <svg viewBox="0 0 ${w} ${h}" class="mining-svg" role="img" aria-label="${label}, last ${data.length} days">
             <line x1="0" y1="${h - padB}" x2="${w}" y2="${h - padB}" class="mining-baseline"></line>
             ${bars}
         </svg>
@@ -126,9 +160,10 @@ function renderMiningChart(items) {
             tooltip.hidden = false;
             tooltip.textContent = "";
             const strong = document.createElement("strong");
-            strong.textContent = String(d.count);
+            const [num, ...rest] = value(d.count).split(" ");
+            strong.textContent = num;
             tooltip.append(strong, document.createTextNode(
-                ` mined · ${d.date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`));
+                ` ${rest.join(" ")} · ${d.date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`));
             const scale = el.clientWidth / w;
             const cx = (parseFloat(rect.getAttribute("x")) + parseFloat(rect.getAttribute("width")) / 2) * scale;
             const cy = parseFloat(rect.getAttribute("y")) * scale;
@@ -176,8 +211,11 @@ async function init() {
     const podcast = podcastStats();
     const grammar = grammarStats();
     const [text, mined] = await Promise.all([textStats(), minedStats()]);
+    const week = timeByDay(7).reduce((a, d) => a + d.count * 60, 0);
+    const days = { week, streak: today.streak(target()) };
 
-    renderTiles({ words, watch, manga, podcast, text, mined, grammar });
+    renderTiles({ words, watch, manga, podcast, text, mined, grammar, listening: listeningStats(), days });
+    renderTimeChart();
     renderWordBar(words);
     renderMiningChart(mined.items);
     renderRecent([...watch.recent, ...manga.recent, ...text.recent]);

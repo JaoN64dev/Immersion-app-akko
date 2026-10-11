@@ -14,6 +14,8 @@ import * as fullscreen from "../player/fullscreen.js";
 import * as cues from "../player/cues.js";
 import * as subs2 from "../player/subs2.js";
 import * as fileSubs from "../player/file-subs.js";
+import * as skip from "../player/skip.js";
+import * as playlist from "../player/playlist.js";
 import * as render from "../player/render.js";
 import * as popup from "../popup.js";
 import * as mining from "../mining.js";
@@ -23,7 +25,7 @@ import { watchHover } from "../words/hover.js";
 import { initKeys } from "../keys.js";
 import { remindBackup } from "../core/reminder.js";
 
-for (const mod of [settings, search, subtitles, opensubs, video, dualAudio, fileSubs, fullscreen, cues, subs2, render, popup, ankiPanel, progress]) {
+for (const mod of [settings, search, subtitles, opensubs, video, dualAudio, fileSubs, skip, playlist, fullscreen, cues, subs2, render, popup, ankiPanel, progress]) {
     mod.init();
 }
 
@@ -101,6 +103,9 @@ initKeys({
     h: settings.toggleHideSubs,
     t: subs2.cycleMode,
     f: fullscreen.toggleFullscreen,
+    k: skip.skipKey,
+    i: skip.markKey,
+    n: playlist.next,
     "[": () => cues.nudgeOffset(-0.1),
     "]": () => cues.nudgeOffset(0.1),
 });

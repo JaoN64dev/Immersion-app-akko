@@ -49,6 +49,21 @@ export function loadSubtitleText(text, ext, name, { restoring = false } = {}) {
     }
 }
 
+// No subtitles (moving on to another episode: its own are loaded, or picked, for it)
+export function clearSubs() {
+    state.cues = [];
+    state.subName = "";
+    state.subRaw = null;
+    state.subRestored = false;
+    state.activeIdx = -1;
+    pauseAt = null;
+    setOffset(0);
+    renderTranscript();
+    renderStats();
+    updateNowPlaying();
+    renderSubtitle();
+}
+
 // Split every line into words (colours, furigana, % known)
 async function tokenizeCues(cues) {
     try {

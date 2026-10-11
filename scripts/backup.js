@@ -1,32 +1,20 @@
-// Backup: every "akko-*" localStorage key plus IndexedDB (reading library, mined words) in
-// one .json file, and restoring it. Older backups kept mined words in localStorage
-// ("akko-mined"); restoring one puts that key back and mining.js moves it on next load.
+// Settings → Backup: download everything as one .json file, restore one, and the automatic backups
+// the server keeps (scripts/core/auto-backup.js). What a backup is: scripts/core/backup-file.js.
 
 import { $ } from "./core/dom.js";
-import { store, download } from "./core/utils.js";
-import { idbAll, idbCount, idbReplace, IDB_STORES } from "./core/idb.js";
+import { store, download, getJson, escapeHtml } from "./core/utils.js";
+import { idbCount } from "./core/idb.js";
 import { wordCounts } from "./words/status.js";
 import { KEY as PROGRESS_KEY } from "./progress.js";
 import { t } from "./i18n.js";
 import { keyFor } from "./core/target.js";
-
-const PREFIX = "akko-";
-const APP = "akko-immersion";
+import { buildBackup, readBackup, applyBackup } from "./core/backup-file.js";
+import { autoBackupOn, setAutoBackup, backupNow } from "./core/auto-backup.js";
 
 const summary = $("#backup-summary");
 const msg = $("#backup-msg");
 const input = $("#backup-import");
-
-function ourKeys() {
-    const out = [];
-    try {
-        for (let i = 0; i < localStorage.length; i++) {
-            const k = localStorage.key(i);
-            if (k.startsWith(PREFIX)) out.push(k);
-        }
-    } catch { /* storage off */ }
-    return out;
-}
+const autoUi = { on: $("#auto-backup-on"), list: $("#auto-backup-list"), folder: $("#auto-backup-folder") };
 
 function describe(words, minedCount, videos, texts) {
     const c = wordCounts(words);
@@ -42,40 +30,28 @@ async function renderSummary() {
 
 async function exportBackup() {
     store.set("akko-last-backup", Date.now());
-    const data = {};
-    ourKeys().forEach((k) => { data[k] = localStorage.getItem(k); });
-    const idb = {};
-    for (const s of IDB_STORES) idb[s] = await idbAll(s).catch(() => []);
-    const file = { app: APP, version: 3, exported: new Date().toISOString(), data, idb };
-    download(`akko-backup-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(file), "application/json");
+    download(`akko-backup-${new Date().toISOString().slice(0, 10)}.json`, await buildBackup(), "application/json");
     msg.textContent = "backup downloaded ✓";
     renderSummary();
 }
 
-async function restoreBackup() {
-    const f = input.files[0];
-    input.value = "";
-    if (!f) return;
+// restore from a backup's text (a file you picked, or an automatic one)
+async function restoreFrom(text) {
     let file;
     try {
-        file = JSON.parse(await f.text());
-        if (file.app !== APP || typeof file.data !== "object") throw new Error();
+        file = readBackup(text);
     } catch {
         msg.textContent = "that isn't an akko backup file";
         return;
     }
-    const data = Object.fromEntries(Object.entries(file.data).filter(([k, v]) => k.startsWith(PREFIX) && typeof v === "string"));
-    const idb = file.idb && typeof file.idb === "object" ? file.idb : {};      // version 1 backups have none
+    const { data, idb } = file;
     const parse = (k, fallback) => { try { return JSON.parse(data[k]) ?? fallback; } catch { return fallback; } };
     const minedCount = (Array.isArray(idb.mined) ? idb.mined.length : 0) + parse("akko-mined", []).length;
     const what = describe(parse(keyFor("akko-words"), {}), minedCount,
         Object.keys(parse(PROGRESS_KEY, {})).length, (idb.texts || []).length);
     if (!confirm(t(`Restore the backup from ${new Date(file.exported).toLocaleString()}?\n\n${what}\n\nThis replaces everything saved in this browser right now.`))) return;
-
     try {
-        ourKeys().forEach((k) => localStorage.removeItem(k));
-        Object.entries(data).forEach(([k, v]) => localStorage.setItem(k, v));
-        for (const s of IDB_STORES) await idbReplace(s, Array.isArray(idb[s]) ? idb[s] : []);
+        await applyBackup(file);
     } catch (err) {
         msg.textContent = "restore failed: " + err.message;
         return;
@@ -84,9 +60,49 @@ async function restoreBackup() {
     setTimeout(() => location.reload(), 600);
 }
 
+async function restoreBackup() {
+    const f = input.files[0];
+    input.value = "";
+    if (f) restoreFrom(await f.text());
+}
+
+// ---------- automatic backups ----------
+
+const size = (n) => (n > 1e6 ? `${(n / 1e6).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1e3))} KB`);
+
+async function renderAuto() {
+    autoUi.on.checked = autoBackupOn();
+    let list;
+    try { list = await getJson("/api/backups"); } catch { autoUi.list.innerHTML = ""; return; }
+    autoUi.folder.textContent = list.folder;
+    autoUi.list.innerHTML = list.backups.length
+        ? list.backups.map((b) => `<li><span>${new Date(b.date).toLocaleString()}</span> <small>${size(b.size)}</small>
+            <button type="button" data-name="${escapeHtml(b.name)}">restore this one</button></li>`).join("")
+        : `<li class="muted">none yet: the first one is made within a few minutes</li>`;
+}
+
 export function init() {
     $("#backup-export").addEventListener("click", exportBackup);
     input.addEventListener("change", restoreBackup);
+    autoUi.on.addEventListener("input", () => setAutoBackup(autoUi.on.checked));
+    $("#auto-backup-now").addEventListener("click", async () => {
+        msg.textContent = "backing up…";
+        try { await backupNow(); msg.textContent = "backup saved ✓"; } catch (err) { msg.textContent = "backup failed: " + err.message; }
+        renderAuto();
+        renderSummary();
+    });
+    autoUi.list.addEventListener("click", async (e) => {
+        const b = e.target.closest("button[data-name]");
+        if (!b) return;
+        try {
+            const res = await fetch(`/api/backups/${encodeURIComponent(b.dataset.name)}`);
+            if (!res.ok) throw new Error(`${res.status}`);
+            restoreFrom(await res.text());
+        } catch (err) {
+            msg.textContent = "couldn't read that backup: " + err.message;
+        }
+    });
+    renderAuto();
 
     // keep the summary current as things get saved
     let pending = null;

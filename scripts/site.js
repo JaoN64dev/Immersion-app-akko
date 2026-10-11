@@ -10,8 +10,65 @@ import "./i18n.js";
 import { chosen, target, setTarget, welcomeOn, setWelcome } from "./core/target.js";
 import { store } from "./core/utils.js";
 import * as today from "./core/today.js";
+import * as autoBackup from "./core/auto-backup.js";
+import * as themes from "./core/theme.js";
 
 today.start();          // count today's minutes (watching, listening, reading)
+autoBackup.start();     // every few days, a backup to the server's data folder
+themes.start();         // light / dark
+
+// ---------- ? shows this page's keys ----------
+// (the same list as the sidebar's "Keys", which is usually folded away)
+(function keysHelp() {
+    const list = document.querySelector("#navi .keys");
+    if (!list) return;
+    let box = null;
+    const typing = (t) => t.matches?.("input, textarea, select, [contenteditable], [contenteditable] *");
+    document.addEventListener("keydown", (e) => {
+        if (e.key !== "?" || e.ctrlKey || e.metaKey || e.altKey || typing(e.target)) return;
+        e.preventDefault();
+        if (!box) {
+            box = document.createElement("dialog");
+            box.className = "keys-help";
+            box.addEventListener("click", (ev) => { if (ev.target === box || ev.target.closest(".keys-help-close")) box.close(); });
+            document.body.append(box);
+        }
+        if (box.open) { box.close(); return; }
+        box.innerHTML = `<h2>Keys <small>on this page</small></h2><ul class="keys">${list.innerHTML}</ul>
+            <p class="keys-help-foot"><kbd>?</kbd> shows this · <kbd>Esc</kbd> closes it</p>
+            <button type="button" class="keys-help-close">close</button>`;
+        box.showModal();
+    });
+})();
+
+// ---------- phones: the sidebar is a menu (☰ in the top bar) ----------
+// It opens over the page; a link in it, the dark backdrop, Esc or ☰ again close it.
+(function sidebarMenu() {
+    const button = document.querySelector(".menu-btn");
+    const sidebar = document.querySelector("#sidebar");
+    if (!button || !sidebar) return;
+    const backdrop = document.createElement("div");
+    backdrop.className = "menu-backdrop";
+    document.body.append(backdrop);
+    const isOpen = () => document.body.classList.contains("menu-open");
+    const setOpen = (open) => {
+        document.body.classList.toggle("menu-open", open);
+        button.setAttribute("aria-expanded", String(open));
+        // the first thing in it you can see (some are only for the other language), once it's
+        // shown (a hidden menu can't take the focus)
+        if (open) setTimeout(() => [...sidebar.querySelectorAll("a, summary, button, input")]
+            .find((el) => el.getClientRects().length)?.focus({ preventScroll: true }), 220);
+        else if (sidebar.contains(document.activeElement)) button.focus({ preventScroll: true });
+    };
+    button.addEventListener("click", () => setOpen(!isOpen()));
+    backdrop.addEventListener("click", () => setOpen(false));
+    sidebar.addEventListener("click", (e) => { if (isOpen() && e.target.closest("a")) setOpen(false); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && isOpen()) setOpen(false); });
+    // narrow windows scroll the tabs sideways: show the page you're on
+    document.querySelector(".topbar .tab[aria-current]")?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    // back to a wide window: the menu isn't a menu any more
+    matchMedia("(min-width: 901px)").addEventListener("change", (e) => { if (e.matches) setOpen(false); });
+})();
 
 const t = target();
 document.body.classList.add(`target-${t}`);

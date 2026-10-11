@@ -8,3 +8,9 @@ data/english-online.json
 data/opensubtitles.json
 
 dist/
+
+data/speech/
+data/listening/
+data/voicevox/
+data/backups/
+data/lan.json

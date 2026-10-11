@@ -13,7 +13,7 @@ import { saveItem } from "../mining.js";
 import { pitchCardHtml, pitchNotes } from "../words/pitch.js";
 
 const KEY = "akko-anki";
-const DEFAULTS = { deck: "", model: "", maps: {}, tags: "akko immersion", auto: false, audio: true, wordAudio: true, shot: true };
+const DEFAULTS = { deck: "", model: "", maps: {}, tags: "akko immersion", auto: false, audio: true, wordAudio: true, shot: true, spokenSentence: true };
 
 // what the site can put into an Anki field
 export const SOURCES = {
@@ -236,6 +236,16 @@ const fetchWordAudio = (item) => {
     return getJson(`/api/audio?${params}`);
 };
 
+// The sentence said by VOICEVOX or the computer's voice (server/speech.js), as {data, ext}
+async function spokenSentence(text) {
+    const res = await fetch(`/api/speech?${new URLSearchParams({ text: text.slice(0, 400), voice: "woman" })}`);
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `no voice (${res.status})`);
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    let bin = "";
+    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    return { data: btoa(bin), ext: "wav" };
+}
+
 // ---------- building the note ----------
 
 function fieldValue(source, item) {
@@ -275,6 +285,10 @@ export async function send(item, media) {
         c.shot && fieldsFor("screenshot").length > 0,
         c.audio && fieldsFor("audio").length > 0);
     const stamp = `akko_${item.added}`;
+    // no recording of the line (mined from a book, a lesson…): the sentence said by a voice
+    if (!result.audio && c.audio && c.spokenSentence && fieldsFor("audio").length > 0 && (item.lang || "ja") === "ja" && item.sentence) {
+        try { result.audio = await spokenSentence(item.sentence); } catch (err) { result.problems.push("sentence audio: " + err.message); }
+    }
     const wordAudio = await wordAudioP;
     if (wordAudio?.error) result.problems.push(wordAudio.error);
 

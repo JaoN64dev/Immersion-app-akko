@@ -48,3 +48,13 @@ test('another name pointed at 127.0.0.1 (DNS rebinding) gets nothing', async () 
   assert.equal(await ask('GET', { Host: `evil.example:${port}` }), 403);
   assert.equal(await ask('POST', { Host: `evil.example:${port}`, Origin: `http://evil.example:${port}` }), 403);
 });
+
+test("other websites can't make akko work for them, even only reading", async () => {
+  for (const from of ['cross-site', 'same-site']) {
+    assert.equal(await ask('GET', { 'Sec-Fetch-Site': from }), 403, from);
+  }
+  // akko's own pages, typing the address, and programs without the header
+  for (const from of ['same-origin', 'none', undefined]) {
+    assert.equal(await ask('GET', from ? { 'Sec-Fetch-Site': from } : {}), 200, String(from));
+  }
+});

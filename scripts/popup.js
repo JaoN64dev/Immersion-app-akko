@@ -13,6 +13,8 @@ import * as mining from "./mining.js";
 import * as anki from "./anki/client.js";
 import { lessonMap } from "./grammar/lessons.js";
 import { target, nativeLang, NATIVE_LANGUAGES } from "./core/target.js";
+import { saySentence, sayWord } from "./core/say.js";
+import { toast } from "./core/toast.js";
 
 const popup = $("#popup");
 let ctx = null;   // { word, lemma, sentence, info, grammar, resume } for the open popup
@@ -207,6 +209,7 @@ function render(word, { entries, inflection, kanji, grammar = [], more = [] }) {
             <div class="entry-head">
                 <span class="headword" lang="ja">${escapeHtml(e.word)}</span>
                 ${readingHtml(e)}
+                <button class="say-word" data-i="${i}" title="hear the word">🔊</button>
                 ${e.common ? `<span class="tag">common</span>` : ""}${freqHtml(e)}
                 <button class="mine" data-i="${i}">+ mine</button>
             </div>
@@ -222,6 +225,7 @@ function render(word, { entries, inflection, kanji, grammar = [], more = [] }) {
     popup.innerHTML = `<div class="popup-head"><b lang="${target()}">${escapeHtml(word)}</b>
         ${lemma && lemma.toLowerCase() !== word.toLowerCase() ? `<span class="lemma" lang="${target()}">→ ${escapeHtml(lemma)}</span>` : ""}
         ${link}
+        ${!en && ctx && ctx.sentence && ctx.sentence.length > 1 ? `<button class="say-sentence" title="hear the whole sentence">▶ sentence</button>` : ""}
         <button class="close" title="close">✕</button></div>
         ${inflectionHtml(lemma || word, inflection)}
         ${grammarHtml(grammar)}
@@ -240,6 +244,13 @@ function render(word, { entries, inflection, kanji, grammar = [], more = [] }) {
         store.set(MORE_CLOSED, d.open ? closed : [...closed, d.dataset.title]);
     }));
     popup.querySelectorAll(".say").forEach((b) => b.addEventListener("click", () => new Audio(b.dataset.src).play().catch(() => {})));
+    // Japanese: hear the word, or the whole sentence it's in
+    const failed = (err) => toast(err.message, true);
+    popup.querySelectorAll(".say-word").forEach((b) => b.addEventListener("click", () => {
+        const e = entries[Number(b.dataset.i)];
+        sayWord(e.word, e.reading || "").catch(failed);
+    }));
+    popup.querySelector(".say-sentence")?.addEventListener("click", () => saySentence(ctx.sentence).catch(failed));
 }
 
 async function mineEntry(entry, btn) {

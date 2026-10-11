@@ -4,9 +4,11 @@
 import { $ } from "../core/dom.js";
 import { getJson, postJson } from "../core/utils.js";
 import { target, setTarget, nativeLang, setNative, NATIVE_LANGUAGES, welcomeOn, setWelcome } from "../core/target.js";
+import { theme, setTheme } from "../core/theme.js";
 import { lang, setLang, t } from "../i18n.js";
 import { bindWordDisplay } from "../words/display.js";
 import * as backup from "../backup.js";
+import * as phone from "./phone.js";
 import "./stats.js";
 
 // learning: switching reloads, since every page keeps that language's data
@@ -203,5 +205,10 @@ const welcomeBox = $("#welcome-on");
 welcomeBox.checked = welcomeOn();
 welcomeBox.addEventListener("change", () => setWelcome(welcomeBox.checked));
 
+const themePick = $("#theme-pick");
+themePick.value = theme();
+themePick.addEventListener("input", () => setTheme(themePick.value));
+
 bindWordDisplay($("#furigana-mode"), $("#color-words"));
 backup.init();
+phone.init();
