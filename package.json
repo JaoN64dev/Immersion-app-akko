@@ -51,7 +51,8 @@
       "!data/voicevox/**",
       "!data/backups/**",
       "!.github/**",
-      "!data/lan.json"
+      "!data/lan.json",
+      "!website/**"
     ],
     "win": {
       "target": [

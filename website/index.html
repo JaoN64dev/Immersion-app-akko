@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>akko: learn Japanese by immersion</title>
+    <meta name="description" content="akko is a free, open-source app for learning Japanese (or English) by immersion: watch anime, read books and manga, listen to podcasts, click any word to look it up and send it to Anki. Runs on your own computer.">
+    <meta property="og:title" content="akko: learn Japanese by immersion">
+    <meta property="og:description" content="Watch, read and listen in Japanese. Click any word to look it up, mine it to Anki, practise JLPT listening. Free and open source.">
+    <meta property="og:image" content="https://jaon64dev.github.io/Immersion-app-akko/images/read.jpg">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="icon" href="images/icon.png">
+    <link rel="stylesheet" href="style.css">
+    <script src="main.js" defer></script>
+</head>
+<body>
+    <marquee scrollamount="2" aria-hidden="true">SITE BY: AKKO ・ 少しずつ ・ SITE BY: AKKO ・ 分からなくても大丈夫 ・ SITE BY: AKKO ・ a little every day ・ SITE BY: AKKO ・ just keep listening</marquee>
+
+    <nav class="topbar" aria-label="sections">
+        <a class="brand" href="#top"><img src="images/icon.png" alt="" width="28" height="28"> akko</a>
+        <div class="topbar-links">
+            <a href="#features">features</a>
+            <a href="#screens">screenshots</a>
+            <a href="#download">download</a>
+            <a href="#resources">resources</a>
+            <a href="#faq">FAQ</a>
+            <a href="https://github.com/JaoN64dev/Immersion-app-akko">GitHub ↗</a>
+        </div>
+    </nav>
+
+    <main id="top">
+        <!-- ======== the first thing you see ======== -->
+        <section class="hero">
+            <div class="hero-text">
+                <p class="kicker">日本語 ・ English</p>
+                <h1>Learn Japanese by <em>living in it</em>.</h1>
+                <p class="lead">Watch anime, read books and manga, listen to podcasts. Click any word you don't know to look it up, then send it to Anki. akko keeps track of what you know, and it's all on your own computer.</p>
+                <div class="hero-actions">
+                    <a class="btn btn-big" id="hero-download" href="https://github.com/JaoN64dev/Immersion-app-akko/releases/latest">⬇ Download for Windows</a>
+                    <span class="hero-version" id="hero-version">free · open source · no account</span>
+                </div>
+                <p class="small">Or <a href="#from-source">run it from the code</a> on Windows, macOS or Linux. Learning English? It does that too.</p>
+            </div>
+            <figure class="hero-shot frame">
+                <img src="images/read.jpg" alt="akko's Read page: a Japanese novel with unknown words underlined in red, furigana over them, and a pop-up dictionary entry for 見当" width="1280" height="800">
+            </figure>
+        </section>
+
+        <!-- ======== what it does ======== -->
+        <section id="features" class="panel">
+            <h2>What akko does</h2>
+            <div class="cards">
+                <article class="card">
+                    <h3><span lang="ja">観る</span> Watch</h3>
+                    <p>Play your videos with Japanese subtitles you can click. akko searches Japanese subtitles for anime, or uses the ones inside the video file. Skip intros, play a whole season in a row, and see how much of each episode you understand.</p>
+                </article>
+                <article class="card">
+                    <h3><span lang="ja">読む</span> Read</h3>
+                    <p>Books (EPUB, text), saved web pages, subtitle files and manga. Every word is clickable, with furigana only on the words you don't know yet. Vertical 縦書き too.</p>
+                </article>
+                <article class="card">
+                    <h3><span lang="ja">聴く</span> Listen</h3>
+                    <p>Podcasts with transcripts you can click, and the episode you left off at.</p>
+                </article>
+                <article class="card">
+                    <h3><span lang="ja">聴解</span> Listening drills</h3>
+                    <p>192 JLPT-style questions from N5 to N1: conversations, quick replies, "what would you say?", dictation. Mistakes come back until you get them right.</p>
+                </article>
+                <article class="card">
+                    <h3><span lang="ja">文法</span> Grammar</h3>
+                    <p>110 short lessons from N5 to N1, with examples and quizzes. Grammar you've studied is underlined wherever it appears in subtitles and books.</p>
+                </article>
+                <article class="card">
+                    <h3><span lang="ja">道</span> The course</h3>
+                    <p>A step-by-step path from zero to immersion, with goals akko checks for you: words known, time listening, pages read.</p>
+                </article>
+                <article class="card">
+                    <h3>A dictionary on every word</h3>
+                    <p>JMdict, kanji and pitch accent, offline. Add more dictionaries in Yomitan format (Jitendex, monolingual ones) and frequency lists.</p>
+                </article>
+                <article class="card">
+                    <h3>Anki in one click</h3>
+                    <p>"+ mine" sends the word, its sentence, the line's audio and a screenshot to Anki, through AnkiConnect.</p>
+                </article>
+                <article class="card">
+                    <h3>Real-sounding voices</h3>
+                    <p>Hear any word or sentence, with free natural voices from VOICEVOX (one click to set up) or your computer's own.</p>
+                </article>
+                <article class="card">
+                    <h3>Yours, on your computer</h3>
+                    <p>No account, no tracking, no subscription. Your words and progress stay on your computer, with automatic backups.</p>
+                </article>
+                <article class="card">
+                    <h3>Phone and tablet</h3>
+                    <p>Turn it on and use the same akko from your phone on your Wi-Fi, for reading in bed.</p>
+                </article>
+                <article class="card">
+                    <h3>Light or dark</h3>
+                    <p>A dark theme for watching at night, and the interface in English or <span lang="ja">日本語</span>.</p>
+                </article>
+            </div>
+        </section>
+
+        <!-- ======== screenshots ======== -->
+        <section id="screens" class="panel">
+            <h2>A look inside</h2>
+            <div class="gallery">
+                <figure class="frame">
+                    <img src="images/grammar.jpg" alt="A grammar lesson about 〜ている with examples, and the pop-up dictionary open on a word" width="1280" height="800" loading="lazy">
+                    <figcaption>Grammar lessons with clickable examples</figcaption>
+                </figure>
+                <figure class="frame">
+                    <img src="images/listening.jpg" alt="A JLPT-style N4 listening question, answered correctly" width="1280" height="800" loading="lazy">
+                    <figcaption>JLPT-style listening, N5 to N1</figcaption>
+                </figure>
+                <figure class="frame">
+                    <img src="images/dark.jpg" alt="Dictation in the dark theme: the missed part of the sentence is highlighted" width="1280" height="800" loading="lazy">
+                    <figcaption>Dictation, in the dark theme</figcaption>
+                </figure>
+                <figure class="frame">
+                    <img src="images/course.jpg" alt="The course page: step one, the idea behind learning by immersion" width="1280" height="800" loading="lazy">
+                    <figcaption>A course from zero to immersion</figcaption>
+                </figure>
+                <figure class="frame frame-phone">
+                    <img src="images/phone.jpg" alt="akko on a phone: a novel on the Read page" width="780" height="1560" loading="lazy">
+                    <figcaption>On a phone</figcaption>
+                </figure>
+            </div>
+        </section>
+
+        <!-- ======== download ======== -->
+        <section id="download" class="panel">
+            <h2>Download</h2>
+            <p class="release-line" id="release-line">The newest version is on the <a href="https://github.com/JaoN64dev/Immersion-app-akko/releases/latest">releases page</a>.</p>
+            <div class="cards downloads">
+                <article class="card card-main">
+                    <h3>Installer <small>recommended</small></h3>
+                    <p>Installs akko and keeps it up to date by itself.</p>
+                    <a class="btn" id="dl-setup" href="https://github.com/JaoN64dev/Immersion-app-akko/releases/latest">⬇ akko-setup.exe</a>
+                    <p class="small" id="dl-setup-size">Windows 10 / 11, 64-bit</p>
+                </article>
+                <article class="card">
+                    <h3>Portable</h3>
+                    <p>No install: one file you can run from anywhere, even a USB stick.</p>
+                    <a class="btn btn-quiet" id="dl-portable" href="https://github.com/JaoN64dev/Immersion-app-akko/releases/latest">⬇ akko-portable.exe</a>
+                    <p class="small" id="dl-portable-size">Windows 10 / 11, 64-bit</p>
+                </article>
+                <article class="card" id="from-source">
+                    <h3>From the code</h3>
+                    <p>Any computer with <a href="https://nodejs.org">Node.js</a>: macOS, Linux, or Windows. Then open <code>http://127.0.0.1:3000</code> in your browser.</p>
+<pre><code>git clone https://github.com/JaoN64dev/Immersion-app-akko.git
+cd Immersion-app-akko
+npm install
+npm start</code></pre>
+                </article>
+            </div>
+            <p class="note-line"><b>"Windows protected your PC"?</b> akko isn't code-signed yet (that costs money), so Windows warns about it the first time. Click <b>More info → Run anyway</b>. The code is all public on GitHub.</p>
+        </section>
+
+        <!-- ======== resources ======== -->
+        <section id="resources" class="panel">
+            <h2>Resources</h2>
+            <div class="cards three">
+                <article class="card">
+                    <h3>Getting started</h3>
+                    <ul class="links">
+                        <li><a href="https://github.com/JaoN64dev/Immersion-app-akko#readme">The README</a>: what's where, setup, tips</li>
+                        <li><a href="https://github.com/JaoN64dev/Immersion-app-akko/releases">Release notes</a>: what's new in each version</li>
+                        <li>In the app: the <b>道 course</b> tab, and <kbd>?</kbd> on any page for its keys</li>
+                    </ul>
+                </article>
+                <article class="card">
+                    <h3>Tools that work with akko</h3>
+                    <ul class="links">
+                        <li><a href="https://apps.ankiweb.net">Anki</a> + <a href="https://ankiweb.net/shared/info/2055492159">AnkiConnect</a> (code <code>2055492159</code>), for mining</li>
+                        <li><a href="https://voicevox.hiroshiba.jp/">VOICEVOX</a>: free natural Japanese voices</li>
+                        <li><a href="https://jitendex.org">Jitendex</a> and other <a href="https://github.com/yomidevs/yomitan">Yomitan</a> dictionaries</li>
+                        <li><a href="https://github.com/kha-white/mokuro">mokuro</a>, to make manga text clickable</li>
+                    </ul>
+                </article>
+                <article class="card">
+                    <h3>Japanese to immerse in</h3>
+                    <ul class="links">
+                        <li><a href="https://www.jlpt.jp/e/samples/forlearners.html">Official JLPT sample tests</a>, with real exam audio</li>
+                        <li><a href="https://kitsunekko.net">kitsunekko</a> and <a href="https://github.com/Matchoo95/JP-Subtitles">JP-Subtitles</a>: Japanese subtitles (akko searches them for you)</li>
+                        <li><a href="https://www.aozora.gr.jp">青空文庫 Aozora Bunko</a>: free Japanese books in the public domain</li>
+                        <li>Podcasts like <span lang="ja">Nihongo con Teppei</span>, <span lang="ja">すこやか日本語</span> or <span lang="ja">ゆる言語学ラジオ</span>: search any in akko's Listen tab</li>
+                    </ul>
+                </article>
+                <article class="card">
+                    <h3>Make it yours</h3>
+                    <ul class="links">
+                        <li><a href="https://github.com/JaoN64dev/Immersion-app-akko/blob/main1/grammar/README.md">Write grammar lessons</a></li>
+                        <li><a href="https://github.com/JaoN64dev/Immersion-app-akko/blob/main1/listening/README.md">Write listening exercises</a>, with your own recordings</li>
+                        <li><a href="https://github.com/JaoN64dev/Immersion-app-akko/blob/main1/course/README.md">Change the course</a></li>
+                        <li><a href="https://github.com/JaoN64dev/Immersion-app-akko/blob/main1/docs/how-it-works.md">How akko works</a>, for developers</li>
+                    </ul>
+                </article>
+                <article class="card">
+                    <h3>Help and ideas</h3>
+                    <ul class="links">
+                        <li><a href="https://github.com/JaoN64dev/Immersion-app-akko/issues">Report a problem or suggest something</a></li>
+                        <li><a href="https://github.com/JaoN64dev/Immersion-app-akko">The code</a>: MIT license, contributions welcome</li>
+                    </ul>
+                </article>
+            </div>
+        </section>
+
+        <!-- ======== questions ======== -->
+        <section id="faq" class="panel">
+            <h2>Questions</h2>
+            <details>
+                <summary>Is it really free?</summary>
+                <p>Yes. akko is open source (MIT license), with no account, ads or paid tier. The dictionaries and voices it uses are free too.</p>
+            </details>
+            <details>
+                <summary>Does it need the internet?</summary>
+                <p>The dictionary, grammar, drills and your words work offline. The internet is only needed to search subtitles, load podcasts, download word recordings the first time, and check for updates.</p>
+            </details>
+            <details>
+                <summary>Where are my words and progress kept?</summary>
+                <p>On your computer, in the app. Nothing is sent anywhere. akko makes an automatic backup every few days, and Settings → Backup lets you save or restore one, or move to another computer.</p>
+            </details>
+            <details>
+                <summary>Mac or Linux?</summary>
+                <p>The ready-made download is for Windows for now. On a Mac or Linux, <a href="#from-source">run it from the code</a> with Node.js and use it in your browser. Everything works there, except the Windows voices; VOICEVOX works on all three.</p>
+            </details>
+            <details>
+                <summary>Where do I get videos and subtitles?</summary>
+                <p>Open your own video files (.mkv, .mp4…) or paste a link. akko finds Japanese subtitles for anime by itself, and uses the ones inside the video file when there are any.</p>
+            </details>
+            <details>
+                <summary>I'm learning English, not Japanese.</summary>
+                <p>Pick English the first time you open akko. You get an English dictionary with American pronunciation, translations into your language, English grammar lessons (A1 to C1) and a course.</p>
+            </details>
+            <details>
+                <summary>Can I use it on my phone?</summary>
+                <p>Yes: in Settings, turn on "Use akko on your phone", then scan the QR code with your phone on the same Wi-Fi and type the PIN. akko keeps running on your computer.</p>
+            </details>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p><img src="images/icon.png" alt="" width="20" height="20"> <b>akko</b> by <a href="https://github.com/JaoN64dev">JaoN64Dev</a> · <a href="https://github.com/JaoN64dev/Immersion-app-akko/blob/main1/LICENSE">MIT license</a></p>
+        <p class="credits">Dictionary: <a href="https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project">JMdict</a> and <a href="https://www.edrdg.org/wiki/index.php/KANJIDIC_Project">KANJIDIC2</a> (EDRDG, CC BY-SA 4.0) · pitch accent: <a href="https://github.com/mifunetoshiro/kanjium">Kanjium</a> · English: <a href="https://wordnet.princeton.edu">WordNet</a>, <a href="https://github.com/cmusphinx/cmudict">CMUdict</a>, <a href="https://en.wiktionary.org">Wiktionary</a> · skip times: <a href="https://aniskip.com">AniSkip</a> · the novel in the screenshots: 夏目漱石「吾輩は猫である」(public domain)</p>
+    </footer>
+</body>
+</html>
