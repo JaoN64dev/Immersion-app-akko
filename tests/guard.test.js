@@ -58,3 +58,12 @@ test("other websites can't make akko work for them, even only reading", async ()
     assert.equal(await ask('GET', from ? { 'Sec-Fetch-Site': from } : {}), 200, String(from));
   }
 });
+
+test("akko's own browser extension can use the API; other extensions can't", async () => {
+  const ours = 'chrome-extension://cflgdipimeohhbeadldfgaohdcnnkcol';
+  assert.equal(await ask('POST', { Origin: ours, 'Sec-Fetch-Site': 'none' }), 200);
+  assert.equal(await ask('POST', { Origin: ours, 'Sec-Fetch-Site': 'cross-site' }), 200);
+  assert.equal(await ask('POST', { Origin: 'chrome-extension://aaaabbbbccccddddeeeeffffgggghhhh' }), 403);
+  // and only at akko's own address
+  assert.equal(await ask('POST', { Origin: ours, Host: `evil.example:${port}` }), 403);
+});

@@ -36,6 +36,7 @@ const speech = require('./server/speech');
 const voicevox = require('./server/voicevox');
 const backups = require('./server/backups');
 const lan = require('./server/lan');
+const companion = require('./server/companion');
 
 const hostname = '127.0.0.1';
 
@@ -57,8 +58,11 @@ app.use('/api/grammar', grammar.router);
 app.use('/api/course', course.router);
 app.use('/api/opensubs', opensubs.router);
 app.use('/api/listening', listening.router);
+// "is this akko?": how the browser extension finds akko among the programs on this computer
+app.get('/api/hello', (req, res) => res.json({ app: 'akko', version: require('./package.json').version }));
 app.use('/api/backups', backups.router);
 app.use('/api/lan', lan.router);
+app.use('/api/companion', companion.router);
 app.use('/api/speech/voicevox', voicevox.router);
 app.use('/api/speech', speech.router);
 

@@ -15,6 +15,10 @@ const { lanGuard } = require('./lan');
 
 const LOCAL = /^(127\.0\.0\.1|localhost)(:\d+)?$/i;
 const READ_ONLY = ['GET', 'HEAD', 'OPTIONS'];
+// the akko companion browser extension (extension/): its ID comes from the "key" in its manifest,
+// so only that extension has it. AKKO_EXTENSIONS adds more IDs (e.g. a Chrome Web Store copy).
+const EXTENSIONS = new Set(['cflgdipimeohhbeadldfgaohdcnnkcol', ...String(process.env.AKKO_EXTENSIONS || '').split(',').filter(Boolean)]
+  .map((id) => `chrome-extension://${id.trim()}`));
 
 function guard(req, res, next) {
   if (req.viaLan) return lanGuard(req, res, () => sameSite(req, res, next));
@@ -27,6 +31,7 @@ function guard(req, res, next) {
 function sameSite(req, res, next) {
   const host = req.headers.host || '';
   const origin = req.headers.origin;
+  if (origin && EXTENSIONS.has(origin) && !req.viaLan) return next();        // akko's own extension
   if (origin && !READ_ONLY.includes(req.method)) {
     let same = false;
     try { same = new URL(origin).host === host; } catch { /* "null" and other non-URLs */ }

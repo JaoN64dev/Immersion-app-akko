@@ -1,19 +1,20 @@
 {
   "name": "akko",
   "productName": "akko",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "Learn Japanese or English by immersion: watch, read and listen with a pop-up dictionary, grammar lessons and Anki mining.",
   "main": "electron/main.js",
   "author": "akko (JaoN64Dev)",
   "license": "MIT",
-  "repository": "github:JaoN64dev/japaneselocalwebapp",
+  "repository": "github:JaoN64dev/Immersion-app-akko",
   "type": "commonjs",
   "scripts": {
     "start": "node server.js",
     "desktop": "node electron/run.js",
-    "dist": "electron-builder --publish never",
+    "dist": "node tools/pack-extension.js && electron-builder --publish never",
     "test": "node --test \"tests/*.test.*\"",
-    "check-lessons": "node tools/check-lessons.js"
+    "check-lessons": "node tools/check-lessons.js",
+    "pack-extension": "node tools/pack-extension.js"
   },
   "dependencies": {
     "@ffmpeg/core": "^0.12.10",
@@ -52,7 +53,9 @@
       "!data/backups/**",
       "!.github/**",
       "!data/lan.json",
-      "!website/**"
+      "!data/companion.json",
+      "!website/**",
+      "!extension/**"
     ],
     "win": {
       "target": [
@@ -83,7 +86,17 @@
       {
         "provider": "github",
         "owner": "JaoN64dev",
-        "repo": "japaneselocalwebapp"
+        "repo": "Immersion-app-akko"
+      }
+    ],
+    "extraResources": [
+      {
+        "from": "extension",
+        "to": "extension",
+        "filter": [
+          "**/*",
+          "!README.md"
+        ]
       }
     ]
   }

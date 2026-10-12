@@ -28,6 +28,11 @@ newestRelease().then((r) => {
     const portable = r.assets.find((a) => /portable.*\.exe$/i.test(a.name));
     point("dl-setup", setup, `Installer ${version}`);
     point("dl-portable", portable, `Portable ${version}`);
+    const extension = r.assets.find((a) => /^akko-companion.*\.zip$/i.test(a.name));
+    if (extension) {
+        document.getElementById("dl-extension").href = extension.browser_download_url;
+        document.getElementById("dl-extension").textContent = `⬇ ${extension.name}`;
+    }
     if (setup) {
         document.getElementById("hero-download").href = setup.browser_download_url;
         document.getElementById("hero-download").textContent = `⬇ Download akko ${version}`;

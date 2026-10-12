@@ -175,6 +175,25 @@ function showTray() {
   buildTrayMenu();
 }
 
+// The browser extension (extension/, YouTube and Netflix): installed next to the app, outside its
+// archive so Chrome can load it. Opens the folder and says what to do in Chrome.
+const extensionDir = () => (app.isPackaged ? path.join(process.resourcesPath, 'extension') : path.join(__dirname, '..', 'extension'));
+async function installExtension() {
+  const { response } = await dialog.showMessageBox({
+    type: 'info',
+    title: 'akko companion for YouTube and Netflix',
+    message: 'Add akko to Chrome or Edge',
+    detail: "The extension puts akko's clickable subtitles on YouTube and Netflix, and sends the words you mark and mine back to akko.\n\n"
+      + '1. In Chrome, open chrome://extensions (Edge: edge://extensions)\n'
+      + '2. Turn on "Developer mode" (top right)\n'
+      + '3. Click "Load unpacked" and pick the folder that opens now\n\n'
+      + 'Keep that folder where it is: Chrome uses it from there. After akko updates, click the reload arrow on the extension.',
+    buttons: ['Open the folder', 'Cancel'],
+    defaultId: 0,
+  });
+  if (response === 0) shell.openPath(extensionDir());
+}
+
 function buildTrayMenu() {
   if (!tray) return;
   tray.setContextMenu(Menu.buildFromTemplate([
@@ -183,6 +202,7 @@ function buildTrayMenu() {
     { type: 'separator' },
     modeMenuItem(),
     { label: 'Open the data folder', click: () => shell.openPath(process.env.AKKO_DATA) },
+    { label: 'Browser extension (YouTube / Netflix)…', click: installExtension },
     { type: 'separator' },
     { label: 'Quit akko (stops the server)', click: () => app.quit() },
   ]));
@@ -219,6 +239,7 @@ function buildMenu() {
         modeMenuItem(),
         { type: 'separator' },
         { label: 'Open the data folder', click: () => shell.openPath(process.env.AKKO_DATA) },
+        { label: 'Browser extension (YouTube / Netflix)…', click: installExtension },
         { type: 'separator' },
         { role: 'quit' },
       ],
@@ -236,7 +257,7 @@ function buildMenu() {
       label: 'Help',
       submenu: [
         { label: 'Check for updates', click: () => checkForUpdate({ quiet: false }) },
-        { label: 'Project page', click: () => shell.openExternal('https://github.com/JaoN64dev/japaneselocalwebapp') },
+        { label: 'Project page', click: () => shell.openExternal('https://github.com/JaoN64dev/Immersion-app-akko') },
       ],
     },
   ]));
@@ -253,6 +274,7 @@ app.on('second-instance', () => {
 
 app.whenReady().then(async () => {
   process.env.AKKO_DATA = path.join(app.getPath('userData'), 'data');
+  process.env.AKKO_EXTENSION = extensionDir();
   prepareData(process.env.AKKO_DATA);
   const chosen = await startMode();
   if (!chosen) { app.quit(); return; }
@@ -282,8 +304,8 @@ app.whenReady().then(async () => {
 // updates). Nothing is installed: it offers to open the download page. AKKO_UPDATE_URL points it
 // somewhere else (for testing).
 
-const RELEASES = 'https://github.com/JaoN64dev/japaneselocalwebapp/releases/latest';
-const UPDATE_URL = process.env.AKKO_UPDATE_URL || 'https://api.github.com/repos/JaoN64dev/japaneselocalwebapp/releases/latest';
+const RELEASES = 'https://github.com/JaoN64dev/Immersion-app-akko/releases/latest';
+const UPDATE_URL = process.env.AKKO_UPDATE_URL || 'https://api.github.com/repos/JaoN64dev/Immersion-app-akko/releases/latest';
 const DAY = 24 * 3600e3;
 
 // "v1.10.0" > "1.9.2"

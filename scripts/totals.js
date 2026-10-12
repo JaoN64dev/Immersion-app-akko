@@ -8,6 +8,7 @@ import { KEY as PROGRESS_KEY } from "./progress.js";
 import { PROGRESS_KEY as GRAMMAR_KEY } from "./grammar/lessons.js";
 import { keyFor, ofTarget, learningEnglish, understood } from "./core/target.js";
 import { readingOf } from "./reader/library.js";
+import { WATCHED as COMPANION_KEY } from "./core/companion.js";
 
 const MANGA_KEY = "akko-manga";             // manga is Japanese only
 const POD_KEY = keyFor("akko-podcast-progress");
@@ -29,6 +30,17 @@ export function watchStats() {
         extra: r.duration ? `${Math.round((r.time / r.duration) * 100)}%` : "", when: r.updated,
     }));
     return { count: all.length, finished, seconds, recent };
+}
+
+// YouTube / Netflix with the browser extension (scripts/core/companion.js): Japanese only
+export function companionStats() {
+    const all = learningEnglish() ? [] : Object.values(store.get(COMPANION_KEY, {}));
+    const seconds = all.reduce((n, r) => n + (r.seconds || 0), 0);
+    const recent = all.map((r) => ({
+        type: r.site === "netflix" ? "netflix" : "youtube", title: r.title, url: r.url,
+        extra: r.seconds >= 60 ? `${Math.round(r.seconds / 60)} min` : "", when: r.when,
+    }));
+    return { count: all.length, seconds, recent };
 }
 
 export function mangaStats() {

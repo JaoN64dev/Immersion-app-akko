@@ -212,3 +212,26 @@ themePick.addEventListener("input", () => setTheme(themePick.value));
 bindWordDisplay($("#furigana-mode"), $("#color-words"));
 backup.init();
 phone.init();
+
+// ---------- YouTube and Netflix: is the browser extension talking to akko? ----------
+(async function companionStatus() {
+    const el = $("#companion-status");
+    if (!el) return;
+    try {
+        const { seen } = await getJson("/api/companion");
+        const ago = Date.now() - seen;
+        el.textContent = !seen ? "Not connected yet: install the extension, then open a Japanese video."
+            : ago < 5 * 60e3 ? "✓ The extension is connected."
+            : `The extension last talked to akko ${ago < 2 * 3600e3 ? `${Math.round(ago / 60e3)} minutes` : ago < 2 * 864e5 ? `${Math.round(ago / 3600e3)} hours` : `${Math.round(ago / 864e5)} days`} ago.`;
+    } catch { el.textContent = ""; }
+    // the extension's folder, for Chrome's "Load unpacked"
+    const open = $("#companion-open");
+    try {
+        const { folder, version } = await getJson("/api/companion/extension");
+        if (!folder || !version) { open.hidden = true; return; }
+        $("#companion-folder").textContent = folder;
+        open.addEventListener("click", async () => {
+            try { await postJson("/api/companion/extension/open", {}); } catch (err) { el.textContent = err.message; }
+        });
+    } catch { open.hidden = true; }
+})();

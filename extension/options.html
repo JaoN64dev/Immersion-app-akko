@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>akko companion: options</title>
+<link rel="stylesheet" href="ui.css">
+</head>
+<body>
+    <header><img src="icons/48.png" alt="" width="32" height="32"> <h1>akko companion</h1></header>
+
+    <section>
+        <h2>akko</h2>
+        <p>The extension uses akko, running on this computer, for the dictionary, splitting words and sending cards to Anki.</p>
+        <p id="akko-status" class="status">looking…</p>
+        <label>akko's address <input id="akko-url" placeholder="found by itself, e.g. http://127.0.0.1:3417"></label>
+        <button id="akko-find">find akko</button>
+    </section>
+
+    <section>
+        <h2>Your words</h2>
+        <p id="words-status" class="status"></p>
+        <p class="hint">Your word list, Anki settings and language come from akko by themselves while akko is running (the desktop app or <code>npm start</code>). Words you mark, cards you mine and the time you watch go back to akko: they show in its Stats and 復習, and count for today and your streak. If akko is closed, they wait here until it's back.</p>
+        <label>or import them from an akko backup file <input id="backup" type="file" accept=".json,application/json"></label>
+    </section>
+
+    <section>
+        <h2>Anki</h2>
+        <p class="hint">Cards go through akko to Anki (with the AnkiConnect add-on, 2055492159), and into akko's mined list. These settings come from akko's own Anki settings; you can also set them here. In the player's akko ▾ menu you can choose to send cards only to akko.</p>
+        <p id="anki-status" class="status"></p>
+        <button id="anki-load">load decks from Anki</button>
+        <div id="anki-form" hidden>
+            <label>deck <select id="deck"></select></label>
+            <label>note type <select id="model"></select></label>
+            <table id="fields"></table>
+            <label>tags <input id="tags"></label>
+            <label class="switch"><input type="checkbox" id="audio"> record the line's audio</label>
+            <label class="switch"><input type="checkbox" id="wordaudio"> add the word's pronunciation</label>
+            <label class="switch"><input type="checkbox" id="shot"> add a screenshot</label>
+        </div>
+    </section>
+
+    <section>
+        <h2>Translation</h2>
+        <label>translate the subtitles into <select id="translate">
+            <option value="en">English</option><option value="pt">Portuguese</option><option value="es">Spanish</option>
+            <option value="fr">French</option><option value="de">German</option><option value="it">Italian</option>
+            <option value="ko">Korean</option><option value="zh-Hans">Chinese (simplified)</option><option value="ru">Russian</option>
+            <option value="id">Indonesian</option><option value="vi">Vietnamese</option><option value="th">Thai</option>
+        </select></label>
+        <p class="hint">On YouTube: the video's own subtitles in that language when it has them, otherwise YouTube's translation.</p>
+    </section>
+
+    <p id="msg" class="status"></p>
+    <script src="options.js"></script>
+</body>
+</html>

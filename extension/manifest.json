@@ -1,0 +1,73 @@
+{
+  "manifest_version": 3,
+  "name": "akko companion",
+  "version": "0.2.0",
+  "description": "Clickable Japanese subtitles on YouTube and Netflix, with akko's dictionary, your word colours, and one-click mining to Anki.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA33b4/iBKPY/GkNQvVfoGlcS+Obe+Ukzbj0RfTxnOZBxbz2M+7HBk22h3JpMLal8uQk0R6cF3GmH//8WKfBSW/jvUqoPiRD6pe8WL1NWGUdnOQ92ORmLScsCW4EADco4Hay7uldr16ejg1/BsGybsjU9q2iKEWAQ9cwUDGLqmo4nRHvhmXKcMtgo5H5xm6xlwQ8R4RKreLXHilwIXAZx+06SIc6lWh7pwMeJ06aAcq18oAuQeSWXWtJ1hUMBKZ/G/kKaybVWaEkZ7+uKPxbz/+11CAWbfL+rjx3edb3IerQFvOwz12FdPq2aoZbhf1az8zfN13up9Vx1Kewvqgjpb0QIDAQAB",
+  "icons": {
+    "16": "icons/16.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "akko companion"
+  },
+  "options_page": "options.html",
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://www.youtube.com/*",
+    "https://www.netflix.com/*",
+    "https://*.nflxvideo.net/*",
+    "http://*.nflxvideo.net/*",
+    "http://127.0.0.1/*",
+    "http://localhost/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.youtube.com/*"
+      ],
+      "js": [
+        "page/youtube.js"
+      ],
+      "world": "MAIN",
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://www.youtube.com/*"
+      ],
+      "js": [
+        "content/common.js",
+        "content/youtube.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.netflix.com/*"
+      ],
+      "js": [
+        "page/netflix.js"
+      ],
+      "world": "MAIN",
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://www.netflix.com/*"
+      ],
+      "js": [
+        "content/common.js",
+        "content/netflix.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

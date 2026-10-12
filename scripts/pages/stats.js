@@ -5,7 +5,7 @@
 import { escapeHtml, store } from "../core/utils.js";
 import * as today from "../core/today.js";
 import { target, learningEnglish } from "../core/target.js";
-import { wordStats, watchStats, mangaStats, podcastStats, textStats, minedStats, grammarStats } from "../totals.js";
+import { wordStats, watchStats, mangaStats, podcastStats, textStats, minedStats, grammarStats, companionStats } from "../totals.js";
 
 // ---------- small formatters ----------
 
@@ -45,7 +45,7 @@ function listeningStats() {
     return { tried: scores.length, pct, mistakes: Object.keys(store.get("akko-listening-mistakes", {})).length };
 }
 
-function renderTiles({ words, watch, manga, podcast, text, mined, grammar, listening, days }) {
+function renderTiles({ words, watch, manga, podcast, text, mined, grammar, listening, days, companion }) {
     document.getElementById("stats-tiles").innerHTML = [
         tile(compact(words.known), "words known"),
         tile(compact(words.learning), "words learning"),
@@ -54,6 +54,7 @@ function renderTiles({ words, watch, manga, podcast, text, mined, grammar, liste
         learningEnglish() ? "" : tile(compact(manga.pages), "manga pages read", manga.count ? `${manga.count} volumes` : ""),     // manga is Japanese only
         tile(compact(watch.count), "videos in progress", watch.finished ? `${watch.finished} finished` : ""),
         tile(hoursText(watch.seconds), "time watching"),
+        companion.count ? tile(hoursText(companion.seconds), "on YouTube / Netflix", `${companion.count} video${companion.count === 1 ? "" : "s"}, with akko companion`) : "",
         tile(hoursText(podcast.seconds), "time listening", podcast.count ? `${podcast.done} / ${podcast.count} episodes done` : ""),
         tile(compact(grammar.learned), "grammar lessons learned", grammar.passed ? `${grammar.passed} quizzes passed` : ""),
         learningEnglish() ? "" : tile(compact(listening.tried), "listening sets tried",
@@ -184,6 +185,8 @@ const TYPE_INFO = {
     watch: { label: "watch", color: "var(--extra2)" },
     manga: { label: "manga", color: "var(--extra4)" },
     read: { label: "read", color: "var(--extra6)" },
+    youtube: { label: "YouTube", color: "var(--extra1)" },
+    netflix: { label: "Netflix", color: "var(--extra7)" },
 };
 
 function renderRecent(rows) {
@@ -197,7 +200,8 @@ function renderRecent(rows) {
         const t = TYPE_INFO[r.type];
         return `<li class="note stats-note">
             <span class="chip" style="background:${t.color}">${t.label}</span>
-            <span class="stats-title" lang="${target()}">${escapeHtml(r.title)}</span>
+            ${r.url ? `<a class="stats-title" lang="${target()}" href="${escapeHtml(r.url)}" target="_blank" rel="noopener">${escapeHtml(r.title)}</a>`
+        : `<span class="stats-title" lang="${target()}">${escapeHtml(r.title)}</span>`}
             ${r.extra ? `<span class="stats-extra">${escapeHtml(r.extra)}</span>` : ""}
             <span class="stats-when">${timeAgo(r.when)}</span>
         </li>`;
@@ -210,15 +214,16 @@ async function init() {
     const manga = mangaStats();
     const podcast = podcastStats();
     const grammar = grammarStats();
+    const companion = companionStats();
     const [text, mined] = await Promise.all([textStats(), minedStats()]);
     const week = timeByDay(7).reduce((a, d) => a + d.count * 60, 0);
     const days = { week, streak: today.streak(target()) };
 
-    renderTiles({ words, watch, manga, podcast, text, mined, grammar, listening: listeningStats(), days });
+    renderTiles({ words, watch, manga, podcast, text, mined, grammar, listening: listeningStats(), days, companion });
     renderTimeChart();
     renderWordBar(words);
     renderMiningChart(mined.items);
-    renderRecent([...watch.recent, ...manga.recent, ...text.recent]);
+    renderRecent([...watch.recent, ...manga.recent, ...text.recent, ...companion.recent]);
 }
 
 init();

@@ -37,8 +37,10 @@ test('phone access: off by default, PIN to sign in, the computer alone changes i
   const lanPort = port + 1;
   lan.start(app, port);
   try {
-    // off: nothing answers on the second port
-    await assert.rejects(ask(lanPort));
+    // off: akko doesn't answer on the second port (another test's server may happen to be there,
+    // test files run side by side, so: nothing answers, or not akko's sign-in)
+    const before = await ask(lanPort).catch(() => null);
+    assert.ok(!before || !/^\/lan-login/.test(before.headers.location || ''), 'phone access is off');
     // the computer turns it on
     const on = JSON.parse((await ask(port, { method: 'POST', path: '/api/lan', body: { enabled: true } })).body);
     assert.equal(on.enabled, true);

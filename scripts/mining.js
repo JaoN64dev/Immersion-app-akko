@@ -107,7 +107,9 @@ export function renderMined() {
             </div>
             <p class="meaning">${escapeHtml(m.meaning)}</p>
             ${m.sentence ? `<p class="sentence">${escapeHtml(m.sentence).replace(escapeHtml(m.word), `<mark>${escapeHtml(m.word)}</mark>`)}</p>` : ""}
-            ${m.source ? `<p class="source">${escapeHtml(m.source)} ${escapeHtml(m.time)}</p>` : ""}
+            ${m.source ? `<p class="source">${m.url && m.url.startsWith("https://")
+                ? `<a href="${escapeHtml(m.url)}" target="_blank" rel="noopener">${escapeHtml(m.source)} ${escapeHtml(m.time)}</a>`
+                : `${escapeHtml(m.source)} ${escapeHtml(m.time)}`}</p>` : ""}
         </li>`).join("") : `<li class="empty">nothing yet — click a word in the subtitles and hit “+ mine”.</li>`;
     more.hidden = mined.length <= shown;
     more.textContent = `show more (${mined.length - shown} older)`;
