@@ -13,7 +13,9 @@
     let state = { videoId: null, title: "", tracks: [], languages: [], main: null };
 
     const player = () => document.getElementById("movie_player");
-    const video = () => document.querySelector("#movie_player video.html5-main-video") || document.querySelector("#movie_player video");
+    // (none while an ad plays: the same video element plays the ad, with the ad's own time)
+    const video = () => (player()?.classList.contains("ad-showing") ? null
+        : document.querySelector("#movie_player video.html5-main-video") || document.querySelector("#movie_player video"));
     const videoIdNow = () => new URLSearchParams(location.search).get("v");
 
     // ---------- YouTube's own subtitles stay hidden while ours show ----------
@@ -46,7 +48,13 @@
         return cues;
     }
 
-    function load(lang, kind = "", tlang = "") {
+    // while an ad plays, the player doesn't fetch the video's subtitles: wait for it to end (2 min at most)
+    async function adOver() {
+        for (let i = 0; i < 240 && player()?.classList.contains("ad-showing"); i++) await A.wait(500);
+    }
+
+    async function load(lang, kind = "", tlang = "") {
+        await adOver();
         const key = [state.videoId, lang, kind, tlang].join("|");
         return new Promise((resolve, reject) => {
             const timer = setTimeout(() => { waiting.delete(key); reject(new Error("YouTube didn't send the subtitles (try playing the video, then reload)")); }, 15000);

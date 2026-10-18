@@ -28,6 +28,7 @@
             <a href="#faq">FAQ</a>
             <a href="https://github.com/JaoN64dev/Immersion-app-akko">GitHub ↗</a>
         </div>
+        <select id="site-lang" class="site-lang" aria-label="Language / Idioma / 言語"><option value="en">English</option></select>
     </nav>
 
     <main id="top">
@@ -143,12 +144,12 @@
             <h2>akko on YouTube and Netflix</h2>
             <div class="split">
                 <div>
-                    <p>The <b>akko companion</b> extension for Chrome and Edge brings akko to videos with Japanese subtitles on YouTube (including its automatic subtitles) and Netflix:</p>
+                    <p>The <b>akko companion</b> extension for Chrome and Edge brings akko to videos with Japanese subtitles on YouTube (including its automatic subtitles), Netflix, and any other site with a video: drop a subtitle file on it.</p>
                     <ul>
                         <li>Hover or click any word for akko's dictionary, with furigana only on the words you don't know yet.</li>
                         <li>"+ mine" sends the word to Anki with its sentence, the translation, the line's audio and a screenshot.</li>
                         <li>The translation shows when you pause, or blurred until you hover. Pause after every line, or blur the Japanese to practise listening.</li>
-                        <li>The words you mark and mine go back into akko, and the time you watch counts for your daily goal and streak.</li>
+                        <li>The words you mark and mine go back into akko (one word list on your computer, browser and phone), with the scene and the line for akko's own spaced-repetition review, and the time you watch counts for your daily goal and streak.</li>
                     </ul>
                     <a class="btn" id="dl-extension" href="https://github.com/JaoN64dev/Immersion-app-akko/releases/latest">⬇ akko-companion.zip</a>
                     <p class="small">It comes with akko too: <b>Settings → YouTube and Netflix → open the extension folder</b>. Then in Chrome: <code>chrome://extensions</code> → Developer mode → Load unpacked → pick the folder. akko needs to be open while you watch.</p>
@@ -176,6 +177,14 @@
                     <p>No install: one file you can run from anywhere, even a USB stick.</p>
                     <a class="btn btn-quiet" id="dl-portable" href="https://github.com/JaoN64dev/Immersion-app-akko/releases/latest">⬇ akko-portable.exe</a>
                     <p class="small" id="dl-portable-size">Windows 10 / 11, 64-bit</p>
+                </article>
+                <article class="card" id="dl-other" hidden>
+                    <h3>macOS and Linux</h3>
+                    <p>The same app for a Mac (Apple Silicon or Intel) or Linux.</p>
+                    <a class="btn btn-quiet" id="dl-mac-arm64" href="#" hidden>⬇ Mac (Apple Silicon)</a>
+                    <a class="btn btn-quiet" id="dl-mac-x64" href="#" hidden>⬇ Mac (Intel)</a>
+                    <a class="btn btn-quiet" id="dl-linux" href="#" hidden>⬇ Linux (.AppImage)</a>
+                    <p class="small">Not code-signed yet: on a Mac, right-click the app → <b>Open</b> the first time. On Linux, make the file executable (<code>chmod +x</code>) and run it.</p>
                 </article>
                 <article class="card" id="from-source">
                     <h3>From the code</h3>
@@ -255,11 +264,11 @@ npm start</code></pre>
             </details>
             <details>
                 <summary>Does the extension work on Netflix?</summary>
-                <p>Yes, on titles with Japanese subtitles as text (most of them). Netflix's video is copy-protected, so Netflix cards get the word's pronunciation but no line audio or screenshot. Netflix changes its player now and then; if it stops working, an akko update will fix it.</p>
+                <p>Yes, on titles with Japanese subtitles as text (most of them). Netflix's video is copy-protected, so cards get the line's audio and a picture from the whole tab: click the akko companion button in Chrome's toolbar once on that tab. Netflix changes its player now and then; if it stops working, an akko update will fix it.</p>
             </details>
             <details>
                 <summary>Mac or Linux?</summary>
-                <p>The ready-made download is for Windows for now. On a Mac or Linux, <a href="#from-source">run it from the code</a> with Node.js and use it in your browser. Everything works there, except the Windows voices; VOICEVOX works on all three.</p>
+                <p>Yes: the <a href="#download">download</a> section has a Mac version (Apple Silicon and Intel) and a Linux one (.AppImage) for each release. They aren't code-signed yet, so the first time a Mac says it can't open akko: right-click it and choose <b>Open</b>. Everything works there except Windows' own voices; VOICEVOX works on all three. You can also <a href="#from-source">run it from the code</a>.</p>
             </details>
             <details>
                 <summary>Where do I get videos and subtitles?</summary>

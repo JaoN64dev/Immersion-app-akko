@@ -206,7 +206,8 @@
                             <div id="sub-overlay" class="sub-overlay" lang="ja"></div>
                             <div id="sub2-overlay" class="sub2-overlay"></div>
                             <div id="comp-badge" class="comp-badge" hidden></div>
-                            <p id="stage-empty" class="stage-empty">load a video file or link ↑<br><span class="ja-only">then pick japanese subs from the search</span><span class="en-only">then add its English subtitle file</span></p>
+                            <p id="stage-empty" class="stage-empty">load a video file or link ↑<br><span class="ja-only">then pick japanese subs from the search</span><span class="en-only">then add its English subtitle file</span>
+                                <span class="ja-only"><br><button type="button" id="try-sample" class="try-sample">▶ or try a sample: <span lang="ja" translate="no">吾輩は猫である</span> (40 s)</button></span></p>
                         </div>
 
                         <div class="toolbar player-toolbar">
@@ -294,6 +295,7 @@
                         <label class="check"><input id="anki-word-audio" type="checkbox" checked> add the word's pronunciation (JapanesePod101 / Lingua Libre)</label>
                         <label class="check ja-only"><input id="anki-spoken" type="checkbox" checked> no recording (mined from a book or lesson): the sentence said by a voice (VOICEVOX / your computer's)</label>
                         <label class="check"><input id="anki-shot" type="checkbox" checked> add a screenshot</label>
+                        <label class="check"><input id="anki-keep" type="checkbox" checked> keep the line's audio and a picture in akko too (復習 plays them; also without Anki)</label>
                         <div class="row import-row">
                             <button id="anki-import">import known words from this deck</button>
                             <span class="hint">mature cards (interval ≥ 21 days) → known, the rest → learning</span>

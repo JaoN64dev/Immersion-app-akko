@@ -37,6 +37,7 @@ const voicevox = require('./server/voicevox');
 const backups = require('./server/backups');
 const lan = require('./server/lan');
 const companion = require('./server/companion');
+const words = require('./server/words');
 
 const hostname = '127.0.0.1';
 
@@ -63,6 +64,7 @@ app.get('/api/hello', (req, res) => res.json({ app: 'akko', version: require('./
 app.use('/api/backups', backups.router);
 app.use('/api/lan', lan.router);
 app.use('/api/companion', companion.router);
+app.use('/api/words', words.router);
 app.use('/api/speech/voicevox', voicevox.router);
 app.use('/api/speech', speech.router);
 
@@ -81,7 +83,7 @@ app.get('/about.html', file('about.html'));
 app.get('/lan-login', lan.loginPage);
 app.get('/style.css', file('style.css'));
 app.get('/favicon.ico', file('electron/icon.png'));     // the browser tab's icon: the app icon
-for (const dir of ['scripts', 'images', 'fonts', 'node_modules/@ffmpeg']) {
+for (const dir of ['scripts', 'images', 'fonts', 'samples', 'node_modules/@ffmpeg']) {
   app.use('/' + dir, express.static(path.join(__dirname, dir)));
 }
 

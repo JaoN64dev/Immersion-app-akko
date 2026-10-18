@@ -12,7 +12,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const kuromoji = require('kuromoji');
+const { loadTokenizer } = require('../server/tokenizer');
 const grammar = require('../server/grammar');
 const english = require('../server/english');
 
@@ -22,10 +22,7 @@ let failures = 0;
 
 const fail = (msg) => { failures++; console.log(`  ✗ ${msg}`); };
 
-function tokenizerJa() {
-  const dicPath = path.join(path.dirname(require.resolve('kuromoji/package.json')), 'dict');
-  return new Promise((resolve, reject) => kuromoji.builder({ dicPath }).build((err, t) => (err ? reject(err) : resolve(t))));
-}
+const tokenizerJa = () => loadTokenizer();     // the same word splitter as the server (Lindera)
 
 // ids of the lessons found in one sentence
 function finderFor(lang, ja, dict) {

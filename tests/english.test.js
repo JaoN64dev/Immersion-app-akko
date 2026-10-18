@@ -30,6 +30,18 @@ test('words that only look like forms of another word stay themselves', () => {
   assert.equal(lemma('We have a meeting.', 'meeting'), 'meeting');
   assert.equal(lemma('This movie is boring.', 'boring'), 'boring');
   assert.equal(lemma('I found my keys.', 'found'), 'find');
+  // grammar words aren't comparatives ("aft" + -er); two plural readings: the common word
+  assert.equal(lemma('We ate after the show.', 'after'), 'after');
+  assert.equal(lemma('It is under the bed.', 'under'), 'under');
+  assert.equal(lemma('She baked cookies.', 'cookies'), 'cookie');
+  assert.equal(lemma('He uses a pen.', 'uses'), 'use');
+  assert.equal(lemma('Time flies.', 'flies'), 'fly');
+  // the words around decide: a verb after "be", an adjective after "very" / "feel"
+  assert.equal(lemma('Alice was beginning to get bored.', 'beginning'), 'begin');
+  assert.equal(lemma('It was the beginning of the end.', 'beginning'), 'beginning');
+  assert.equal(lemma('She was very tired.', 'tired'), 'tired');
+  assert.equal(lemma('I feel bored.', 'bored'), 'bored');
+  assert.equal(lemma('The game tired him out.', 'tired'), 'tire');
 });
 
 test('contractions stay one clickable word', () => {
@@ -77,4 +89,7 @@ test('phrases and Japanese translations', async () => {
   const e = r.entries[0];
   assert.equal(e.reading, '/ɡɪv ʌp/');
   assert.ok(e.tr.some((s) => s.words.some((w) => w.includes('諦める'))), 'あきらめる among the Japanese');
+  // a phrase selected as it's written in the text: its first word in its dictionary form
+  assert.equal((await english.lookup(['gave up'], 'gave up', dict, 'ja')).entries[0].word, 'give up');
+  assert.equal((await english.lookup(['ran into'], 'ran into', dict, 'ja')).entries[0].word, 'run into');
 });

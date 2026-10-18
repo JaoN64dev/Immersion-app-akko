@@ -1,7 +1,7 @@
 // akko companion on Netflix (EXPERIMENTAL): on a title with Japanese subtitles, akko's clickable
 // subtitles go over the video, with a translation from another subtitle track. The track list
 // comes from page/netflix.js; the subtitle files (WebVTT) are downloaded by background.js.
-// Netflix's video is copy-protected, so cards get no line audio or screenshot here.
+// Netflix's video is copy-protected, so a card's line audio and picture are taken from the tab.
 
 (async () => {
     const A = window.akkoCompanion;
@@ -168,8 +168,8 @@
     const site = {
         name: "netflix",
         video,
-        recordable: false,                 // copy-protected: no audio, no screenshot
-        screenshot: false,
+        recordable: "tab",                 // copy-protected: the line's audio and the picture come from the
+        screenshot: "tab",                 // whole tab (background.js, offscreen.js), not the video
         seek: (t) => window.postMessage({ source: "akko-companion-ask", type: "nf-seek", time: t }, "*"),
         title: () => (document.querySelector("[data-uia='video-title']")?.textContent || document.title.replace(/\s*-?\s*Netflix\s*$/i, "")).trim(),
         url: (t) => `https://www.netflix.com/watch/${state.movieId}?t=${Math.floor(t)}`,

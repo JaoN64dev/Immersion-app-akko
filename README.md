@@ -6,10 +6,13 @@ An immersion app for learning **Japanese** or **American English**, on your own 
 
 - **Watch** videos with subtitles. Search Japanese subtitles (kitsunekko, JP-Subtitles) or English ones (OpenSubtitles), load your own, or use the ones **inside the video file** (.mkv), no website needed.
 - **Skip intro**: a button over the video skips anime openings and endings (exact times from [AniSkip](https://aniskip.com), found from the show and episode), or mark a show's opening once with **I** and akko offers to skip it in its other episodes. **K** skips, or jumps 85 s.
+- **YouTube, Netflix and any video site**: the **akko companion** browser extension (Chrome, Edge) puts akko's clickable subtitles on videos with Japanese subtitles (on other sites, with a subtitle file you drop on the video): the dictionary, your word colours, a list of every line with ★ on the best sentences to mine, "+ mine" to Anki with the line's audio and a picture, pause after each line, listening practice. The words you mark and mine, and the time you watch, come back into akko. See [extension/README.md](extension/README.md).
 - **Read** books (EPUB, text) and manga.
 - **Listen** to podcasts with transcripts.
 - **Click any word** to see its dictionary entry, kanji and pitch accent, plus any **dictionaries you add** (Yomitan format: Jitendex, monolingual dictionaries…) and how common the word is (frequency lists like JPDB). Hover a word and press 1–4 to mark it new / learning / known / ignored; the app colours words by how well you know them.
-- Send words to **Anki** as flashcards.
+- Send words to **Anki** as flashcards, or review them in akko's own **復習** (spaced repetition, FSRS: each word comes back just before you'd forget it, with its sentence, the scene and the line's audio).
+- **One word list everywhere**: the desktop app, akko in your browser, your phone and the extension share the same list of words you know.
+- **Something to try at once**: a short sample video (the opening of 吾輩は猫である, read aloud) and the novel's first chapter in the Read library.
 - Follow the **course**: a step-by-step path from the basics to immersion, built on the AJATT idea, with goals the app checks for you. The Japanese course and the N5 grammar lessons are also in **Portuguese and Spanish** (Settings → Your language).
 - Study **grammar** with short lessons and quizzes (Japanese N5–N1, English A1–C1). Grammar you've studied is underlined in subtitles and texts.
 - Practise **listening** (Japanese, N5–N1), JLPT style: conversations with a question, quick replies, sentences from the grammar lessons, and **dictation** (type what you hear). Mistakes come back until you get them right; **exam mode** plays each question once. Every line is spoken: with [VOICEVOX](https://voicevox.hiroshiba.jp/) (free), in natural-sounding voices. Get it with one button on the 聴解 page, or install it yourself; akko starts it in the background whenever akko opens and closes it when akko quits. Otherwise lines are spoken by your computer's Japanese voices (on Windows: add Japanese in Settings → Time & language → Speech). The script shows afterwards with clickable words and a ▶ on each line. Add your own sets, with your own recordings if you like ([listening/README.md](listening/README.md)), and try the official JLPT samples from the page.
@@ -35,13 +38,18 @@ The dictionaries work offline.
 
 You can use akko either way; it's the same app.
 
-- **Desktop app** (easiest): download the installer (`akko-setup-<version>.exe`) or the version without install (`akko-portable-<version>.exe`) from the [Releases page](https://github.com/JaoN64dev/japaneselocalwebapp/releases) and open it. Nothing else to install: the dictionaries come inside.
+- **Desktop app** (easiest): download it from the [Releases page](https://github.com/JaoN64dev/Immersion-app-akko/releases) and open it. Nothing else to install: the dictionaries come inside.
+  - **Windows**: the installer (`akko-setup-<version>.exe`) or the version without install (`akko-portable-<version>.exe`).
+  - **macOS**: `akko-<version>-mac-arm64.dmg` (Apple Silicon: M1 and newer) or `akko-<version>-mac-x64.dmg` (Intel). Drag akko into Applications. It isn't code-signed, so the first time macOS says it can't open it: right-click akko → **Open** → **Open**. (If it says the app is "damaged", run `xattr -cr /Applications/akko.app` in Terminal once.)
+  - **Linux**: `akko-<version>-linux-x86_64.AppImage`: make it executable (`chmod +x`, or Properties → Allow executing) and run it.
   - **App window or your browser?** Each time akko starts, it asks how to open: in its own **app window**, or in **your browser** (akko then runs as an icon in the system tray, next to the clock; right-click it to open akko or quit). Tick **Remember my choice** to stop the question, and change it later in **akko → When akko starts**. Starting the app with `--browser` or `--window` skips the question.
   - The installers aren't code-signed, so Windows SmartScreen shows "Windows protected your PC" the first time: click **More info → Run anyway**.
   - **Updates**: once a day (or Help → Check for updates) akko looks for a newer release. The installed app downloads it and installs it when you restart; the portable one opens the download page.
 - **Web server** (from the code): run it with Node.js and use it in your browser. Best if you want to change lessons or the code. See [Setup](#setup-web-server) below.
 
-The app window, your browser and the web server version each keep their own copy of your words and progress. To move them, use **Settings → Backup** in one and **Restore** in the other.
+Your **word list** (the words you know, are learning or ignore) is shared by all of them: it lives in akko's server, and every window, browser and phone keeps in step with it (as does the browser extension). The rest (video positions, books, mined words, stats) is kept by each window or browser on its own; to move it, use **Settings → Backup** in one and **Restore** in the other.
+
+**The browser extension** comes with the desktop app: **Settings → YouTube and Netflix → open the extension folder** (or the tray menu → Browser extension…), then in Chrome `chrome://extensions` → Developer mode → **Load unpacked** → that folder. Each release also has it as `akko-companion-<version>.zip`.
 
 > Before you start watching, read the **keys** section in the app (in the sidebar) to learn the keyboard shortcuts.
 
@@ -58,8 +66,8 @@ To check that Node.js is installed, open a terminal and run `node --version`.
 1. **Download the project**
 
    ```
-   git clone https://github.com/JaoN64dev/japaneselocalwebapp.git
-   cd japaneselocalwebapp
+   git clone https://github.com/JaoN64dev/Immersion-app-akko.git
+   cd Immersion-app-akko
    ```
 
 2. **Install the dependencies**
@@ -95,7 +103,12 @@ From the project folder, after `npm install`:
 | Command | What it does |
 |---|---|
 | `npm run desktop` | opens the desktop app straight from the code (to try changes); `npm run desktop -- --browser` for the browser mode |
-| `npm run dist` | builds the installers into `dist/`: `akko-setup-<version>.exe` and `akko-portable-<version>.exe` on Windows (a `.dmg` on macOS, an `.AppImage` on Linux; build each on its own system) |
+| `npm run dist` | builds the installers into `dist/`: `akko-setup-<version>.exe` and `akko-portable-<version>.exe` on Windows (a `.dmg` on macOS, an `.AppImage` on Linux; build each on its own system), and the extension's `akko-companion-<version>.zip` |
+| `npm run pack-extension` | only the extension's zip |
+
+**Releases are built by GitHub** (`.github/workflows/build.yml`): push a version tag (`git tag 1.9` then `git push origin 1.9`) and GitHub runs the tests, builds akko on Windows, macOS and Linux, and makes a **draft release** with every file. Add the notes on GitHub and publish it. (Actions → build → Run workflow builds all three without a release; the files are kept with the run.)
+
+To make a release by hand instead, upload `akko-setup-<version>.exe`, its `.blockmap`, `latest.yml` (the installed Windows app's updates need these three), `akko-portable-<version>.exe` and `akko-companion-<version>.zip`. Not `builder-debug.yml`: it's a build log with your folders in it.
 
 The desktop app runs the same server inside the app, on port 3417, so it can run next to `npm start` (port 3000). Its server files (dictionaries, caches, OCR results, OpenSubtitles login) are in your user profile (`%APPDATA%\akko\data` on Windows), reachable from **akko → Open the data folder**. Lessons and the course are built into the app; to edit them, use the web server version.
 
@@ -128,7 +141,7 @@ In **Settings → Dictionaries**, press **add a dictionary (.zip)** and pick a d
 2. Go to **Tools → Add-ons → Get Add-ons…** and enter the code **`2055492159`** (AnkiConnect).
 3. Restart Anki.
 
-Anki must be open while you use the app. You don't need to change any AnkiConnect settings, because the app connects to it through its own server.
+Anki must be open while you use the app. You don't need to change any AnkiConnect settings, because the app connects to it through its own server. (If AnkiConnect listens somewhere other than `http://127.0.0.1:8765`, start akko with `AKKO_ANKI` set to its address.)
 
 Cards can include a recording of the word being said. Set a field to **word audio** in the Anki panel on the Watch page. Japanese audio comes from [JapanesePod101](https://www.japanesepod101.com/) or, if that has none, from [Lingua Libre](https://lingualibre.org/) recordings on Wikimedia Commons; English audio from Wikimedia Commons. You need an internet connection for this.
 
@@ -168,6 +181,7 @@ GITHUB_TOKEN=your_token_here npm start
 | Problem | Fix |
 | --- | --- |
 | "Windows protected your PC" when opening the desktop app | The app isn't code-signed. Click **More info → Run anyway**. |
+| macOS: "akko can't be opened" / "is damaged" | Right-click akko → **Open**. If it says damaged: `xattr -cr /Applications/akko.app` in Terminal, then open it again. |
 | Desktop app: "Port 3417 is already used by another program" | Another program uses that port. Close it, or restart the computer. |
 | `'node' is not recognized` | Install Node.js, then open a new terminal. |
 | `Port 3000 is already in use` | akko (or another program) is already running on port 3000. Close the other terminal, or use another port with `AKKO_PORT` (see Setup). |
@@ -175,19 +189,26 @@ GITHUB_TOKEN=your_token_here npm start
 | `can't reach Anki` | Open Anki and check that AnkiConnect is installed. |
 | Words don't show a definition | Web server: wait until the terminal says `dictionary: … ready`. |
 | `Cannot find module …` | Run `npm install` again. |
+| The extension says akko isn't running | Open akko (version 1.8 or newer). Settings → YouTube and Netflix says whether it's connected. Running akko on another port? Set its address in the extension's options. |
+| "YouTube didn't send the subtitles" | Play the video for a moment (or let the ad finish), then reload the page. |
+| Netflix cards have no audio or picture | Click the akko companion button in Chrome's toolbar once on that tab. A black picture: turn off "Use graphics acceleration when available" in Chrome's settings. |
 
 ## Project structure
 
 ```
 server.js        starts the local server (port 3000)
-server/          the APIs: dictionary, English, grammar, course, subtitles, Anki, podcasts, OCR
+server/          the APIs: dictionary, English, grammar, course, subtitles, Anki, podcasts, OCR, listening, speech, the extension
 electron/        the desktop app: main.js runs the server and opens the window or browser; icons
 scripts/         the code that runs in the browser (scripts/pages/ = one entry script per page)
 *.html           the pages: watch (index), reading, podcasts, grammar, course, review, settings, about
 grammar/         Japanese grammar lessons (Markdown)      grammar-en/   English grammar lessons
 course/          the Japanese course (Markdown)           course-en/    the English course + translations
 data/            offline dictionary files, and what the server saves (OCR, caches)
-tools/           npm run check-lessons
+extension/       the akko companion browser extension (YouTube, Netflix)
+website/         akko's website (GitHub Pages)
+listening/       the 聴解 listening exercises (Markdown)
+samples/         the sample video, its subtitles and the sample novel
+tools/           npm run check-lessons, npm run pack-extension
 tests/           npm test
 docs/            how the code works
 ```
@@ -210,7 +231,9 @@ For English, two npm packages are used (installed into `node_modules`, not in `d
 
 ## Other credits
 
-- Word splitting: [kuromoji](https://github.com/takuyaa/kuromoji.js) (Apache 2.0)
+- Word splitting: [Lindera](https://github.com/lindera/lindera) (MIT) with the [IPADIC](https://github.com/lindera/lindera/tree/main/lindera-ipadic) dictionary
+- Spaced repetition: the [FSRS](https://github.com/open-spaced-repetition) algorithm (MIT)
+- The sample: 吾輩は猫である by 夏目漱石 (public domain) from [Aozora Bunko](https://www.aozora.gr.jp/); voice VOICEVOX:青山龍星 ([samples/README.md](samples/README.md))
 - Desktop app: [Electron](https://www.electronjs.org/) (MIT), packaged with [electron-builder](https://www.electron.build/)
 - Anime search: [AniList](https://anilist.co) API
 - Anime subtitles: [kitsunekko.net](https://kitsunekko.net) and the [kitsunekko mirror](https://github.com/Ajatt-Tools/kitsunekko-mirror) on GitHub

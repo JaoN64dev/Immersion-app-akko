@@ -7,7 +7,7 @@ import * as client from "./client.js";
 const ui = {
     status: $("#anki-status"), connect: $("#anki-connect"),
     deck: $("#anki-deck"), model: $("#anki-model"), fields: $("#anki-fields"),
-    tags: $("#anki-tags"), auto: $("#anki-auto"), audio: $("#anki-audio"), wordAudio: $("#anki-word-audio"), shot: $("#anki-shot"), spoken: $("#anki-spoken"),
+    tags: $("#anki-tags"), auto: $("#anki-auto"), audio: $("#anki-audio"), wordAudio: $("#anki-word-audio"), shot: $("#anki-shot"), spoken: $("#anki-spoken"), keep: $("#anki-keep"),
     importBtn: $("#anki-import"), msg: $("#anki-msg"),
 };
 
@@ -57,6 +57,7 @@ export function init() {
     ui.wordAudio.checked = c.wordAudio;
     ui.shot.checked = c.shot;
     if (ui.spoken) ui.spoken.checked = c.spokenSentence;
+    if (ui.keep) ui.keep.checked = c.keep !== false;
     client.onMessage(say);
 
     ui.connect.addEventListener("click", () => connect());
@@ -68,9 +69,9 @@ export function init() {
     ui.fields.addEventListener("change", (e) => {
         if (e.target.dataset.field) client.setFieldSource(e.target.dataset.field, e.target.value);
     });
-    [ui.tags, ui.auto, ui.audio, ui.wordAudio, ui.shot, ui.spoken].filter(Boolean).forEach((i) => i.addEventListener("change", () => {
+    [ui.tags, ui.auto, ui.audio, ui.wordAudio, ui.shot, ui.spoken, ui.keep].filter(Boolean).forEach((i) => i.addEventListener("change", () => {
         client.saveCfg({ tags: ui.tags.value, auto: ui.auto.checked, audio: ui.audio.checked, wordAudio: ui.wordAudio.checked, shot: ui.shot.checked,
-            ...(ui.spoken ? { spokenSentence: ui.spoken.checked } : {}) });
+            ...(ui.spoken ? { spokenSentence: ui.spoken.checked } : {}), ...(ui.keep ? { keep: ui.keep.checked } : {}) });
         if (ui.auto.checked && !client.isConnected()) connect();
     }));
     ui.importBtn.addEventListener("click", async () => {

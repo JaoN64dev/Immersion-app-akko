@@ -1,7 +1,7 @@
 {
   "name": "akko",
   "productName": "akko",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "description": "Learn Japanese or English by immersion: watch, read and listen with a pop-up dictionary, grammar lessons and Anki mining.",
   "main": "electron/main.js",
   "author": "akko (JaoN64Dev)",
@@ -23,7 +23,7 @@
     "cmu-pronouncing-dictionary": "^3.0.0",
     "electron-updater": "^6.8.9",
     "express": "^5.2.1",
-    "kuromoji": "^0.1.2",
+    "lindera-wasm-nodejs-ipadic": "2.0.0",
     "wordnet-db": "^3.1.14"
   },
   "devDependencies": {
@@ -38,24 +38,21 @@
     },
     "files": [
       "**/*",
+      "!data/**",
+      "data/dict.json",
+      "data/kanji.json",
+      "data/accents.txt",
       "!dist/**",
       "!tests/**",
       "!tools/**",
       "!docs/**",
       "!*.bat",
-      "!data/ocr/**",
-      "!data/english-online.json",
-      "!data/opensubtitles.json",
-      "!data/*.zip",
-      "!data/speech/**",
-      "!data/listening/**",
-      "!data/voicevox/**",
-      "!data/backups/**",
       "!.github/**",
-      "!data/lan.json",
-      "!data/companion.json",
       "!website/**",
-      "!extension/**"
+      "!extension/**",
+      "!node_modules/@ffmpeg/core/dist/umd/**",
+      "!node_modules/@ffmpeg/ffmpeg/dist/umd/**",
+      "!node_modules/wordnet-db/dict/index.sense"
     ],
     "win": {
       "target": [
@@ -73,14 +70,31 @@
       "artifactName": "akko-portable-${version}.${ext}"
     },
     "mac": {
-      "target": "dmg",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
       "icon": "electron/icon.png",
       "category": "public.app-category.education"
     },
     "linux": {
-      "target": "AppImage",
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "icon": "electron/icon.png",
-      "category": "Education"
+      "category": "Education",
+      "executableName": "akko",
+      "synopsis": "Learn Japanese or English by immersion"
     },
     "publish": [
       {
@@ -98,6 +112,18 @@
           "!README.md"
         ]
       }
-    ]
+    ],
+    "electronLanguages": [
+      "en-US",
+      "pt-BR",
+      "es",
+      "ja"
+    ],
+    "dmg": {
+      "artifactName": "akko-${version}-mac-${arch}.${ext}"
+    },
+    "appImage": {
+      "artifactName": "akko-${version}-linux-${arch}.${ext}"
+    }
   }
 }

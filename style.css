@@ -1321,6 +1321,11 @@ body.target-en .tab small {font-size: .9em;}
 .review-buttons {display: flex; justify-content: center; flex-wrap: wrap; gap: .6em; margin-top: 1.2em;}
 main .review-buttons button {font-size: 1.05em; padding: .4em 1.2em;}
 main .review-buttons .review-known {background: var(--extra4); border-color: #2e7d32;}
+.review-new {display: inline-block; margin: 0 0 .3em; padding: 0 .6em; border-radius: 99px; background: var(--extra5); color: var(--ink); font-size: .8em; font-weight: bold;}
+.review-media {display: flex; flex-direction: column; align-items: center; gap: .5em; margin: .4em 0;}
+.review-media:empty {display: none;}
+.review-picture {max-width: min(100%, 480px); border-radius: 10px; box-shadow: 2px 2px 8px var(--shadow, #0003);}
+main .review-buttons button small {opacity: .7; font-weight: normal;}
 .review-progress {text-align: center; color: var(--on-panel); font-weight: bold;}
 .review-empty, .review-done {font-size: 1.1em;}
 
@@ -1660,3 +1665,9 @@ main .ex-say {position: absolute; right: 0; top: .7em; padding: 0 .45em; font-si
 .phone-qr {width: 150px; height: 150px; flex: none; background: #fff; border-radius: 8px; padding: 4px;}
 .phone-qr svg {width: 100%; height: 100%; display: block;}
 .phone-pin {margin: .2em 0; font-size: 2.2em; font-weight: 900; letter-spacing: .25em; color: var(--dark-link-color);}
+
+/* Settings → YouTube and Netflix: the extension folder is one long path, it must wrap on a phone */
+#companion-folder {overflow-wrap: anywhere; word-break: break-all;}
+
+/* Watch: the sample, offered while the player is empty (samples/README.md) */
+.stage-empty .try-sample {pointer-events: auto; margin-top: .8em; font-size: .95em;}

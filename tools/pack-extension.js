@@ -12,7 +12,9 @@ const { version } = JSON.parse(fs.readFileSync(path.join(dir, 'manifest.json'), 
 const out = path.join(root, 'dist', `akko-companion-${version}.zip`);
 
 const zip = new AdmZip();
-zip.addLocalFolder(dir, 'akko-companion');
+// the files at the top of the zip: Windows' "Extract All" already makes a folder named after it,
+// and that folder is the one to pick in Chrome's "Load unpacked"
+zip.addLocalFolder(dir);
 fs.mkdirSync(path.dirname(out), { recursive: true });
 zip.writeZip(out);
 console.log(`extension ${version} -> ${path.relative(root, out)} (${zip.getEntries().length} files)`);

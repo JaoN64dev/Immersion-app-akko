@@ -5,7 +5,9 @@ import * as popup from "../popup.js";
 import { initKeys } from "../keys.js";
 import { remindBackup } from "../core/reminder.js";
 import { t } from "../i18n.js";
-import { learningEnglish } from "../core/target.js";
+import { learningEnglish, ofTarget, keyFor } from "../core/target.js";
+import { store } from "../core/utils.js";
+import { idbAll } from "../core/idb.js";
 import { readTextFile, splitParagraphs } from "../reader/import.js";
 import { addText, getText, removeText, renderLibrary } from "../reader/library.js";
 import * as reader from "../reader/text.js";
@@ -96,8 +98,25 @@ for (const input of [ui.mangaFiles, ui.mangaFolder]) {
 
 popup.init();
 reader.init({ onBack: showLibrary });
+// The first time, while the library is empty: the first chapter of a public-domain novel to read
+// straight away (samples/README.md), 吾輩は猫である or Alice in Wonderland. Once per language:
+// deleting it is respected.
+const SAMPLES = {
+    ja: { file: "/samples/wagahai-1.txt", title: "吾輩は猫である（一）夏目漱石" },
+    en: { file: "/samples/alice-1.txt", title: "Alice's Adventures in Wonderland (I) · Lewis Carroll" },
+};
+async function addSample() {
+    const flag = keyFor("akko-sample-text");
+    if (store.get(flag, false)) return;
+    store.set(flag, true);
+    if ((await idbAll("texts").catch(() => [])).some(ofTarget)) return;
+    const sample = SAMPLES[learningEnglish() ? "en" : "ja"];
+    const res = await fetch(sample.file);
+    if (res.ok) await addText(sample.title, splitParagraphs(await res.text()));
+}
+
 manga.init();
-showLibrary();
+addSample().catch(() => {}).finally(showLibrary);
 
 const inManga = () => !ui.mangaMode.hidden;
 initKeys({

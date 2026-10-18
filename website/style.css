@@ -147,6 +147,8 @@ main {width: min(1180px, 100% - 32px); margin: 0 auto;}
 .card pre code {background: none; padding: 0;}
 .card-main {outline-color: #e0a800;}
 .downloads .btn {margin: .3em 0 .2em;}
+#dl-other .btn {display: block; width: fit-content; margin: .35em 0;}
+#dl-other .btn[hidden] {display: none;}
 .links {margin: 0; padding-left: 1.1em;}
 .links li {margin: .3em 0;}
 
@@ -189,3 +191,16 @@ main {width: min(1180px, 100% - 32px); margin: 0 auto;}
   html {scroll-behavior: auto;}
   .btn {transition: none;}
 }
+
+.card[hidden] {display: none;}
+
+/* the page's language (main.js) */
+.site-lang {flex: none; margin-left: .4em; max-width: 9.5em; font: inherit; font-size: .9em; padding: .2em .4em; border-radius: 8px; border: 1px solid var(--border, #8884); background: var(--panel, #fff); color: inherit; cursor: pointer;}
+.lang-hint {margin: 0; padding: .5em 1em; text-align: center; background: var(--panel, #fff8e6); border-bottom: 1px solid #8883; font-size: .95em;}
+.lang-hint button {margin-left: .6em; font: inherit; background: none; border: 0; cursor: pointer; color: inherit; opacity: .6;}
+@media (max-width: 600px) {
+  .site-lang {max-width: 6.2em; font-size: .8em; padding: .15em .2em;}
+}
+/* the brand keeps its size; the links strip takes what is left and scrolls */
+.topbar .brand {flex: none;}
+.topbar-links {min-width: 0;}

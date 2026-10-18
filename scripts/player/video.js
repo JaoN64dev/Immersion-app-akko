@@ -28,7 +28,7 @@ export function openFile(file) {
     dualAudio.load(file, saved && saved.audioTrack);
 }
 
-async function openUrl(url) {
+export async function openUrl(url) {
     resetVideo();
     state.videoName = decodeURIComponent(url.split("/").pop().split("?")[0]);
     if (/\.m3u8(\?|$)/i.test(url) && !el.video.canPlayType("application/vnd.apple.mpegurl")) {

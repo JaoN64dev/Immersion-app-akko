@@ -1,0 +1,84 @@
+# Builds akko on Windows, macOS and Linux (each has to be built on its own system) and, for a
+# version tag, puts everything into a draft release: add the notes on GitHub and publish it.
+#
+#   - push a tag (e.g. `git tag 1.9 && git push origin 1.9`): build all three, draft release
+#   - Actions → build → Run workflow: build all three, files kept with the run (no release)
+#
+# What comes out:
+#   Windows  akko-setup-<v>.exe (+ .blockmap, latest.yml for updates), akko-portable-<v>.exe
+#   macOS    akko-<v>-mac-arm64.dmg (Apple Silicon), akko-<v>-mac-x64.dmg (Intel)
+#   Linux    akko-<v>-linux-x86_64.AppImage
+#   all      akko-companion-<v>.zip (the browser extension)
+# Nothing is code-signed (that costs money): Windows shows "Windows protected your PC", macOS
+# "can't be opened" the first time; README.md says what to do.
+
+name: build
+
+on:
+  push:
+    tags: ['*']
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run check-lessons
+
+  build:
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build
+        run: npm run dist
+        env:
+          # no signing certificate: build unsigned (macOS still gets an ad-hoc signature)
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: akko-${{ runner.os }}
+          if-no-files-found: error
+          path: |
+            dist/*.exe
+            dist/*.blockmap
+            dist/latest*.yml
+            dist/*.dmg
+            dist/*.AppImage
+            dist/akko-companion-*.zip
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          name: akko ${{ github.ref_name }}
+          files: dist/*
+          fail_on_unmatched_files: true

@@ -1,4 +1,4 @@
-// Japanese tokenizer (kuromoji) + offline dictionary (JMdict via jmdict-simplified),
+// Japanese tokenizer (Lindera, through server/tokenizer.js) + offline dictionary (JMdict via jmdict-simplified),
 // kanji info (KANJIDIC2) and pitch accent (Kanjium)
 //
 //   POST /api/tokenize  {lines: [...]}      -> words with dictionary forms + furigana
@@ -17,7 +17,7 @@ const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const AdmZip = require('adm-zip');
-const kuromoji = require('kuromoji');
+const { loadTokenizer: newTokenizer } = require('./tokenizer');
 const { UA, cached, fetchText, asyncRoute } = require('./http');
 const grammar = require('./grammar');
 const english = require('./english');
@@ -29,10 +29,9 @@ const ZIP_FILE = path.join(DATA, 'jmdict.zip');
 const KANJI_FILE = path.join(DATA, 'kanji.json');
 const ACCENTS_FILE = path.join(DATA, 'accents.txt');
 const ACCENTS_URL = 'https://raw.githubusercontent.com/mifunetoshiro/kanjium/master/data/source_files/raw/accents.txt';
-const KUROMOJI_DICT = path.join(path.dirname(require.resolve('kuromoji/package.json')), 'dict');
 
-let dict = null;          // { entries, tags }
-let index = null;         // Map(text -> [entry index])
+let dict = null;          // { entries (an Entries), tags, version }
+let index = null;         // Map(text -> entry number, or [entry numbers] when several)
 let tokenizer = null;
 let kanji = null;         // { 雨: {m, on, kun, j, s, g} }
 let pitch = null;         // Map("word\treading" -> [accent numbers])
@@ -101,19 +100,77 @@ function compact(jm) {
   return { entries, tags: jm.tags, version: jm.dictDate };
 }
 
+// The word dictionary stays as the file's bytes, and an entry becomes an object only when it's
+// looked up (the last few thousand are kept): all 218,000 as objects took ~140 MB more memory.
+class Entries {
+  constructor(buf, starts, ends) {
+    this.buf = buf;
+    this.starts = starts;
+    this.ends = ends;
+    this.cache = new Map();
+  }
+
+  get length() { return this.starts.length; }
+
+  parse(i) { return JSON.parse(this.buf.toString('utf8', this.starts[i], this.ends[i])); }
+
+  get(i) {
+    let e = this.cache.get(i);
+    if (e) return e;
+    e = this.parse(i);
+    if (this.cache.size >= 5000) this.cache.delete(this.cache.keys().next().value);
+    this.cache.set(i, e);
+    return e;
+  }
+
+  // every entry once, without filling the cache (English builds its word list this way)
+  forEach(fn) { for (let i = 0; i < this.starts.length; i++) fn(this.parse(i), i); }
+}
+
+// {"entries":[{…},{…}],"tags":{…},"version":"…"} -> where each entry's bytes are, and the rest
+function readDict(buf) {
+  const KEY = '"entries":[';
+  const at = buf.indexOf(KEY);
+  if (at < 0) throw new Error('the dictionary file is damaged');
+  const starts = [], ends = [];
+  let i = at + KEY.length, depth = 0, inString = false, start = 0;
+  for (; i < buf.length; i++) {
+    const c = buf[i];
+    if (inString) {
+      if (c === 0x5c) i++;                       //  : skip the escaped character
+      else if (c === 0x22) inString = false;     // "
+      continue;
+    }
+    if (c === 0x22) inString = true;
+    else if (c === 0x7b || c === 0x5b) {         // { [
+      if (depth === 0) start = i;
+      depth++;
+    } else if (c === 0x7d || c === 0x5d) {       // } ]
+      if (depth === 0) break;                    // the end of "entries"
+      depth--;
+      if (depth === 0) { starts.push(start); ends.push(i + 1); }
+    }
+  }
+  const rest = JSON.parse(buf.toString('utf8', 0, at) + KEY + buf.toString('utf8', i));
+  return { ...rest, entries: new Entries(buf, Int32Array.from(starts), Int32Array.from(ends)) };
+}
+
 // Put a word dictionary in use. Lookups keep using the old one until the new one is indexed.
 function useDict(d) {
   const idx = new Map();
   d.entries.forEach((e, i) => {
     for (const text of new Set([...e.k, ...e.r, ...(e.h || [])])) {
-      const list = idx.get(text);
-      if (list) list.push(i); else idx.set(text, [i]);
+      const v = idx.get(text);
+      if (v === undefined) idx.set(text, i);
+      else if (typeof v === 'number') idx.set(text, [v, i]);
+      else v.push(i);
     }
   });
   dict = d;
   index = idx;
   ready.dict = true;
 }
+const hitsOf = (text) => { const v = index.get(text); return v === undefined ? null : typeof v === 'number' ? [v] : v; };
 
 let loadingDict = false;      // true while the start-up load (maybe a first download + build) runs
 
@@ -136,7 +193,7 @@ async function readOrBuildDict() {
     fs.writeFileSync(DICT_FILE, JSON.stringify(compact(JSON.parse(entry.getData().toString('utf8')))));
     fs.unlinkSync(ZIP_FILE);
   }
-  useDict(JSON.parse(fs.readFileSync(DICT_FILE, 'utf8')));
+  useDict(readDict(fs.readFileSync(DICT_FILE)));
   console.log(`dictionary: ${dict.entries.length} entries ready`);
 }
 
@@ -218,7 +275,7 @@ function install({ kind, data }) {
     const previous = dict && dict.version;
     const previousCount = dict ? dict.entries.length : 0;
     replaceFile(DICT_FILE, JSON.stringify(d));
-    useDict(d);
+    useDict(readDict(fs.readFileSync(DICT_FILE)));
     console.log(`dictionary: installed JMdict ${d.version || ''} (${d.entries.length} entries)`);
     // previousCount lets the page warn about a much smaller dictionary (e.g. jmdict-eng-common)
     return { kind, count: d.entries.length, version: d.version || null, previous: previous || null, previousCount };
@@ -271,16 +328,11 @@ async function loadPitch() {
   console.log(`pitch accent: ${pitch.size} words ready`);
 }
 
-function loadTokenizer() {
-  return new Promise((resolve, reject) => {
-    kuromoji.builder({ dicPath: KUROMOJI_DICT }).build((err, t) => {
-      if (err) return reject(err);
-      tokenizer = t;
-      ready.tokenizer = true;
-      console.log('tokenizer: ready');
-      resolve();
-    });
-  });
+// Lindera, with kuromoji-shaped tokens (server/tokenizer.js)
+async function loadTokenizer() {
+  tokenizer = await newTokenizer();
+  ready.tokenizer = true;
+  console.log('tokenizer: ready');
 }
 
 function init() {
@@ -448,11 +500,11 @@ function formatEntry(e, query) {
 }
 
 function lookupExact(q) {
-  const hits = index.get(q);
+  const hits = hitsOf(q);
   if (!hits) return [];
   const kanjiQuery = hasKanji(q);
   return hits
-    .map((i) => dict.entries[i])
+    .map((i) => dict.entries.get(i))
     .sort((a, b) => (b.c || 0) - (a.c || 0)
       || (kanjiQuery ? (b.k.includes(q) - a.k.includes(q)) : (b.r[0] === q) - (a.r[0] === q)))
     .slice(0, 6)

@@ -11,9 +11,11 @@ import { toast } from "../core/toast.js";
 import { setWordStatus, saveWords } from "../words/status.js";
 import { saveItem } from "../mining.js";
 import { pitchCardHtml, pitchNotes } from "../words/pitch.js";
+import { keepMedia } from "../core/media.js";
 
 const KEY = "akko-anki";
-const DEFAULTS = { deck: "", model: "", maps: {}, tags: "akko immersion", auto: false, audio: true, wordAudio: true, shot: true, spokenSentence: true };
+// keep: the line's audio and the picture are also kept in akko (scripts/core/media.js), for 復習
+const DEFAULTS = { deck: "", model: "", maps: {}, tags: "akko immersion", auto: false, audio: true, wordAudio: true, shot: true, spokenSentence: true, keep: true };
 
 // what the site can put into an Anki field
 export const SOURCES = {
@@ -282,8 +284,9 @@ export async function send(item, media) {
         ? fetchWordAudio(item).catch((err) => ({ error: err.message }))
         : null;
     const result = await captureMedia(item, media,
-        c.shot && fieldsFor("screenshot").length > 0,
-        c.audio && fieldsFor("audio").length > 0);
+        (c.shot && fieldsFor("screenshot").length > 0) || c.keep,
+        (c.audio && fieldsFor("audio").length > 0) || c.keep);
+    if (c.keep) keepMedia(item.id, { audio: result.audio, picture: result.screenshot });
     const stamp = `akko_${item.added}`;
     // no recording of the line (mined from a book, a lesson…): the sentence said by a voice
     if (!result.audio && c.audio && c.spokenSentence && fieldsFor("audio").length > 0 && (item.lang || "ja") === "ja" && item.sentence) {
@@ -299,9 +302,9 @@ export async function send(item, media) {
         tags: c.tags.split(/\s+/).filter(Boolean),
         options: { allowDuplicate: false, duplicateScope: "deck" },
     };
-    if (result.screenshot) note.picture = [{ data: result.screenshot, filename: `${stamp}.jpg`, fields: fieldsFor("screenshot") }];
+    if (result.screenshot && c.shot && fieldsFor("screenshot").length) note.picture = [{ data: result.screenshot, filename: `${stamp}.jpg`, fields: fieldsFor("screenshot") }];
     note.audio = [];
-    if (result.audio) note.audio.push({ data: result.audio.data, filename: `${stamp}.${result.audio.ext}`, fields: fieldsFor("audio") });
+    if (result.audio && c.audio && fieldsFor("audio").length) note.audio.push({ data: result.audio.data, filename: `${stamp}.${result.audio.ext}`, fields: fieldsFor("audio") });
     if (wordAudio?.data) note.audio.push({ data: wordAudio.data, filename: `${stamp}_word.${wordAudio.ext}`, fields: fieldsFor("wordAudio") });
 
     try {
@@ -313,6 +316,13 @@ export async function send(item, media) {
         say(`${item.word}: ${err.message}`, true);
         return false;
     }
+}
+
+// Without Anki: the line's audio and the picture only kept in akko (for 復習)
+export async function keepOnly(item, media) {
+    if (!cfg().keep || !media) return;
+    const result = await captureMedia(item, media, true, true);
+    await keepMedia(item.id, { audio: result.audio, picture: result.screenshot });
 }
 
 // ---------- importing known words ----------

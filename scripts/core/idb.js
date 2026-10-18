@@ -1,12 +1,14 @@
 // IndexedDB for things too big for localStorage (~5 MB per site): the reading library and
-// mined words. Stores: "texts" and "mined" (both keyPath "id").
+// mined words. Stores: "texts", "mined" and "media" (all keyPath "id"). "media" holds a mined
+// word's line audio and picture as Blobs ({id: <the mined word's id>, audio, picture}); it's left
+// out of backups (a backup is text; these are recordings).
 // Every write fires "akko-saved" (like store.set) and warns if it fails.
 
 import { warnSaveFailed } from "./utils.js";
 
 const DB = "akko";
-const VERSION = 2;               // 2 added "mined"
-const STORES = ["texts", "mined"];
+const VERSION = 3;               // 2 added "mined", 3 "media"
+const STORES = ["texts", "mined", "media"];
 let opening = null;
 
 function open() {
@@ -16,7 +18,11 @@ function open() {
             req.onupgradeneeded = () => {
                 for (const s of STORES) if (!req.result.objectStoreNames.contains(s)) req.result.createObjectStore(s, { keyPath: "id" });
             };
-            req.onsuccess = () => resolve(req.result);
+            req.onsuccess = () => {
+                // a newer akko (another tab) needs to change the stores: let go, and reopen next time
+                req.result.onversionchange = () => { req.result.close(); opening = null; };
+                resolve(req.result);
+            };
             req.onerror = () => reject(req.error);
             req.onblocked = () => reject(new Error("close the site's other tabs, then reload"));
         });
@@ -59,4 +65,4 @@ export const idbReplace = (store, values) => write(store, (s) => {
     values.forEach((v) => s.put(v));
 });
 
-export const IDB_STORES = STORES;
+export const IDB_STORES = ["texts", "mined"];       // the ones backups carry

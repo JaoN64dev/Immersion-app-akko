@@ -1,38 +1,45 @@
 // The akko companion browser extension (extension/) and akko's pages meet here, so they keep in
 // step even when akko only runs in its own window, whose storage the extension can't reach:
-//   - the extension adds what you did while watching to a log: word statuses, mined words, and
-//     time spent on Japanese videos. Every akko window applies the log to its own storage
+//   - word statuses from the extension go straight into akko's one word list (server/words.js)
+//   - the extension adds the rest of what you did while watching to a log: mined words, and time
+//     spent on Japanese videos. Every akko window applies the log to its own storage
 //     (scripts/core/companion.js) and remembers how far it got, so the desktop app and akko in a
 //     browser both get everything.
-//   - akko's windows send their word list, Anki settings and language; the extension reads them.
+//   - akko's windows send their Anki settings and language; the extension reads them, and the word list.
 // Saved in DATA/companion.json. The log keeps the last 5000 entries, 60 days at most.
 //
-//   GET  /api/companion[?from=extension] -> {words, anki, native, at, seen}
-//        words: akko's list, with the log's statuses akko hasn't applied yet on top
-//   PUT  /api/companion/app  {words, anki, native, seq, epoch}       (akko's pages)
+//   GET  /api/companion[?from=extension] -> {words (the Japanese word list), anki, native, at, seen}
+//   PUT  /api/companion/app  {anki, native}                           (akko's pages)
 //   POST /api/companion/log  {entries: [...]}                         (the extension)
 //        {kind: "status", lemma, status} | {kind: "mined", item} | {kind: "time", day, seconds, site, key, title, url}
 //   GET  /api/companion/log?after=<seq>&epoch=<epoch> -> {epoch, last, entries: [{seq, at, kind, ...}]}
 //        epoch changes if the file is started again, and then the whole log comes back
 //   GET  /api/companion/extension -> {folder, version}; POST /api/companion/extension/open (the computer only)
+//   POST /api/companion/media/<mined id> {kind: "audio" | "picture", ext, data (base64)}   (the extension)
+//   GET  /api/companion/media/<mined id>/<kind>     a mined word's line audio / picture, for akko's windows
+//        (in DATA/companion-media, kept as long as the log: 60 days)
 
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { DATA } = require('./paths');
+const wordList = require('./words');
 
 const router = express.Router();
 const FILE = path.join(DATA, 'companion.json');
 const KEEP = 5000;
 const KEEP_DAYS = 60;
+const MEDIA = path.join(DATA, 'companion-media');
+const MEDIA_TYPES = { webm: 'audio/webm', ogg: 'audio/ogg', mp3: 'audio/mpeg', wav: 'audio/wav', jpg: 'image/jpeg' };
+const safeId = (id) => /^[\w-]{1,80}$/.test(String(id || ''));
 const STATUSES = ['new', 'learning', 'known', 'ignored'];
 
 let cache = null;
 function read() {
   if (cache) return cache;
   try { cache = JSON.parse(fs.readFileSync(FILE, 'utf8')); } catch { cache = null; }
-  if (!cache || !cache.epoch) cache = { epoch: crypto.randomBytes(6).toString('hex'), next: 1, log: [], app: { words: {}, anki: null, native: '', at: 0, seq: 0 }, seen: 0 };
+  if (!cache || !cache.epoch) cache = { epoch: crypto.randomBytes(6).toString('hex'), next: 1, log: [], app: { anki: null, native: '', at: 0 }, seen: 0 };
   return cache;
 }
 function save() {
@@ -68,41 +75,27 @@ function clean(e) {
       source: text(m.source, 300), time: text(m.time, 20), url: text(m.url, 500), videoName: text(m.videoName, 300),
       cueStart: Number.isFinite(m.cueStart) ? m.cueStart : null, cueEnd: Number.isFinite(m.cueEnd) ? m.cueEnd : null,
       ankiNoteId: Number.isFinite(m.ankiNoteId) ? m.ankiNoteId : undefined,
+      // which recordings were sent with it (POST /media): {audio: "webm", picture: "jpg"}
+      media: m.media && typeof m.media === 'object'
+        ? Object.fromEntries(['audio', 'picture'].filter((k) => MEDIA_TYPES[m.media[k]]).map((k) => [k, m.media[k]])) : undefined,
       lang: 'ja', added: Number.isFinite(m.added) ? m.added : Date.now(),
     } };
   }
   return null;
 }
 
-// akko's word list as the extension should see it: the statuses akko hasn't applied yet on top
-function wordsNow(c) {
-  const words = { ...(c.app.words || {}) };
-  for (const e of c.log) {
-    if (e.kind !== 'status' || e.seq <= (c.app.seq || 0)) continue;
-    if (e.status === 'new') delete words[e.lemma]; else words[e.lemma] = e.status;
-  }
-  return words;
-}
-
 router.get('/', (req, res) => {
   const c = read();
   // when the extension last asked (shown in akko's settings); written at most once a minute
   if (req.query.from === 'extension') { const was = c.seen; c.seen = Date.now(); if (c.seen - was > 60e3) save(); }
-  res.json({ words: wordsNow(c), anki: c.app.anki, native: c.app.native, at: c.app.at, seen: c.seen });
+  res.json({ words: wordList.words('ja'), anki: c.app.anki, native: c.app.native, at: c.app.at || 1, seen: c.seen });
 });
 
 router.put('/app', express.json({ limit: '20mb' }), (req, res) => {
   const c = read();
   const b = req.body || {};
-  if (!b.words || typeof b.words !== 'object' || Array.isArray(b.words)) return res.status(400).json({ error: 'no word list' });
-  c.app = {
-    words: b.words,
-    anki: b.anki && typeof b.anki === 'object' ? b.anki : null,
-    native: text(b.native, 20),
-    at: Date.now(),
-    // how far into the log this list already is
-    seq: b.epoch === c.epoch && Number.isInteger(b.seq) ? Math.min(b.seq, c.next - 1) : 0,
-  };
+  if (b.anki !== undefined && b.anki !== null && (typeof b.anki !== 'object' || Array.isArray(b.anki))) return res.status(400).json({ error: 'bad Anki settings' });
+  c.app = { anki: b.anki || null, native: text(b.native, 20), at: Date.now() };
   save();
   res.json({ ok: true });
 });
@@ -113,15 +106,19 @@ router.post('/log', express.json({ limit: '5mb' }), (req, res) => {
   const c = read();
   const now = Date.now();
   let added = 0;
+  const statuses = {};
   for (const raw of list.slice(0, 1000)) {
     const e = clean(raw);
     if (!e) continue;
-    c.log.push({ seq: c.next++, at: now, ...e });
     added++;
+    if (e.kind === 'status') { statuses[e.lemma] = e.status; continue; }     // straight into the word list
+    c.log.push({ seq: c.next++, at: now, ...e });
   }
+  wordList.apply('ja', statuses);
   const oldest = now - KEEP_DAYS * 864e5;
   c.log = c.log.filter((e) => e.at >= oldest).slice(-KEEP);
   save();
+  pruneMedia(oldest);
   res.json({ added, last: c.next - 1 });
 });
 
@@ -149,6 +146,36 @@ router.post('/extension/open', (req, res) => {
     require('child_process').spawn(opener, [folder], { detached: true, stdio: 'ignore' }).unref();
     res.json({ ok: true, folder });
   } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ---------- a mined word's line audio and picture, from the extension ----------
+
+function pruneMedia(oldest) {
+  let files = [];
+  try { files = fs.readdirSync(MEDIA); } catch { return; }
+  for (const f of files) {
+    try { if (fs.statSync(path.join(MEDIA, f)).mtimeMs < oldest) fs.unlinkSync(path.join(MEDIA, f)); } catch { /* gone already */ }
+  }
+}
+
+router.post('/media/:id', express.json({ limit: '15mb' }), (req, res) => {
+  const { kind, ext, data } = req.body || {};
+  if (!safeId(req.params.id) || !['audio', 'picture'].includes(kind) || !MEDIA_TYPES[ext] || typeof data !== 'string') {
+    return res.status(400).json({ error: 'not a recording' });
+  }
+  if ((kind === 'picture') !== (ext === 'jpg')) return res.status(400).json({ error: 'not a recording' });
+  fs.mkdirSync(MEDIA, { recursive: true });
+  fs.writeFileSync(path.join(MEDIA, `${req.params.id}.${kind}.${ext}`), Buffer.from(data, 'base64'));
+  res.json({ ok: true });
+});
+
+router.get('/media/:id/:kind', (req, res) => {
+  if (!safeId(req.params.id) || !['audio', 'picture'].includes(req.params.kind)) return res.status(404).end();
+  let files = [];
+  try { files = fs.readdirSync(MEDIA); } catch { /* none yet */ }
+  const name = files.find((f) => f.startsWith(`${req.params.id}.${req.params.kind}.`));
+  if (!name) return res.status(404).end();
+  res.type(MEDIA_TYPES[name.split('.').pop()]).sendFile(path.join(MEDIA, name));
 });
 
 // for tests

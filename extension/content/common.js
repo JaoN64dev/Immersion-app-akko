@@ -3,10 +3,14 @@
 // which draws the subtitles over the video with every word clickable:
 //   - words are split and looked up by akko (through background.js), coloured by your word list
 //     (new: red, learning: yellow), with furigana on the ones you don't know yet
-//   - click a word: akko's dictionary entry, its status (1-4), "+ mine" to Anki with the sentence,
-//     the line's audio, a screenshot and the word's pronunciation, using akko's Anki settings
-//   - hovering the subtitles pauses the video; [ and ] go to the previous / next line, P replays,
-//     A pauses at the end of every line, R changes how the translation shows
+//   - click a word: akko's dictionary entry (with its pronunciation, pitch accent, conjugation,
+//     kanji, and akko's grammar lessons it's part of), its status (1-4), "+ mine" to Anki with the
+//     sentence, the line's audio, a screenshot and the word's pronunciation, using akko's Anki settings
+//   - ★ on lines with exactly one word you don't know (i+1: the best sentences to mine)
+//   - ☰ every line of the video in a list (Shift+T): click a line to go there, a word to look it up
+//   - hovering the subtitles pauses the video; [ and ] go to the previous / next line, P replays
+//     (Shift+P slowly), A pauses at the end of every line, R changes how the translation shows;
+//     the subtitles can be moved earlier / later when they're out of time
 //   - a translation line shows when the video is paused (or always, or blurred until the mouse is on it)
 //   - akko gets it all (through background.js and akko's server): word statuses, mined words (in
 //     akko's mined list and 復習) and the time watched (it counts for today and the streak)
@@ -44,6 +48,8 @@
         bg: 65,                   // the subtitles' background, % opacity
         font: "sans",             // sans | serif | round
         mineTo: "anki",           // anki: Anki and akko | akko: only akko's mined list
+        iPlusOne: true,           // ★ on lines with exactly one word you don't know
+        keepMedia: true,          // the line's audio and the picture also kept in akko (復習)
     };
     const ANKI = { deck: "", model: "", maps: {}, tags: "akko immersion", audio: true, wordAudio: true, shot: true };
     let words = {};
@@ -96,6 +102,13 @@
         }
         return lines.map((l) => tokenCache.get(l));
     }
+
+    // akko's grammar lessons (id, title, meaning, level), for the grammar a word is part of
+    let lessonList = null;
+    const grammarLessons = () => {
+        if (!lessonList) lessonList = api("/api/grammar").then((r) => r.lessons || []).catch(() => { lessonList = null; return []; });
+        return lessonList;
+    };
 
     // ---------- small helpers ----------
 
@@ -219,6 +232,30 @@ rt {font-size: .5em; color: #f0f0f0;}
 .popup ol {margin: 4px 0 0; padding-left: 1.3em;}
 .popup small {color: #777;}
 .popup .msg {color: #555;}
+.popup .infl {margin: -2px 0 6px; color: #555; font-size: .9em;}
+.popup .say {padding: 0 6px; margin-left: 6px; font-size: .9em;}
+.popup .pitch {display: inline-block; margin-left: 8px; color: #384775; font-family: "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;}
+.popup .pitch small {margin-left: 2px;}
+.popup .extra {border-top: 1px dashed #ccc; margin-top: 8px; padding-top: 6px; font-size: .9em;}
+.popup .extra p {margin: 2px 0;}
+.popup .extra b {font-family: "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif; font-size: 1.15em;}
+.popup .extra a {color: #2d5bd3;}
+.star {color: #ffd479; font-size: .6em; vertical-align: super; margin-left: .25em; cursor: help;}
+.pill .tx.on {background: #384775;}
+.side {position: absolute; top: 46px; bottom: 60px; left: 12px; width: min(380px, 40%); pointer-events: auto; background: #1f2027ee; color: #eee; border-radius: 12px; display: flex; flex-direction: column; font: 13px/1.5 system-ui, sans-serif; box-shadow: 0 4px 18px #0008;}
+.side[hidden], .panel[hidden], .popup[hidden] {display: none;}
+.side .bar {display: flex; gap: 8px; align-items: center; padding: 8px 12px; border-bottom: 1px solid #ffffff1f;}
+.side .bar b {margin-right: auto;}
+.side .bar label {font-size: 12px; color: #bbb;}
+.side ol {list-style: none; margin: 0; padding: 4px 0; overflow: auto; flex: 1;}
+.side li {display: flex; gap: 8px; padding: 4px 12px; cursor: pointer; border-left: 3px solid transparent;}
+.side li:hover {background: #ffffff10;}
+.side li.now {background: #ff5a7a22; border-left-color: #ff5a7a;}
+.side li time {color: #888; font-size: 11px; min-width: 3.2em; padding-top: .35em; font-variant-numeric: tabular-nums;}
+.side li .t {font-family: "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif; font-size: 16px; line-height: 1.7;}
+.side li .t rt {font-size: .55em;}
+.side li .st1 {color: #ffd479; padding-top: .3em;}
+.side.only1 li:not(.one) {display: none;}
 .toast {position: absolute; left: 50%; top: 14px; transform: translateX(-50%); background: #000000d9; color: #fff; padding: 6px 14px; border-radius: 10px; font: 600 14px/1.4 system-ui, sans-serif; pointer-events: none; opacity: 0; transition: opacity .2s;}
 .toast.show {opacity: 1;}
 .toast.bad {background: #b00020e6;}
@@ -233,16 +270,21 @@ rt {font-size: .5em; color: #f0f0f0;}
         shadow.innerHTML = `<style>${CSS}</style>
             <div class="root">
                 <div class="lines"><div class="line" lang="ja"></div><div class="tr"></div></div>
-                <div class="pill"><span class="mode"></span><span class="pct"></span><button class="open" title="akko companion">akko ▾</button></div>
+                <div class="pill"><span class="mode"></span><span class="pct"></span><button class="tx" title="all the lines (Shift+T)">☰</button><button class="open" title="akko companion">akko ▾</button></div>
+                <div class="side" hidden></div>
                 <div class="panel" hidden></div>
                 <div class="popup" hidden></div>
                 <div class="toast"></div>
             </div>`;
         container.append(host);
         const $ = (sel) => shadow.querySelector(sel);
-        const ui = { root: $(".root"), lines: $(".lines"), line: $(".line"), tr: $(".tr"), pct: $(".pct"), mode: $(".mode"), open: $(".open"), panel: $(".panel"), popup: $(".popup"), toast: $(".toast") };
+        const ui = { root: $(".root"), lines: $(".lines"), line: $(".line"), tr: $(".tr"), pct: $(".pct"), mode: $(".mode"), open: $(".open"), tx: $(".tx"), side: $(".side"), panel: $(".panel"), popup: $(".popup"), toast: $(".toast") };
 
         let cues = [], cues2 = [];
+        let delay = 0;                   // seconds the subtitles are moved by (+ later, - earlier), for this video
+        let slowUntil = -1;              // slow replay: back to normal speed after this time
+        let hiddenForShot = false;       // akko's subtitles out of the way while the tab's picture is taken
+        const timeNow = (v) => v.currentTime - delay;      // the subtitles' clock
         let tracks = [], current = "", translations = [], currentTr = "";
         let shown = -1, shownTr = "";
         let hovered = null;              // the word under the mouse
@@ -278,24 +320,36 @@ rt {font-size: .5em; color: #f0f0f0;}
             const cls = t.c && (status === "new" || status === "learning") ? ` ${status}` : "";
             const ruby = t.f && (prefs.furigana === "always" || (prefs.furigana === "unknown" && isUnknown(t.b)))
                 ? t.f.map((p) => (p.r ? `<ruby>${esc(p.t)}<rt>${esc(p.r)}</rt></ruby>` : esc(p.t))).join("") : esc(t.s);
-            return `<span class="w${cls}" data-b="${esc(t.b)}">${ruby}</span>`;
+            const gr = t.gr && t.gr.length ? ` data-gr="${esc(t.gr.join(" "))}"` : "";
+            return `<span class="w${cls}" data-b="${esc(t.b)}"${gr}>${ruby}</span>`;
         }
+        const lineHtml = (c) => { const tokens = tokenCache.get(c.text); return tokens ? tokens.map(wordHtml).join("") : esc(c.text); };
+        // i+1: exactly one word you don't know yet, the best sentences to mine
+        const unknownIn = (c) => new Set((tokenCache.get(c.text) || []).filter((t) => t.c && isUnknown(t.b)).map((t) => t.b)).size;
+        const STAR = `<span class="star" title="one new word: a good sentence to mine">★</span>`;
         function render(force = false) {
             const v = site.video();
-            if (!v) return;
-            const i = lineAt(cues, v.currentTime);
+            // no video right now (an ad is playing): out of the way, so the ad's own buttons work
+            const visibility = v && !hiddenForShot ? "" : "hidden";
+            if (ui.root.style.visibility !== visibility) ui.root.style.visibility = visibility;
+            if (!v) {
+                if (shown !== -1 || shownTr) { shown = -1; shownTr = ""; ui.line.textContent = ""; ui.tr.textContent = ""; }
+                return;
+            }
+            const now = timeNow(v);
+            const i = lineAt(cues, now);
             if (i !== shown || force) {
                 shown = i;
                 const c = cues[i];
                 if (!c) ui.line.textContent = "";
-                else {
-                    const tokens = tokenCache.get(c.text);
-                    ui.line.innerHTML = tokens ? tokens.map(wordHtml).join("") : esc(c.text);
-                }
+                else ui.line.innerHTML = lineHtml(c) + (prefs.iPlusOne && unknownIn(c) === 1 ? STAR : "");
+                markTranscript();
             }
+            // slow replay: normal speed again after the line
+            if (slowUntil >= 0 && now >= slowUntil) { v.playbackRate = 1; slowUntil = -1; }
             // auto-pause: stop at the end of each line (not while recording one for Anki)
             const c = cues[shown];
-            if (prefs.autoPause && c && !v.paused && !recording && autoPausedAt !== shown && v.currentTime >= c.end - 0.08) {
+            if (prefs.autoPause && c && !v.paused && !recording && autoPausedAt !== shown && now >= c.end - 0.08) {
                 autoPausedAt = shown;
                 v.pause();
             }
@@ -303,14 +357,15 @@ rt {font-size: .5em; color: #f0f0f0;}
             ui.line.classList.toggle("blurred", prefs.hideJa && !v.paused && !pausedByHover);
             // the translation: when paused (or always, or blurred), the line(s) at this moment
             const showTr = prefs.translation === "always" || prefs.translation === "blur" || (prefs.translation === "paused" && (v.paused || pausedByHover));
-            const tr = showTr ? cues2.filter((x) => v.currentTime >= x.start - 0.3 && v.currentTime < x.end + 0.3).map((x) => x.text).join(" ") : "";
+            const tr = showTr ? cues2.filter((x) => now >= x.start - 0.3 && now < x.end + 0.3).map((x) => x.text).join(" ") : "";
             if (tr !== shownTr) { shownTr = tr; ui.tr.textContent = tr; }
             ui.tr.classList.toggle("blurred", prefs.translation === "blur");
         }
-        let raf = 0;
-        const loop = () => { render(); raf = requestAnimationFrame(loop); };
-        raf = requestAnimationFrame(loop);
-        const redraw = () => { resize(); render(true); renderPct(); };
+        // ~16 times a second is plenty for subtitles (YouTube's own update 4 times a second), and
+        // nothing at all while the tab is in the background
+        const RENDER_EVERY = 60;
+        const renderTimer = setInterval(() => { if (!document.hidden) render(); }, RENDER_EVERY);
+        const redraw = () => { resize(); render(true); renderPct(); renderTranscript(); };
         changed.add(redraw);
 
         function renderPct() {
@@ -322,6 +377,49 @@ rt {font-size: .5em; color: #f0f0f0;}
             }
             ui.pct.textContent = total ? `${Math.round((known / total) * 100)}% 理解` : "";
         }
+
+        // ----- the transcript: every line, the one playing marked; click a line to go there -----
+        let only1 = false;               // show only the i+1 lines
+        function renderTranscript() {
+            if (ui.side.hidden) return;
+            const ones = cues.filter((c) => unknownIn(c) === 1).length;
+            ui.side.classList.toggle("only1", only1);
+            ui.side.innerHTML = `<div class="bar"><b>${cues.length} lines</b>
+                    <label title="lines with exactly one word you don't know"><input type="checkbox" class="only1"${only1 ? " checked" : ""}> only ★ (${ones})</label>
+                    <button class="close" title="close (Shift+T)">✕</button></div>
+                <ol>${cues.map((c, i) => {
+                    const one = unknownIn(c) === 1;
+                    return `<li data-i="${i}"${one ? ` class="one"` : ""}><time>${clock(c.start)}</time><span class="t" lang="ja">${lineHtml(c)}</span>${one ? `<span class="st1" title="one new word">★</span>` : ""}</li>`;
+                }).join("")}</ol>`;
+            ui.side.querySelector(".close").onclick = () => showTranscript(false);
+            ui.side.querySelector(".only1").onchange = (e) => { only1 = e.target.checked; ui.side.classList.toggle("only1", only1); };
+            markTranscript(true);
+        }
+        function markTranscript(scroll = false) {
+            if (ui.side.hidden) return;
+            const was = ui.side.querySelector("li.now");
+            const li = ui.side.querySelector(`li[data-i="${shown}"]`);
+            if (was && was !== li) was.classList.remove("now");
+            if (!li) return;
+            li.classList.add("now");
+            // follow the video, unless the mouse is in the list (reading back)
+            if (scroll || was !== li) { if (!ui.side.matches(":hover")) li.scrollIntoView({ block: "center" }); }
+        }
+        function showTranscript(on) {
+            ui.side.hidden = !on;
+            ui.tx.classList.toggle("on", on);
+            if (on) renderTranscript();
+        }
+        ui.tx.addEventListener("click", () => showTranscript(ui.side.hidden));
+        ui.side.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const w = e.target.closest(".w");
+            if (w) { lookup(w); return; }
+            const li = e.target.closest("li[data-i]");
+            if (li) jumpTo(cues[Number(li.dataset.i)]);
+        });
+        ui.side.addEventListener("mouseover", (e) => { hovered = e.target.closest(".w"); });
+        for (const type of ["dblclick", "mousedown", "pointerdown", "wheel"]) ui.side.addEventListener(type, (e) => e.stopPropagation());
 
         // ----- hover: pause, and remember the word for the 1-4 keys -----
         ui.lines.addEventListener("mouseenter", () => {
@@ -344,7 +442,7 @@ rt {font-size: .5em; color: #f0f0f0;}
             lookup(w);
         });
         // clicks on the overlay mustn't reach the player (which would play / pause)
-        for (const el of [ui.lines, ui.popup, ui.panel, ui.open]) {
+        for (const el of [ui.lines, ui.popup, ui.panel, ui.open, ui.tx]) {
             for (const type of ["click", "dblclick", "mousedown", "pointerdown"]) el.addEventListener(type, (e) => e.stopPropagation());
         }
 
@@ -364,7 +462,9 @@ rt {font-size: .5em; color: #f0f0f0;}
         async function lookup(w) {
             const lemma = w.dataset.b;
             const plain = [...w.childNodes].map((n) => (n.nodeName === "RUBY" ? [...n.childNodes].filter((x) => x.nodeName !== "RT").map((x) => x.textContent).join("") : n.textContent)).join("");
-            popupWord = { lemma, el: w, surface: plain };
+            // a word in the transcript: its own line is the sentence for the card
+            const li = w.closest("li[data-i]");
+            popupWord = { lemma, el: w, surface: plain, grammar: (w.dataset.gr || "").split(" ").filter(Boolean), cue: li ? Number(li.dataset.i) : null };
             const v = site.video();
             if (v && !v.paused) { v.pause(); pausedByHover = true; }
             ui.popup.innerHTML = `<div class="head"><b>${esc(plain)}</b><button class="x" title="close (Esc)">✕</button></div><p class="msg">辞書を引いています…</p>`;
@@ -377,7 +477,8 @@ rt {font-size: .5em; color: #f0f0f0;}
                 qs.set("lang", "ja");
                 const r = await api(`/api/dict?${qs}`);
                 if (!popupWord || popupWord.el !== w) return;
-                renderEntries(r, lemma, plain);
+                await renderEntries(r, lemma, plain);
+                if (!popupWord || popupWord.el !== w) return;
                 place(w);
             } catch (err) {
                 ui.popup.querySelector(".msg").textContent = "couldn't look it up: " + err.message;
@@ -390,18 +491,47 @@ rt {font-size: .5em; color: #f0f0f0;}
                 .map(([s, label]) => `<button data-st="${s}" class="${now === s ? "on" : ""}">${label}</button>`).join("")}</div>`;
         }
 
-        function renderEntries(r, lemma, plain) {
+        async function renderEntries(r, lemma, plain) {
             const entries = r.entries || [];
+            const pitchOf = (e) => ((e.pitch || []).find((p) => p.reading === e.reading) || (e.pitch || [])[0] || {}).accents || [];
+            // grammar this word is part of: akko's lessons, a click away
+            const lessons = popupWord && popupWord.grammar.length ? (await grammarLessons()).filter((l) => popupWord.grammar.includes(l.id)) : [];
+            let akkoUrl = "";
+            try { if (lessons.length) akkoUrl = (await chrome.storage.local.get("akkoUrl")).akkoUrl || ""; } catch { /* the extension was reloaded */ }
+            const kanji = (r.kanji || []).slice(0, 4);
             ui.popup.innerHTML = `<div class="head"><b>${esc(plain)}</b>${lemma && lemma !== plain ? `<span>→ ${esc(lemma)}</span>` : ""}<button class="x" title="close (Esc)">✕</button></div>
+                ${r.inflection && r.inflection.length ? `<p class="infl">${esc(plain)} = ${esc(r.query || lemma)} + ${esc(r.inflection.join(" + "))}</p>` : ""}
                 ${lemma ? statusButtons(lemma) : ""}
                 ${entries.length ? entries.slice(0, 4).map((e, i) => `<div class="entry">
                     <button class="mine" data-i="${i}">+ mine</button>
-                    <span class="hw">${esc(e.word)}</span><span class="rd">${e.reading && e.reading !== e.word ? esc(e.reading) : ""}</span>${e.common ? `<span class="tag">common</span>` : ""}
+                    <span class="hw">${esc(e.word)}</span><span class="rd">${e.reading && e.reading !== e.word ? esc(e.reading) : ""}</span>${e.common ? `<span class="tag">common</span>` : ""}<button class="say" data-i="${i}" title="hear it">🔊</button>
+                    ${pitchOf(e).length ? `<span class="pitch" title="pitch accent">${pitchOf(e).map((n) => `${pitchCardHtml(e.reading || e.word, n)}<small>[${n}]</small>`).join(" ")}</span>` : ""}
                     <ol>${e.senses.slice(0, 4).map((s) => `<li>${esc(s.gloss.join("; "))} <small>${esc(s.pos.join(", "))}</small></li>`).join("")}</ol>
-                </div>`).join("") : `<p class="msg">no dictionary entry for this</p>`}`;
+                </div>`).join("") : `<p class="msg">no dictionary entry for this</p>`}
+                ${lessons.length || kanji.length ? `<div class="extra">
+                    ${lessons.map((l) => `<p>文法 <a href="${esc(akkoUrl ? `${akkoUrl}/grammar.html#${encodeURIComponent(l.id)}` : "#")}" target="_blank" rel="noopener"><b>${esc(l.title)}</b></a> ${esc(l.meaning)} <small>${esc(l.level || "")}</small></p>`).join("")}
+                    ${kanji.map((k) => `<p><b>${esc(k.char)}</b> ${esc((k.meanings || []).slice(0, 3).join(", "))} <small>${esc([(k.on || []).slice(0, 2).join("・"), (k.kun || []).slice(0, 2).join("・"), k.jlpt ? `JLPT ${k.jlpt}` : ""].filter(Boolean).join(" · "))}</small></p>`).join("")}
+                </div>` : ""}`;
             ui.popup.querySelector(".x").onclick = closePopup;
             ui.popup.querySelectorAll("[data-st]").forEach((b) => { b.onclick = () => markWord(lemma, b.dataset.st); });
             ui.popup.querySelectorAll(".mine").forEach((b) => { b.onclick = () => mine(entries[Number(b.dataset.i)], b); });
+            ui.popup.querySelectorAll(".say").forEach((b) => { b.onclick = () => say(entries[Number(b.dataset.i)], b); });
+        }
+
+        // the word's pronunciation (akko: recordings, or its voices)
+        async function say(e, btn) {
+            btn.disabled = true;
+            try {
+                const a = await api(`/api/audio?${new URLSearchParams({ word: e.word, reading: e.reading || "", lang: "ja" })}`);
+                const type = { mp3: "audio/mpeg", ogg: "audio/ogg", opus: "audio/ogg", wav: "audio/wav", m4a: "audio/mp4", webm: "audio/webm" }[a.ext] || "audio/mpeg";
+                const bytes = Uint8Array.from(atob(a.data), (ch) => ch.charCodeAt(0));
+                const url = URL.createObjectURL(new Blob([bytes], { type }));
+                const audio = new Audio(url);
+                audio.onended = () => URL.revokeObjectURL(url);
+                await audio.play();
+            } catch (err) {
+                toast(`${e.word}: ${err.message || "no recording"}`, true);
+            } finally { btn.disabled = false; }
         }
 
         function closePopup() {
@@ -420,7 +550,41 @@ rt {font-size: .5em; color: #f0f0f0;}
         }
 
         // ----- mining -----
+        // the line's audio and the picture: from the video itself (YouTube), or from the whole tab
+        // when the video is copy-protected (Netflix: site.recordable / site.screenshot = "tab")
+        const byTab = (what) => site[what] === "tab" || prefs.tabCapture;
+        // Chrome only lets an extension record a tab after its toolbar button was clicked on that tab
+        const CLICK = "for the line's audio and a picture, click the akko companion button in Chrome's toolbar once on this tab";
+        const needsClick = (err) => /invoked|activeTab|all_urls|permission/i.test(err.message || "");
         async function recordLine(c) {
+            return byTab("recordable") ? recordLineTab(c) : recordLineVideo(c);
+        }
+        async function recordLineTab(c) {
+            const v = site.video();
+            if (!v) throw new Error("no video");
+            const from = c.start + delay - 0.1, to = c.end + delay + 0.15;
+            const back = v.currentTime, wasPaused = v.paused;
+            recording = true;
+            try {
+                if (site.seek) site.seek(from); else v.currentTime = from;
+                for (let i = 0; i < 60 && Math.abs(v.currentTime - from) > 0.4; i++) await wait(50);
+                await ask({ type: "tabAudioStart" });
+                await v.play();
+                const until = Date.now() + (to - from) * 1000 + 8000;      // never record forever
+                while (v.currentTime < to && !v.paused && Date.now() < until) await wait(40);
+                const a = await ask({ type: "tabAudioStop" });
+                v.pause();
+                return a;
+            } catch (err) {
+                await ask({ type: "tabAudioStop" }).catch(() => {});
+                throw needsClick(err) ? Object.assign(new Error(CLICK), { click: true }) : err;
+            } finally {
+                if (site.seek) site.seek(back); else v.currentTime = back;
+                if (!wasPaused) v.play().catch(() => {});
+                recording = false;
+            }
+        }
+        async function recordLineVideo(c) {
             const v = site.video();
             if (!site.recordable || !v || !v.captureStream) throw new Error("no audio here");
             const stream = v.captureStream();
@@ -430,7 +594,8 @@ rt {font-size: .5em; color: #f0f0f0;}
             const back = v.currentTime, wasPaused = v.paused;
             recording = true;
             try {
-                v.currentTime = Math.max(0, c.start - 0.1);
+                v.playbackRate = 1;
+                v.currentTime = Math.max(0, c.start + delay - 0.1);
                 await new Promise((r) => v.addEventListener("seeked", r, { once: true }));
                 const rec = new MediaRecorder(new MediaStream(tracksA), { mimeType: mime });
                 const parts = [];
@@ -438,7 +603,7 @@ rt {font-size: .5em; color: #f0f0f0;}
                 const done = new Promise((r) => { rec.onstop = r; });
                 rec.start();
                 await v.play();
-                while (v.currentTime < c.end + 0.15 && !v.paused) await wait(40);
+                while (v.currentTime < c.end + delay + 0.15 && !v.paused) await wait(40);
                 rec.stop();
                 await done;
                 v.pause();
@@ -452,7 +617,37 @@ rt {font-size: .5em; color: #f0f0f0;}
             }
         }
 
-        function screenshot() {
+        async function screenshot() {
+            return byTab("screenshot") ? screenshotTab() : screenshotVideo();
+        }
+        // a picture of the tab, cut to the video, with akko's subtitles and menus out of the way
+        async function screenshotTab() {
+            const v = site.video();
+            if (!v) throw new Error("no video");
+            hiddenForShot = true;
+            ui.root.style.visibility = "hidden";
+            await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+            let data;
+            try { data = (await ask({ type: "tabShot" })).data; }
+            catch (err) { throw needsClick(err) ? Object.assign(new Error(CLICK), { click: true }) : err; }
+            finally { hiddenForShot = false; ui.root.style.visibility = ""; }
+            const img = await new Promise((resolve, reject) => { const i = new Image(); i.onload = () => resolve(i); i.onerror = () => reject(new Error("no picture")); i.src = data; });
+            const r = v.getBoundingClientRect();
+            const k = img.width / innerWidth;
+            const sx = Math.max(0, r.left * k), sy = Math.max(0, r.top * k);
+            const sw = Math.min(img.width - sx, r.width * k), sh = Math.min(img.height - sy, r.height * k);
+            const w = Math.min(640, Math.round(sw)), h = Math.round((sh / sw) * w);
+            const canvas = Object.assign(document.createElement("canvas"), { width: w, height: h });
+            const g = canvas.getContext("2d");
+            g.drawImage(img, sx, sy, sw, sh, 0, 0, w, h);
+            // copy-protected video can come out black (Chrome's hardware acceleration hides it)
+            const px = g.getImageData(0, 0, w, h).data;
+            let sum = 0;
+            for (let i = 0; i < px.length; i += 400) sum += px[i] + px[i + 1] + px[i + 2];
+            if (sum / (px.length / 400) < 8) throw new Error("the picture came out black (in Chrome's settings, turning off \"Use graphics acceleration\" fixes it on Netflix)");
+            return canvas.toDataURL("image/jpeg", 0.85).split(",")[1];
+        }
+        function screenshotVideo() {
             const v = site.video();
             if (!site.screenshot || !v || !v.videoWidth) throw new Error("no screenshot here");
             const w = Math.min(640, v.videoWidth), h = Math.round((v.videoHeight / v.videoWidth) * w);
@@ -463,7 +658,8 @@ rt {font-size: .5em; color: #f0f0f0;}
 
         async function mine(entry, btn) {
             if (!entry) return;
-            const c = cues[shown] || cues[lineAt(cues, site.video()?.currentTime || 0)];
+            const c = popupWord && popupWord.cue !== null ? cues[popupWord.cue]
+                : cues[shown] || (site.video() ? cues[lineAt(cues, timeNow(site.video()))] : null);
             const v = site.video();
             btn.disabled = true;
             btn.textContent = "adding…";
@@ -492,32 +688,43 @@ rt {font-size: .5em; color: #f0f0f0;}
                     source: site.title(), time: clock(t), videoName: site.title(),
                     cueStart: c ? c.start : null, cueEnd: c ? c.end : null,
                 };
+                // the picture and the line's audio: for Anki (when its fields want them), and kept in
+                // akko for 復習 (sent to akko's server, which hands them to akko's windows)
+                const keep = prefs.keepMedia !== false;
+                const fieldsFor = (src) => Object.keys(map).filter((f) => map[f] === src);
+                let shot = null, line = null;
+                if ((toAnki && anki.shot && wants("screenshot")) || keep) {
+                    try { shot = await screenshot(); } catch (err) { problems.push(err.click ? err.message : "screenshot: " + err.message); }
+                }
+                if (c && ((toAnki && anki.audio && wants("audio")) || keep)) {
+                    btn.textContent = "recording…";
+                    try { line = await recordLine(c); } catch (err) { problems.push(err.click ? err.message : "line audio: " + err.message); }
+                }
+                const media = {};
+                if (keep) {
+                    for (const [kind, ext, data] of [["picture", "jpg", shot], ["audio", line && line.ext, line && line.data]]) {
+                        if (!data) continue;
+                        try { await api(`/api/companion/media/${encodeURIComponent(forAkko.id)}`, { method: "POST", body: { kind, ext, data } }); media[kind] = ext; }
+                        catch { problems.push("recording not kept in akko"); }
+                    }
+                }
                 if (!toAnki) {
-                    await toAkko([{ kind: "mined", item: forAkko }]);
+                    await toAkko([{ kind: "mined", item: { ...forAkko, media } }]);
                     btn.textContent = "saved ✓";
                     if (statusOf(entry.word) === "new") await setStatus(entry.word, "learning");
-                    toast(`saved ${entry.word} in akko ✓`);
+                    toast(`saved ${entry.word} in akko ✓${problems.length ? ` (${[...new Set(problems)].join(", ")})` : ""}`);
                     return;
                 }
                 const fields = Object.fromEntries(Object.entries(map).map(([f, src]) => [f, fieldValue(src, item)]));
                 const stamp = `akko_${Date.now()}`;
                 const audio = [], picture = [];
-                const fieldsFor = (src) => Object.keys(map).filter((f) => map[f] === src);
-                if (anki.shot && wants("screenshot")) {
-                    try { picture.push({ data: screenshot(), filename: `${stamp}.jpg`, fields: fieldsFor("screenshot") }); } catch (err) { problems.push("screenshot: " + err.message); }
-                }
+                if (shot && anki.shot && wants("screenshot")) picture.push({ data: shot, filename: `${stamp}.jpg`, fields: fieldsFor("screenshot") });
+                if (line && anki.audio && wants("audio")) audio.push({ data: line.data, filename: `${stamp}.${line.ext}`, fields: fieldsFor("audio") });
                 if (anki.wordAudio && wants("wordAudio")) {
                     try {
                         const a = await api(`/api/audio?${new URLSearchParams({ word: item.word, reading: item.reading, lang: "ja" })}`);
                         audio.push({ data: a.data, filename: `${stamp}_word.${a.ext}`, fields: fieldsFor("wordAudio") });
                     } catch (err) { problems.push("word audio: " + err.message); }
-                }
-                if (anki.audio && wants("audio") && c) {
-                    btn.textContent = "recording…";
-                    try {
-                        const a = await recordLine(c);
-                        audio.push({ data: a.data, filename: `${stamp}.${a.ext}`, fields: fieldsFor("audio") });
-                    } catch (err) { problems.push("line audio: " + err.message); }
                 }
                 const noteId = await ankiCall("addNote", { note: {
                     deckName: anki.deck, modelName: anki.model, fields,
@@ -525,10 +732,10 @@ rt {font-size: .5em; color: #f0f0f0;}
                     options: { allowDuplicate: false, duplicateScope: "deck" },
                     audio, picture,
                 } });
-                await toAkko([{ kind: "mined", item: { ...forAkko, ankiNoteId: noteId } }]).catch(() => problems.push("not saved in akko"));
+                await toAkko([{ kind: "mined", item: { ...forAkko, media, ankiNoteId: noteId } }]).catch(() => problems.push("not saved in akko"));
                 btn.textContent = "added ✓";
                 if (statusOf(entry.word) === "new") await setStatus(entry.word, "learning");
-                toast(`added ${entry.word} to ${anki.deck} ✓${problems.length ? ` (${problems.join(", ")})` : ""}`);
+                toast(`added ${entry.word} to ${anki.deck} ✓${problems.length ? ` (${[...new Set(problems)].join(", ")})` : ""}`);
             } catch (err) {
                 btn.disabled = false;
                 btn.textContent = "+ mine";
@@ -558,17 +765,23 @@ rt {font-size: .5em; color: #f0f0f0;}
                     <option value="paused">when paused</option><option value="always">always</option>
                     <option value="blur">always, blurred until the mouse is on it</option><option value="off">never</option></select></label>
                 <label>furigana<select class="furi"><option value="unknown">on words I don't know</option><option value="always">always</option><option value="off">off</option></select></label>
+                ${check("iplus1", prefs.iPlusOne, "★ lines with exactly one new word (the best to mine)")}
+                <label>timing <small>(when the subtitles are early or late)</small></label>
+                <div class="row"><button class="earlier" title="show the subtitles earlier">− 0.25 s</button><span class="delay" style="align-self:center;min-width:5em;text-align:center">${delay > 0 ? "+" : ""}${delay.toFixed(2)} s</span><button class="later" title="show the subtitles later">+ 0.25 s</button></div>
                 <h3>Watching</h3>
                 ${check("hover", prefs.hoverPause, "pause when the mouse is on the subtitles")}
                 ${check("autopause", prefs.autoPause, "pause at the end of every line <small>(A)</small>")}
                 ${check("hideja", prefs.hideJa, "listening practice: blur the Japanese until paused <small>(L)</small>")}
-                <div class="row"><button class="prev" title="previous line ([)">⏮ line</button><button class="again" title="replay the line (P)">↻</button><button class="next" title="next line (])">line ⏭</button></div>
+                <div class="row"><button class="prev" title="previous line ([)">⏮ line</button><button class="again" title="replay the line (P)">↻</button><button class="slow" title="replay the line slowly (Shift+P)">🐢</button><button class="next" title="next line (])">line ⏭</button></div>
+                <div class="row"><button class="transcript" title="all the lines (Shift+T)">☰ all the lines</button></div>
                 <h3>Look</h3>
                 <label>size <input class="size" type="range" min="60" max="180" step="10" value="${prefs.size}"></label>
                 <label>height <input class="position" type="range" min="2" max="45" step="1" value="${prefs.position}"></label>
                 <label>background <input class="bg" type="range" min="0" max="100" step="5" value="${prefs.bg}"></label>
                 <label>font<select class="font"><option value="sans">gothic (plain)</option><option value="serif">mincho (book style)</option><option value="round">rounded</option></select></label>
                 <h3>Mining</h3>
+                ${site.recordable === "tab" ? `<p class="muted">For the line's audio and a picture on cards, click the akko companion button in Chrome's toolbar once on this tab (Chrome only lets extensions record a tab after that).</p>` : ""}
+                ${check("keepmedia", prefs.keepMedia !== false, "keep the line's audio and a picture in akko too (復習 plays them)")}
                 <label>“+ mine” sends the card to<select class="mineto"><option value="anki">Anki, and akko's mined list</option><option value="akko">only akko's mined list</option></select></label>
                 <p class="muted">${esc(note)}</p>
                 <p class="muted"><span class="synced"></span> <a class="akko-link" href="#" target="_blank" rel="noopener">open akko ↗</a></p>
@@ -600,6 +813,12 @@ rt {font-size: .5em; color: #f0f0f0;}
             $p(".prev").onclick = () => go(-1);
             $p(".next").onclick = () => go(1);
             $p(".again").onclick = () => go(0);
+            $p(".slow").onclick = () => go(0, true);
+            $p(".transcript").onclick = () => { ui.panel.hidden = true; showTranscript(true); };
+            $p(".earlier").onclick = () => moveSubs(-0.25);
+            $p(".later").onclick = () => moveSubs(0.25);
+            $p(".iplus1").onchange = (e) => savePrefs({ iPlusOne: e.target.checked });
+            $p(".keepmedia").onchange = (e) => savePrefs({ keepMedia: e.target.checked });
             $p(".off").onclick = () => savePrefs({ on: { ...prefs.on, [site.name]: false } }).then(() => api0.destroy());
         }
         ui.open.addEventListener("click", () => {
@@ -607,18 +826,31 @@ rt {font-size: .5em; color: #f0f0f0;}
             if (!ui.panel.hidden) renderPanel();
         });
 
-        function go(step) {
+        function go(step, slow = false) {
             const v = site.video();
             if (!v || !cues.length) return;
-            const t = v.currentTime;
+            const t = timeNow(v);
             let i = lineAt(cues, t);
             if (i < 0) i = cues.findIndex((c) => c.start > t) - (step > 0 ? 1 : 0);
-            const target = cues[Math.max(0, Math.min(cues.length - 1, step === 0 ? Math.max(i, 0) : i + step))];
-            if (!target) return;
+            jumpTo(cues[Math.max(0, Math.min(cues.length - 1, step === 0 ? Math.max(i, 0) : i + step))], slow);
+        }
+        // play from a line's start; slow: at 70% speed until the line ends
+        function jumpTo(target, slow = false) {
+            const v = site.video();
+            if (!v || !target) return;
             autoPausedAt = -1;
+            const at = target.start + delay + 0.01;
             // Netflix breaks if its video's time is set directly: the site jumps through its own player
-            if (site.seek) site.seek(target.start + 0.01); else v.currentTime = target.start + 0.01;
+            if (site.seek) site.seek(at); else v.currentTime = at;
+            if (slow) { v.playbackRate = 0.7; slowUntil = target.end; } else if (slowUntil >= 0) { v.playbackRate = 1; slowUntil = -1; }
             v.play().catch(() => {});
+        }
+        function moveSubs(by) {
+            delay = Math.round((delay + by) * 100) / 100;
+            render(true);
+            toast(`subtitles ${delay === 0 ? "on time" : `${Math.abs(delay).toFixed(2)} s ${delay > 0 ? "later" : "earlier"}`}`);
+            const d = ui.panel.querySelector(".delay");
+            if (d) d.textContent = `${delay > 0 ? "+" : ""}${delay.toFixed(2)} s`;
         }
 
         // ----- keys: only ours, and only when not typing -----
@@ -629,9 +861,12 @@ rt {font-size: .5em; color: #f0f0f0;}
             let done = true;
             if (STATUS_KEYS[e.key] && word) markWord(word, STATUS_KEYS[e.key]);
             else if (e.key === "Escape" && !ui.popup.hidden) closePopup();
+            else if (e.key === "Escape" && !ui.side.hidden) showTranscript(false);
             else if (e.key === "[") go(-1);
             else if (e.key === "]") go(1);
-            else if (e.key === "p" || e.key === "P") go(0);
+            else if (e.key === "p") go(0);
+            else if (e.key === "P") go(0, true);                        // Shift+P: slowly
+            else if (e.key === "T") showTranscript(ui.side.hidden);     // Shift+T (t alone is YouTube's)
             else if (e.key === "a" || e.key === "A") toggle("autoPause", "pause at the end of every line");
             else if (e.key === "l" || e.key === "L") toggle("hideJa", "listening practice");
             else if (e.key === "r" || e.key === "R") {
@@ -693,10 +928,12 @@ rt {font-size: .5em; color: #f0f0f0;}
             toast,
             destroy() {
                 flushTime();
+                const v = site.video();
+                if (v && slowUntil >= 0) v.playbackRate = 1;
                 clearInterval(countTimer);
                 clearInterval(syncTimer);
                 removeEventListener("pagehide", flushTime);
-                cancelAnimationFrame(raf);
+                clearInterval(renderTimer);
                 ro.disconnect();
                 changed.delete(redraw);
                 window.removeEventListener("keydown", onKey, true);

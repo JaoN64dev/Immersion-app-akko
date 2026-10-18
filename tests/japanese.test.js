@@ -1,4 +1,4 @@
-// Japanese: word splitting (kuromoji + grouping), furigana, what counts as a word, grammar marks,
+// Japanese: word splitting (Lindera + grouping), furigana, what counts as a word, grammar marks,
 // and dictionary lookups (JMdict, conjugation, kanji, pitch accent).
 process.env.AKKO_OFFLINE = '1';
 

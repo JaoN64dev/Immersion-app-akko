@@ -2,16 +2,13 @@ node_modules/
 .env
 *.log
 
-data/ocr/
 
-data/english-online.json
-data/opensubtitles.json
 
 dist/
 
-data/speech/
-data/listening/
-data/voicevox/
-data/backups/
-data/lan.json
-data/companion.json
+# data/: only the dictionary files belong in the repository; the rest is what the server saves
+# (your word list, logins, backups, caches…)
+data/*
+!data/dict.json
+!data/kanji.json
+!data/accents.txt

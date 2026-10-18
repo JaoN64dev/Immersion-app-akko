@@ -119,6 +119,17 @@ for (const d of document.querySelectorAll("details[data-remember]")) {
 // the transcript can be closed so the video gets the whole width
 const playerLayout = document.querySelector(".player-layout");
 const transcriptToggle = document.getElementById("transcript-toggle");
+// ---------- the sample (samples/README.md): a short video with its subtitles, to try akko at once ----------
+
+document.getElementById("try-sample")?.addEventListener("click", async () => {
+    await video.openUrl("/samples/wagahai.webm");
+    try {
+        const text = await (await fetch("/samples/wagahai.srt")).text();
+        cues.loadSubtitleText(text, "srt", "吾輩は猫である (sample)");
+    } catch { /* the video still plays */ }
+    el.video.play().catch(() => {});
+});
+
 function showTranscript(show) {
     playerLayout.classList.toggle("no-transcript", !show);
     transcriptToggle.setAttribute("aria-pressed", String(show));

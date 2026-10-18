@@ -12,7 +12,7 @@ import { morae, pattern, isHigh } from "./words/pitch.js";
 import * as mining from "./mining.js";
 import * as anki from "./anki/client.js";
 import { lessonMap } from "./grammar/lessons.js";
-import { target, nativeLang, NATIVE_LANGUAGES } from "./core/target.js";
+import { target, nativeLang, NATIVE_LANGUAGES, learningEnglish } from "./core/target.js";
 import { saySentence, sayWord } from "./core/say.js";
 import { toast } from "./core/toast.js";
 
@@ -315,7 +315,8 @@ export function enableWordClicks(container, lineSelector, contextFor = () => ({}
         // selected text, minus any furigana that got caught in the selection
         const frag = range && !range.collapsed ? range.cloneContents() : null;
         if (frag) frag.querySelectorAll("rt").forEach((rt) => rt.remove());
-        const selected = frag ? frag.textContent.replace(/\s+/g, "") : "";
+        // Japanese has no spaces between words (and selections pick up line breaks); English keeps one between words
+        const selected = !frag ? "" : learningEnglish() ? frag.textContent.replace(/\s+/g, " ").trim() : frag.textContent.replace(/\s+/g, "");
 
         if (selected && lineEl.contains(sel.anchorNode)) {
             lookup(selected, { sentence, info: c.info, anchor: { getBoundingClientRect: () => range.getBoundingClientRect() } });

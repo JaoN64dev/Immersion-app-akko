@@ -4,7 +4,7 @@
 
 const express = require('express');
 
-const ANKI_CONNECT = 'http://127.0.0.1:8765';
+const ANKI_CONNECT = process.env.AKKO_ANKI || 'http://127.0.0.1:8765';      // AKKO_ANKI: AnkiConnect somewhere else
 const router = express.Router();
 
 router.post('/', express.json({ limit: '50mb' }), async (req, res) => {

@@ -10,6 +10,7 @@ import { t } from "./i18n.js";
 import { keyFor } from "./core/target.js";
 import { buildBackup, readBackup, applyBackup } from "./core/backup-file.js";
 import { autoBackupOn, setAutoBackup, backupNow } from "./core/auto-backup.js";
+import { restored as wordsRestored } from "./core/words-sync.js";
 
 const summary = $("#backup-summary");
 const msg = $("#backup-msg");
@@ -52,6 +53,7 @@ async function restoreFrom(text) {
     if (!confirm(t(`Restore the backup from ${new Date(file.exported).toLocaleString()}?\n\n${what}\n\nThis replaces everything saved in this browser right now.`))) return;
     try {
         await applyBackup(file);
+        wordsRestored();             // the shared word list becomes the backup's (scripts/core/words-sync.js)
     } catch (err) {
         msg.textContent = "restore failed: " + err.message;
         return;

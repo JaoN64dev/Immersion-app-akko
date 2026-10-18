@@ -13,11 +13,13 @@ import * as today from "./core/today.js";
 import * as autoBackup from "./core/auto-backup.js";
 import * as themes from "./core/theme.js";
 import * as companion from "./core/companion.js";
+import * as wordsSync from "./core/words-sync.js";
 
 today.start();          // count today's minutes (watching, listening, reading)
 autoBackup.start();     // every few days, a backup to the server's data folder
 themes.start();         // light / dark
 companion.start();      // the browser extension: what you did on YouTube / Netflix comes in
+wordsSync.start();      // one word list for every window, phone and the extension (server/words.js)
 
 // ---------- ? shows this page's keys ----------
 // (the same list as the sidebar's "Keys", which is usually folded away)

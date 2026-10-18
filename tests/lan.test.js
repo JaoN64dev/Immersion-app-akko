@@ -6,6 +6,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const http = require('http');
+const net = require('net');
 const express = require('express');
 
 // http.request so the Host and cookies can be set by hand
@@ -32,20 +33,26 @@ test('phone access: off by default, PIN to sign in, the computer alone changes i
   app.get('/lan-login', lan.loginPage);
   app.get('/api/x', (req, res) => res.json({ ok: true }));
   app.get('/', (req, res) => res.send('home'));
-  const main = await new Promise((r) => { const s = app.listen(0, '127.0.0.1', () => r(s)); });
+  // phone access answers on the main port + 1: pick a port whose neighbour is free (other test
+  // files run side by side and have servers of their own)
+  const freeNext = (p) => new Promise((r) => { const t = net.createServer().once('error', () => r(false)).listen(p + 1, '0.0.0.0', () => t.close(() => r(true))); });
+  let main = null;
+  for (let i = 0; i < 20 && !main; i++) {
+    const s = await new Promise((r) => { const x = app.listen(0, '127.0.0.1', () => r(x)); });
+    if (await freeNext(s.address().port)) main = s; else s.close();
+  }
   const port = main.address().port;
   const lanPort = port + 1;
   lan.start(app, port);
   try {
-    // off: akko doesn't answer on the second port (another test's server may happen to be there,
-    // test files run side by side, so: nothing answers, or not akko's sign-in)
-    const before = await ask(lanPort).catch(() => null);
-    assert.ok(!before || !/^\/lan-login/.test(before.headers.location || ''), 'phone access is off');
+    // off: nothing answers on the second port
+    await assert.rejects(ask(lanPort));
     // the computer turns it on
     const on = JSON.parse((await ask(port, { method: 'POST', path: '/api/lan', body: { enabled: true } })).body);
     assert.equal(on.enabled, true);
     assert.match(on.pin, /^\d{6}$/);
-    await new Promise((r) => setTimeout(r, 200));
+    // the second address starts listening a moment later (longer on a busy computer)
+    for (let i = 0; i < 60 && !(await ask(lanPort).then(() => true, () => false)); i++) await new Promise((r) => setTimeout(r, 50));
 
     // not signed in: pages go to the PIN page, the API says so
     const page = await ask(lanPort);

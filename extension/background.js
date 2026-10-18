@@ -6,6 +6,8 @@
 //   {type: "log", entries}                -> for akko: word statuses, mined words, time watched
 //   {type: "sync"}                        -> send those to akko, and copy akko's word list,
 //                                            Anki settings and language here
+//   {type: "tabAudioStart"} / {type: "tabAudioStop"} -> {data, ext}: the tab's sound (offscreen.js),
+//   {type: "tabShot"} -> {data}: a picture of the tab; for Netflix, whose video can't be recorded directly
 // Keeping in step with akko goes through akko's server (server/companion.js), so it works with
 // akko's desktop app too. What's waiting to go: "outbox" in chrome.storage.local (it survives
 // akko being closed, and goes when akko is back).
@@ -108,8 +110,28 @@ function sync() {
     });
 }
 
+// ---------- recording the tab (Netflix) ----------
+
+async function offscreen(msg) {
+    if (!(await chrome.offscreen.hasDocument())) {
+        await chrome.offscreen.createDocument({ url: "offscreen.html", reasons: ["USER_MEDIA"], justification: "record the line's audio for Anki cards on Netflix" });
+    }
+    const r = await chrome.runtime.sendMessage({ target: "offscreen", ...msg });
+    if (!r) throw new Error("the recorder didn't answer");
+    if (r.error) throw new Error(r.error);
+    return r.data;
+}
+
 const handlers = {
     akko,
+    async tabAudioStart(msg, sender) {
+        const streamId = await chrome.tabCapture.getMediaStreamId({ targetTabId: sender.tab.id });
+        return offscreen({ type: "rec-start", streamId });
+    },
+    tabAudioStop: () => offscreen({ type: "rec-stop" }),
+    async tabShot(msg, sender) {
+        return { data: await chrome.tabs.captureVisibleTab(sender.tab.windowId, { format: "jpeg", quality: 92 }) };
+    },
     async status() {
         const a = await findAkko(true);
         return a ? { ok: true, url: a.url, version: a.version } : { ok: false };
@@ -134,7 +156,7 @@ const handlers = {
 
 chrome.runtime.onMessage.addListener((msg, sender, reply) => {
     const h = handlers[msg && msg.type];
-    if (!h) return false;
-    h(msg).then((data) => reply({ data }), (err) => reply({ error: err.message || String(err) }));
+    if (!h || msg.target === "offscreen") return false;
+    h(msg, sender).then((data) => reply({ data }), (err) => reply({ error: err.message || String(err) }));
     return true;        // the reply comes later
 });

@@ -94,6 +94,10 @@ const NT_STEMS = { ca: 'can', wo: 'will', sha: 'shall', ai: 'am' };
 const OWN_WORD_AFTER = new Set(['a', 'an', 'the', 'my', 'your', 'his', 'her', 'its', 'our', 'their',
   'to', 'please', 'can', 'could', 'will', 'would', 'shall', 'should', 'may', 'might', 'must', 'do', 'does', "don't", "let's"]);
 
+const DEGREE = new Set(['very', 'so', 'too', 'really', 'quite', 'extremely', 'rather', 'pretty', 'more', 'most', 'less', 'least', 'fairly', 'incredibly', 'totally', 'completely']);
+const LINKING = new Set(['feel', 'feels', 'felt', 'feeling', 'get', 'gets', 'got', 'getting', 'gotten', 'look', 'looks', 'looked', 'seem', 'seems', 'seemed', 'become', 'becomes', 'became']);
+const BE = new Set(['am', 'is', 'are', 'was', 'were', 'be', 'been', 'being']);
+const isBe = (w) => BE.has(w) || /'(s|re|m)$/.test(w);
 const DETERMINERS = new Set(['a', 'an', 'the', 'my', 'your', 'his', 'her', 'its', 'our', 'their', 'this', 'that',
   'these', 'those', 'every', 'each', 'no', 'some', 'any', 'another']);
 
@@ -150,13 +154,17 @@ const known = (w) => vocab.index.has(w) || vocab.nouns.has(w) || vocab.verbs.has
 // ---------- dictionary form ----------
 
 // "studies" -> {lemma: "study", tags: ["s"]}; tags: s, ing, past, pp, er, est
-function lemmatize(word) {
+// verb: the word is used as a verb here ("was beginning"), so an -ing form is the verb's even when
+// it's also a common noun of its own ("the beginning")
+function lemmatize(word, { verb = false } = {}) {
   const w = word.toLowerCase();
   const irregular = FORMS.get(w);
   if (irregular) return { lemma: irregular.lemma, tags: [...irregular.tags] };
   const { verbs, adjectives, nouns } = vocab;
   const tags = [];
   if (IRREGULAR_BASES.has(w)) return { lemma: w, tags };     // (come, run, put… as participles are in FORMS)
+  // grammar words are themselves: "after" isn't "aft" + -er, "under" isn't "und" + -er
+  if (FUNCTION_WORDS.has(w)) return { lemma: w, tags };
   const undouble = (s) => (/([bcdfgklmnprstvz])\1$/.test(s) ? s.slice(0, -1) : null);
   const first = (cands, set) => cands.find((c) => c && c.length > 1 && set.has(c));
 
@@ -165,9 +173,10 @@ function lemmatize(word) {
     const v = first([stem, stem + 'e', undouble(stem), w.endsWith('ying') ? w.slice(0, -4) + 'ie' : null], verbs);
     // "evening" is a noun far more often than "even" is a verb; "running" is mostly "run"
     // "interesting", "boring", "amazing" are adjectives of their own; a very common verb wins ("running")
-    const own = (nouns.has(w) && wordnet.frequency('noun', w) > wordnet.frequency('verb', v))
-      || (adjectives.has(w) && wordnet.frequency('adj', w) > 0 && wordnet.frequency('verb', v) <= 3);
-    if (v && !own) return { lemma: v, tags: ['ing'] };
+    const ownNoun = nouns.has(w) && wordnet.frequency('noun', w) > wordnet.frequency('verb', v);
+    const ownAdj = adjectives.has(w) && wordnet.frequency('adj', w) > 0 && wordnet.frequency('verb', v) <= 3;
+    // used as a verb ("was beginning"), it isn't the noun; it can still be the adjective ("is boring")
+    if (v && !ownAdj && (verb || !ownNoun)) return { lemma: v, tags: ['ing'] };
   }
   if (w.endsWith('ed') && w.length > 3) {
     const stem = w.slice(0, -2);
@@ -181,8 +190,11 @@ function lemmatize(word) {
     if (a) return { lemma: a, tags: [cut === 3 ? 'est' : 'er'] };
   }
   if (w.endsWith('s') && w.length > 3 && !/(ss|us|is)$/.test(w)) {
-    const nounOrVerb = { has: (c) => nouns.has(c) || verbs.has(c) };
-    const base = first([w.endsWith('ies') ? w.slice(0, -3) + 'y' : null, w.endsWith('es') ? w.slice(0, -2) : null, w.slice(0, -1)], nounOrVerb);
+    const real = (c) => c && c.length > 1 && (nouns.has(c) || verbs.has(c));
+    const cands = [w.endsWith('ies') ? w.slice(0, -3) + 'y' : null, w.endsWith('es') ? w.slice(0, -2) : null, w.slice(0, -1)].filter(real);
+    // more than one real word ("cookies": cooky / cookie, "uses": us / use): the more common one
+    const used = (c) => wordnet.frequency('noun', c) + wordnet.frequency('verb', c);
+    const base = cands.length > 1 ? cands.reduce((best, c) => (used(c) > used(best) ? c : best)) : cands[0];
     if (base) return { lemma: base, tags: ['s'] };
   }
   return { lemma: w, tags };
@@ -240,6 +252,10 @@ function tokenizeLine(line, sentenceStart) {
     let parts = splitContraction(lower);
     // after a determiner an -ing word that is also a noun is that noun: "the meeting", "a painting"
     if (!parts && lower.endsWith('ing') && DETERMINERS.has(previous) && vocab.nouns.has(lower)) parts = [{ text: lower, lemma: lower, tags: [] }];
+    // after "very", "so", "feel", "get"… an -ed word that is also an adjective is that adjective: "very tired", "I feel bored"
+    if (!parts && lower.endsWith('ed') && (DEGREE.has(previous) || LINKING.has(previous)) && vocab.adjectives.has(lower)) parts = [{ text: lower, lemma: lower, tags: [] }];
+    // after a form of "be" an -ing word is the verb: "was beginning" (to begin), not "the beginning"
+    if (!parts && lower.endsWith('ing') && isBe(previous)) parts = [{ text: lower, ...lemmatize(lower, { verb: true }) }];
     if (!parts) {
       // only verb forms ("the best" stays a superlative of good)
       const verbForm = FORMS.has(lower) && FORMS.get(lower).tags.some((t) => t === 'past' || t === 'pp');
@@ -296,7 +312,7 @@ function japaneseFor(word, dict) {
   const seen = new Set();
   for (const code of hits) {
     const i = Math.floor(code / 16), k = code % 16;
-    const e = dict.entries[i];
+    const e = dict.entries.get ? dict.entries.get(i) : dict.entries[i];      // the real one (server/dictionary.js) or a plain list
     const sense = e.s[k];
     if (!sense || seen.has(i)) continue;
     seen.add(i);
@@ -325,7 +341,7 @@ function japaneseFor(word, dict) {
 
 const WIKT = 'https://en.wiktionary.org';
 // Wikimedia asks API users to say who they are
-const WIKI_UA = 'akko-immersion/1.0 (https://github.com/JaoN64dev/japaneselocalwebapp; local learning app)';
+const WIKI_UA = 'akko-immersion/1.0 (https://github.com/JaoN64dev/Immersion-app-akko; local learning app)';
 const ONLINE_FILE = path.join(require('./paths').DATA, 'english-online.json');
 const KEEP = 90 * 24 * 3600e3;          // a saved answer is refreshed after 90 days
 const MAX_SAVED = 30000;                // words kept on disk
@@ -473,6 +489,18 @@ async function entryFor(word, dict, native) {
   };
 }
 
+// A phrase as selected ("gave up", "looks forward to"): its first word in its dictionary form
+// ("give up", "look forward to"), and without a last little word ("look forward")
+function phraseForms(lower) {
+  if (!lower.includes(' ')) return [];
+  const words = lower.split(' ');
+  const head = lemmatize(words[0]).lemma;
+  const base = [head, ...words.slice(1)];
+  const out = [base.join(' ')];
+  if (base.length > 2 && FUNCTION_WORDS.has(base[base.length - 1])) out.push(base.slice(0, -1).join(' '));
+  return out;
+}
+
 // candidates = what the page sent (lemma, word as clicked); form = the word as clicked
 async function lookup(candidates, form, dict, native) {
   buildVocab(dict);
@@ -481,7 +509,7 @@ async function lookup(candidates, form, dict, native) {
     const lower = c.toLowerCase().replace(/’/g, "'").replace(/\s+/g, ' ').trim();
     const parts = splitContraction(lower);
     const lemma = parts ? parts[0].lemma : lower.includes(' ') ? lower : lemmatize(lower).lemma;
-    for (const w of [lemma, lower]) if (w && !words.includes(w)) words.push(w);
+    for (const w of [lemma, lower, ...phraseForms(lower)]) if (w && !words.includes(w)) words.push(w);
   }
   const entries = [];
   for (const w of words) {

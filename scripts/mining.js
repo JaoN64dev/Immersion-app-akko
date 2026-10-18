@@ -9,6 +9,7 @@ import { idbAll, idbPut, idbPutMany, idbDelete, idbReplace } from "./core/idb.js
 import * as anki from "./anki/client.js";
 import { t } from "./i18n.js";
 import { target, ofTarget } from "./core/target.js";
+import { dropMedia } from "./core/media.js";
 
 const OLD_KEY = "akko-mined";
 const PAGE = 100;                  // cards drawn at a time on the Watch page
@@ -83,7 +84,9 @@ export async function mine(entry, ctx) {
     mined.unshift(item);
     renderMined();
     try { await saveItem(item); } catch { /* warned already; it stays in this page's list */ }
-    return anki.auto() ? anki.send(item, ctx.media) : false;
+    if (anki.auto()) return anki.send(item, ctx.media);
+    anki.keepOnly(item, ctx.media).catch(() => {});      // the line's audio and picture, for 復習
+    return false;
 }
 
 // ---------- the list (Watch page) ----------
@@ -140,6 +143,7 @@ export function initList({ media } = {}) {
             mined.splice(mined.indexOf(item), 1);
             renderMined();
             await idbDelete("mined", item.id).catch(() => {});
+            dropMedia(item.id);
             announce();
         }
     });
