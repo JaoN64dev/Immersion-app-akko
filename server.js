@@ -18,6 +18,7 @@
 //   - /api/lan      using akko from a phone on the same Wi-Fi (off by default) server/lan.js
 //   - /api/diagnostics, /api/report   what akko runs on; reporting a problem  server/diagnostics.js
 //   - /api/sync     everything else in step between windows, browsers, phones server/sync.js
+//   - /api/cloud    akko accounts: words and mined words between computers   server/cloud.js
 
 // first: it keeps the warnings and errors every other part prints, for the diagnostics
 const diagnostics = require('./server/diagnostics');
@@ -43,6 +44,7 @@ const lan = require('./server/lan');
 const companion = require('./server/companion');
 const words = require('./server/words');
 const sync = require('./server/sync');
+const cloud = require('./server/cloud');
 
 const hostname = '127.0.0.1';
 
@@ -72,6 +74,7 @@ app.use('/api/lan', lan.router);
 app.use('/api/companion', companion.router);
 app.use('/api/words', words.router);
 app.use('/api/sync', sync.router);
+app.use('/api/cloud', cloud.router);
 app.use('/api/speech/voicevox', voicevox.router);
 app.use('/api/speech', speech.router);
 
@@ -106,6 +109,7 @@ function start(port = Number(process.env.AKKO_PORT) || 3000) {
       discord.init();
       voicevox.start();          // natural voices for the listening drills, if VOICEVOX is here
       lan.start(app, port);      // the phone / tablet address, if that's turned on
+      cloud.start();             // an akko account, if you're signed in: words and mined words online
       resolve(url);
     });
     server.on('error', reject);

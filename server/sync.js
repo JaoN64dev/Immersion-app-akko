@@ -21,6 +21,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { EventEmitter } = require('events');
 const { DATA } = require('./paths');
 
 const router = express.Router();
@@ -34,6 +35,7 @@ const safeId = (id) => /^[\w-]{1,80}$/.test(String(id || ''));
 const KINDS = ['audio', 'picture'];
 const TYPES = /^(audio\/(webm|ogg|mpeg|wav|mp4)|image\/(jpeg|png|webp))$/;
 
+const changed = new EventEmitter();     // "change" (collection): for akko accounts (server/cloud.js)
 let meta = null;
 const collections = new Map();        // name -> {floor, records}
 const dirty = new Set();
@@ -91,8 +93,12 @@ function put(name, k, { value = null, updated, deleted = false }) {
   dirty.add(name);
   dirty.add('meta');
   if (deleted && name === 'mined') dropMedia(k);
+  changed.emit('change', name);
   return true;
 }
+
+// for akko accounts (server/cloud.js): a collection's changes since version v, and the version now
+const since = (name, v) => ({ v: getMeta().v, changes: changesSince(name, v) });
 
 // tombstones older than TOMBSTONE_DAYS go; a page that last synced before them gets everything
 function prune(name) {
@@ -153,16 +159,28 @@ function dropMedia(id) {
   dirty.add('media');
 }
 
-router.put('/media/:id/:kind', express.raw({ type: () => true, limit: '15mb' }), (req, res) => {
-  const { id, kind } = req.params;
-  const type = String(req.headers['content-type'] || '').split(';')[0].trim();
-  if (!safeId(id) || !KINDS.includes(kind) || !TYPES.test(type) || !Buffer.isBuffer(req.body) || !req.body.length) return res.status(400).json({ error: 'not a recording' });
+// a recording kept here; false if it isn't one
+function writeMedia(id, kind, type, bytes) {
+  if (!safeId(id) || !KINDS.includes(kind) || !TYPES.test(type) || !Buffer.isBuffer(bytes) || !bytes.length) return false;
   fs.mkdirSync(MEDIA, { recursive: true });
-  fs.writeFileSync(mediaFile(id, kind), req.body);
+  fs.writeFileSync(mediaFile(id, kind), bytes);
   const idx = media();
   idx[id] = { ...(idx[id] || {}), [kind]: type };
   dirty.add('media');
   save();
+  changed.emit('change', 'media');
+  return true;
+}
+// {type, bytes} or null
+function readMedia(id, kind) {
+  const type = safeId(id) && KINDS.includes(kind) && (media()[id] || {})[kind];
+  try { return type ? { type, bytes: fs.readFileSync(mediaFile(id, kind)) } : null; } catch { return null; }
+}
+
+router.put('/media/:id/:kind', express.raw({ type: () => true, limit: '15mb' }), (req, res) => {
+  const { id, kind } = req.params;
+  const type = String(req.headers['content-type'] || '').split(';')[0].trim();
+  if (!writeMedia(id, kind, type, req.body)) return res.status(400).json({ error: 'not a recording' });
   res.json({ ok: true });
 });
 
@@ -176,4 +194,4 @@ router.get('/media/:id/:kind', (req, res) => {
 // for tests
 const reset = () => { if (timer) writeNow(); meta = null; mediaIndex = null; collections.clear(); };
 
-module.exports = { router, put, addSeconds, reset, DIR };
+module.exports = { router, put, since, addSeconds, media, writeMedia, readMedia, changed, reset, DIR };

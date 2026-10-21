@@ -50,6 +50,7 @@
       "!.github/**",
       "!website/**",
       "!extension/**",
+      "!cloud/**",
       "!node_modules/@ffmpeg/core/dist/umd/**",
       "!node_modules/@ffmpeg/ffmpeg/dist/umd/**",
       "!node_modules/wordnet-db/dict/index.sense"

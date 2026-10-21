@@ -44,6 +44,7 @@
                 <li><a href="#dictionary-section">dictionaries</a></li>
                 <li><a href="#backup-section">backup / restore</a></li>
                 <li><a href="#phone-section">use on your phone</a></li>
+                <li id="account-nav" hidden><a href="#account-section">akko account</a></li>
                 <li><a href="#help-section">help / report a problem</a></li>
             </ul>
             </details>
@@ -161,6 +162,65 @@
                     </div>
                     <p class="hint" data-i18n="phone-hint">The first time, Windows may ask whether akko can use the network: allow it on <b>private networks</b>. Words, progress, 復習 and mined words are shared with akko on this computer, both ways, like any other window.</p>
                     <p id="phone-msg" class="status dark"></p>
+                </div>
+            </section>
+
+            <!-- AKKO ACCOUNT: words and mined words online, between computers (server/cloud.js, scripts/pages/account.js) -->
+            <section id="account-section" hidden>
+                <h2 class="dashed-heading">akko account</h2>
+                <div class="note settings-note account-note">
+                    <p>Your word list and mined words (with their recordings) the same on every computer you use akko on: sign in on each one. Everything keeps working offline; changes go when you're back online.</p>
+                    <p id="account-status" class="status dark"></p>
+                    <div id="account-out">
+                        <div class="choice-row" role="radiogroup" aria-label="akko account">
+                            <button type="button" class="choice" data-pane="signup" role="radio" aria-checked="true">create an account</button>
+                            <button type="button" class="choice" data-pane="signin" role="radio" aria-checked="false">sign in</button>
+                            <button type="button" class="choice" data-pane="recover" role="radio" aria-checked="false">forgot the password</button>
+                        </div>
+                        <form id="account-signup" class="account-form">
+                            <label>e-mail <input name="email" type="email" autocomplete="email" required></label>
+                            <label>password <small>(8 characters or more)</small> <input name="password" type="password" autocomplete="new-password" minlength="8" required></label>
+                            <label class="check"><input name="agree" type="checkbox" required> I've read how my data is kept (below)</label>
+                            <div class="row-buttons"><button type="submit">create the account</button></div>
+                        </form>
+                        <form id="account-signin" class="account-form" hidden>
+                            <label>e-mail <input name="email" type="email" autocomplete="email" required></label>
+                            <label>password <input name="password" type="password" autocomplete="current-password" required></label>
+                            <div class="row-buttons"><button type="submit">sign in</button></div>
+                        </form>
+                        <form id="account-recover" class="account-form" hidden>
+                            <p class="hint">With the recovery code you were given when the account was made. Every computer is signed out; sign in again with the new password.</p>
+                            <label>e-mail <input name="email" type="email" autocomplete="email" required></label>
+                            <label>recovery code <input name="recovery" autocomplete="off" required placeholder="XXXX-XXXX-XXXX-XXXX" translate="no"></label>
+                            <label>new password <small>(8 characters or more)</small> <input name="password" type="password" autocomplete="new-password" minlength="8" required></label>
+                            <div class="row-buttons"><button type="submit">set the new password</button></div>
+                        </form>
+                    </div>
+                    <div id="account-in" hidden>
+                        <p>Signed in as <b id="account-email" translate="no"></b></p>
+                        <div class="row-buttons"><button type="button" id="account-sync">sync now</button><button type="button" id="account-export">download my data</button><button type="button" id="account-signout">sign out</button></div>
+                        <details id="account-devices-box"><summary>computers signed in</summary><ul id="account-devices" class="account-devices"></ul></details>
+                        <details><summary>delete the account</summary>
+                            <form id="account-delete" class="account-form">
+                                <p class="hint">Removes the account and everything in it from the online service, recordings too. What's on your computers stays.</p>
+                                <label>password <input name="password" type="password" autocomplete="current-password" required></label>
+                                <div class="row-buttons"><button type="submit">delete it and everything in it</button></div>
+                            </form>
+                        </details>
+                    </div>
+                    <div id="account-recovery" class="account-recovery" hidden>
+                        <p><b>Your recovery code.</b> Keep it somewhere safe (a note, a password manager): if you forget your password, it's the only way back in. It's shown only now.</p>
+                        <p id="account-code" class="recovery-code" translate="no"></p>
+                        <div class="row-buttons"><button type="button" id="account-code-copy">copy it</button><button type="button" id="account-code-done">I've kept it</button></div>
+                    </div>
+                    <p id="account-msg" class="status dark"></p>
+                    <details class="account-privacy"><summary>how your data is kept</summary>
+                        <div data-i18n="account-privacy">
+                            <p><b>What's kept</b>: your e-mail; your password as a hash (never the password itself); your word list; your mined words (the word, its reading and meaning, the sentence and its translation, where and when it's from) and their recordings (the line's audio and a picture); the names of the computers you signed in on, and when each was last used.</p>
+                            <p><b>Where</b>: on Cloudflare (a database and file storage), run for akko. It's only used to keep your computers in step: no ads, no tracking, never sold or shared.</p>
+                            <p><b>Yours</b>: <i>download my data</i> gives you all of it; <i>delete the account</i> removes all of it, recordings too. Without an account, nothing leaves your computer.</p>
+                        </div>
+                    </details>
                 </div>
             </section>
 

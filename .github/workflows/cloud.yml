@@ -1,0 +1,42 @@
+# akko's online service (cloud/): applies the database's tables and deploys the Worker when cloud/
+# changes on main, or by hand. Needs the CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID and
+# CLOUDFLARE_D1_ID secrets (cloud/README.md); without them it says so and stops.
+name: cloud
+
+on:
+  push:
+    branches: [main, main1]
+    paths: ["cloud/**", ".github/workflows/cloud.yml"]
+  workflow_dispatch:
+
+concurrency: cloud
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cloud
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Secrets present?
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ] || [ -z "${{ secrets.CLOUDFLARE_D1_ID }}" ]; then
+            echo "::warning::The Cloudflare secrets aren't set yet (cloud/README.md): nothing deployed."
+            echo "skip=1" >> "$GITHUB_ENV"
+          fi
+      - name: The database's id
+        if: env.skip != '1'
+        run: sed -i 's/D1_DATABASE_ID/${{ secrets.CLOUDFLARE_D1_ID }}/' wrangler.toml
+      - name: Tables
+        if: env.skip != '1'
+        run: npx --yes wrangler@4 d1 execute akko --remote --file schema.sql
+      - name: Deploy
+        if: env.skip != '1'
+        run: npx --yes wrangler@4 deploy

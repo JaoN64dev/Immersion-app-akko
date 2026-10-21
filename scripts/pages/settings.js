@@ -10,6 +10,7 @@ import { bindWordDisplay } from "../words/display.js";
 import * as backup from "../backup.js";
 import * as phone from "./phone.js";
 import * as help from "./help.js";
+import * as account from "./account.js";
 import "./stats.js";
 
 // learning: switching reloads, since every page keeps that language's data
@@ -239,3 +240,6 @@ phone.init();
 
 // ---------- Help: report a problem, diagnostics ----------
 help.init();
+
+// ---------- akko account: words and mined words online ----------
+account.init();

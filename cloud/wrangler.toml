@@ -1,0 +1,19 @@
+# akko's online service: a Cloudflare Worker (cloud/src/worker.js). See cloud/README.md.
+# The D1 database's id is filled in by the deploy workflow from the CLOUDFLARE_D1_ID secret.
+name = "akko-cloud"
+main = "src/worker.js"
+compatibility_date = "2026-01-15"
+
+# GitHub issues for problem reports
+[vars]
+GITHUB_REPO = "JaoN64dev/Immersion-app-akko"
+# GITHUB_TOKEN is a secret: `wrangler secret put GITHUB_TOKEN` (a token that can open issues there)
+
+[[d1_databases]]
+binding = "DB"
+database_name = "akko"
+database_id = "D1_DATABASE_ID"
+
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "akko-recordings"

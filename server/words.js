@@ -18,6 +18,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { EventEmitter } = require('events');
 const { DATA } = require('./paths');
 
 const router = express.Router();
@@ -26,6 +27,7 @@ const LANGS = ['ja', 'en'];
 const STATUSES = ['new', 'learning', 'known', 'ignored'];
 const KEEP = 20000;              // changes remembered, for pages catching up
 
+const changed = new EventEmitter();     // "change" (lang): for akko accounts (server/cloud.js)
 let cache = null;
 function read() {
   if (cache) return cache;
@@ -65,8 +67,19 @@ function apply(lang, changes) {
     n++;
   }
   if (list.journal.length > KEEP) list.journal.splice(0, list.journal.length - KEEP);
-  if (n) save();
+  if (n) { save(); changed.emit('change', lang); }
   return n;
+}
+
+// what changed since version v, the latest status per word, for akko accounts (server/cloud.js):
+// {v, changes: {word: status}}, or changes null when v is too far back
+function since(lang, v) {
+  const list = read()[lang];
+  const oldest = list.journal.length ? list.journal[0].v : list.v + 1;
+  if (v < oldest - 1 || v > list.v) return { v: list.v, changes: null };
+  const changes = {};
+  for (const e of list.journal) if (e.v > v) changes[e.w] = e.s;
+  return { v: list.v, changes };
 }
 
 function merge(lang, words, prefer) {
@@ -107,4 +120,4 @@ router.get('/', (req, res) => {
 // for tests
 const reset = () => { if (timer) writeNow(); cache = null; };
 
-module.exports = { router, apply, words, reset, FILE, writeNow };
+module.exports = { router, apply, words, since, changed, reset, FILE, writeNow };

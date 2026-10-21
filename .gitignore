@@ -12,3 +12,6 @@ data/*
 !data/dict.json
 !data/kanji.json
 !data/accents.txt
+
+# akko's online service run locally (tools/cloud-local.mjs)
+cloud-local/

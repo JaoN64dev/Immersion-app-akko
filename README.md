@@ -176,6 +176,21 @@ npm start
 GITHUB_TOKEN=your_token_here npm start
 ```
 
+## akko account (optional) and your privacy
+
+akko works entirely on your computer. Its windows, browsers and phones on your Wi-Fi share everything through akko's own server, with nothing going online.
+
+To have the same word list and mined words (with their recordings) on **several computers**, create an **akko account** in Settings → akko account, then sign in on each computer. This is the only part of akko that uses the internet. It keeps:
+
+- your e-mail, and your password as a hash (never the password itself)
+- your word list
+- your mined words, with their recordings
+- the names of the computers you signed in on
+
+It's stored on Cloudflare for akko and used only to keep your computers in step: no ads, no tracking, never sold or shared. **Download my data** gives you everything, and **delete the account** removes everything. Instead of password e-mails, you get a recovery code when you sign up; keep it. Details and how the service is run: [`cloud/README.md`](cloud/README.md).
+
+**Report a problem** (Settings → Help, or the desktop app's Help menu) shows exactly what it will send before sending. Reports become public GitHub issues, without your e-mail.
+
 ## Troubleshooting
 
 | Problem | Fix |
