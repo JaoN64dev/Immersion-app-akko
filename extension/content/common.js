@@ -17,8 +17,13 @@
 // Everything lives in a shadow root inside the player, so the site's styles don't touch it and
 // it stays visible in full screen.
 //
-// Saved in chrome.storage.local: words {lemma: status} (akko's list, copied by background.js),
-// outbox (what's waiting to go to akko), anki (akko's Anki settings), prefs.
+// Japanese or English: the site script picks the video's language from what you learn (prefs.learn:
+// "auto" follows akko, or "ja", "en", "both"; learning()) and passes it as site.lang. The overlay
+// splits words, looks them up and keeps statuses, mined words and time in that language.
+//
+// Saved in chrome.storage.local: words / wordsEn {lemma: status} (akko's lists, copied by
+// background.js), outbox (what's waiting to go to akko), anki (akko's Anki settings), akkoTarget
+// (what akko is learning), native (your language), prefs.
 
 (() => {
     if (window.akkoCompanion) return;
@@ -43,7 +48,8 @@
     const PREFS = {
         size: 100, hoverPause: true, translation: "paused", furigana: "unknown", translateTo: "en", on: { youtube: true, netflix: true },
         autoPause: false,         // pause at the end of every line
-        hideJa: false,            // the Japanese line blurred while playing: listen first
+        hideJa: false,            // the subtitle line blurred while playing: listen first
+        learn: "auto",            // auto: what akko is learning | ja | en | both
         position: 11,             // the subtitles' distance from the bottom, % of the player
         bg: 65,                   // the subtitles' background, % opacity
         font: "sans",             // sans | serif | round
@@ -52,24 +58,36 @@
         keepMedia: true,          // the line's audio and the picture also kept in akko (復習)
     };
     const ANKI = { deck: "", model: "", maps: {}, tags: "akko immersion", audio: true, wordAudio: true, shot: true };
-    let words = {};
+    const lists = { ja: {}, en: {} };   // your words, per language
+    let lang = "ja";                    // the language of the subtitles on this page (overlay())
+    let akkoTarget = "ja", native = "";
     let prefs = { ...PREFS };
     let anki = { ...ANKI };
     const changed = new Set();          // callbacks when words/prefs change
 
-    const ready = chrome.storage.local.get(["words", "prefs", "anki"]).then((s) => {
-        words = s.words || {};
+    const ready = chrome.storage.local.get(["words", "wordsEn", "prefs", "anki", "akkoTarget", "native"]).then((s) => {
+        lists.ja = s.words || {};
+        lists.en = s.wordsEn || {};
+        akkoTarget = s.akkoTarget === "en" ? "en" : "ja";
+        native = s.native || "";
         prefs = { ...PREFS, ...(s.prefs || {}), on: { ...PREFS.on, ...((s.prefs || {}).on || {}) } };
         anki = { ...ANKI, ...(s.anki || {}) };
     });
     chrome.storage.onChanged.addListener((c) => {
-        if (c.words) words = c.words.newValue || {};
+        if (c.words) lists.ja = c.words.newValue || {};
+        if (c.wordsEn) lists.en = c.wordsEn.newValue || {};
+        if (c.akkoTarget) akkoTarget = c.akkoTarget.newValue === "en" ? "en" : "ja";
+        if (c.native) native = c.native.newValue || "";
         if (c.prefs) { const p = c.prefs.newValue || {}; prefs = { ...PREFS, ...p, on: { ...PREFS.on, ...(p.on || {}) } }; }
         if (c.anki) anki = { ...ANKI, ...(c.anki.newValue || {}) };
         changed.forEach((fn) => fn());
     });
 
-    const statusOf = (lemma) => words[lemma] || "new";
+    const statusOf = (lemma) => lists[lang][lemma] || "new";
+
+    // the languages to look for in a video, in order (the site scripts pick the first one it has)
+    const learning = () => ({ ja: ["ja"], en: ["en"], both: ["ja", "en"] }[prefs.learn] || [akkoTarget]);
+    const LANG_NAMES = { ja: "Japanese", en: "English" };
     const isUnknown = (lemma) => ["new", "learning"].includes(statusOf(lemma));
 
     // to akko: through background.js's outbox, so nothing is lost while akko is closed
@@ -78,9 +96,10 @@
 
     async function setStatus(lemma, status) {
         if (!(chrome.runtime && chrome.runtime.id)) throw new Error("the extension was updated: reload this page");
+        const words = lists[lang];
         if (status === "new") delete words[lemma]; else words[lemma] = status;
-        await chrome.storage.local.set({ words });
-        await toAkko([{ kind: "status", lemma, status }]);
+        await chrome.storage.local.set({ [lang === "en" ? "wordsEn" : "words"]: words });
+        await toAkko([{ kind: "status", lemma, status, lang }]);
     }
     const today = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60e3).toISOString().slice(0, 10); };
     // takes effect here at once (two quick changes mustn't undo each other), then saved for every tab
@@ -92,25 +111,39 @@
 
     // ---------- splitting lines into words (akko's tokenizer), cached ----------
 
-    const tokenCache = new Map();
+    const tokenCache = new Map();       // "<lang>|<line>" -> tokens
+    const toks = (line) => tokenCache.get(`${lang}|${line}`);
     async function tokenize(lines) {
-        const todo = [...new Set(lines.filter((l) => !tokenCache.has(l)))];
+        const todo = [...new Set(lines.filter((l) => !toks(l)))];
         for (let i = 0; i < todo.length; i += 300) {
             const part = todo.slice(i, i + 300);
-            const { tokens } = await api("/api/tokenize", { method: "POST", body: { lines: part, lang: "ja" } });
-            part.forEach((l, k) => tokenCache.set(l, tokens[k]));
+            const { tokens } = await api("/api/tokenize", { method: "POST", body: { lines: part, lang } });
+            part.forEach((l, k) => tokenCache.set(`${lang}|${l}`, tokens[k]));
         }
-        return lines.map((l) => tokenCache.get(l));
+        return lines.map(toks);
     }
 
     // akko's grammar lessons (id, title, meaning, level), for the grammar a word is part of
-    let lessonList = null;
+    const lessonLists = {};
     const grammarLessons = () => {
-        if (!lessonList) lessonList = api("/api/grammar").then((r) => r.lessons || []).catch(() => { lessonList = null; return []; });
-        return lessonList;
+        const l = lang;
+        if (!lessonLists[l]) lessonLists[l] = api(`/api/grammar?lang=${l}`).then((r) => r.lessons || []).catch(() => { delete lessonLists[l]; return []; });
+        return lessonLists[l];
     };
 
+    // what language a subtitle file is in: "ja", "en" or "" (anything else)
+    const STOP = new Set(["the", "and", "you", "to", "is", "it", "that", "of", "a", "i", "what", "this", "in", "my", "your", "we", "don't", "it's", "i'm", "be", "have", "do", "not", "are"]);
+    function langOfText(lines) {
+        const sample = lines.slice(0, 80).join(" ");
+        if ((sample.match(/[぀-ヿ一-鿿]/g) || []).length > sample.length * 0.3) return "ja";
+        const words = sample.toLowerCase().match(/[a-z']+/g) || [];
+        return words.length >= 10 && words.filter((w) => STOP.has(w)).length > words.length * 0.15 ? "en" : "";
+    }
+
     // ---------- small helpers ----------
+
+    // text put together from pieces, translated piece by piece (the rest is done by lang.js's watch)
+    const L10N = (s) => (globalThis.akkoLang ? akkoLang.t(s) : s);
 
     const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
     const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -172,7 +205,7 @@
         switch (source) {
             case "word": return esc(item.word);
             case "reading": return esc(item.reading);
-            case "furigana": return item.reading && item.reading !== item.word ? `${esc(item.word)}[${esc(item.reading)}]` : esc(item.word);
+            case "furigana": return item.lang !== "en" && item.reading && item.reading !== item.word ? `${esc(item.word)}[${esc(item.reading)}]` : esc(item.word);
             case "meaning": return esc(item.meaning);
             case "pitch": return item.pitch.map((n) => pitchCardHtml(item.reading || item.word, n)).join("・");
             case "pitchNotes": return item.pitch.map((n) => esc(pitchNotes(item.reading || item.word, n))).join("<br>");
@@ -190,6 +223,7 @@
 :host {all: initial;}
 .root {position: absolute; inset: 0; pointer-events: none; z-index: 60; font-family: "Hiragino Sans", "Yu Gothic UI", "Meiryo", "Noto Sans JP", sans-serif; --size: 28px; --bottom: 11%; --bg: #000000a6;}
 .root.serif {font-family: "Yu Mincho", "Hiragino Mincho ProN", "Noto Serif JP", "MS Mincho", serif;}
+.root.en {font-family: system-ui, "Segoe UI", Roboto, Arial, sans-serif;}
 .root.round {font-family: "M PLUS Rounded 1c", "Kosugi Maru", "Hiragino Maru Gothic ProN", "Yu Gothic UI", "Meiryo", sans-serif;}
 .lines {position: absolute; left: 50%; bottom: var(--bottom); transform: translateX(-50%); max-width: 90%; text-align: center; pointer-events: auto; display: flex; flex-direction: column; align-items: center; gap: .2em;}
 .line {font-size: var(--size); line-height: 1.75; color: #fff; background: var(--bg); padding: .05em .45em; border-radius: .25em; text-shadow: 0 0 3px #000; white-space: pre-wrap; transition: filter .15s;}
@@ -241,6 +275,7 @@ rt {font-size: .5em; color: #f0f0f0;}
 .popup .expr {margin: 0 0 8px; padding: 6px 8px; border-radius: 8px; background: #e6f6f4; border-left: 4px solid #14a89b;}
 .popup .expr .lbl {display: block; font-size: .78em; font-weight: 700; color: #0f766e;}
 .popup .expr .st {margin: 6px 0 0;}
+.popup .trs {margin: 2px 0 0; font-weight: 600; color: #384775;}
 .popup .extra {border-top: 1px dashed #ccc; margin-top: 8px; padding-top: 6px; font-size: .9em;}
 .popup .extra p {margin: 2px 0;}
 .popup .extra b {font-family: "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif; font-size: 1.15em;}
@@ -268,13 +303,14 @@ rt {font-size: .5em; color: #f0f0f0;}
 
     // site = {name, video(), recordable: bool, screenshot: bool, onTrack(id), onTranslation(id), title(), url(t)}
     function overlay(container, site) {
+        lang = site.lang === "en" ? "en" : "ja";
         const host = document.createElement("div");
         host.setAttribute("data-akko", "");
         host.style.cssText = "position:absolute;inset:0;pointer-events:none;z-index:60;";
         const shadow = host.attachShadow({ mode: "open" });
         shadow.innerHTML = `<style>${CSS}</style>
             <div class="root">
-                <div class="lines"><div class="line" lang="ja"></div><div class="tr"></div></div>
+                <div class="lines"><div class="line" lang="${lang}"></div><div class="tr" translate="no"></div></div>
                 <div class="pill"><span class="mode"></span><span class="pct"></span><button class="tx" title="all the lines (Shift+T)">☰</button><button class="open" title="akko companion">akko ▾</button></div>
                 <div class="side" hidden></div>
                 <div class="panel" hidden></div>
@@ -282,7 +318,10 @@ rt {font-size: .5em; color: #f0f0f0;}
                 <div class="toast"></div>
             </div>`;
         container.append(host);
+        // the menus and messages in akko's interface language (lang.js)
+        if (globalThis.akkoLang) akkoLang.watch(shadow);
         const $ = (sel) => shadow.querySelector(sel);
+        $(".root").classList.toggle("en", lang === "en");
         const ui = { root: $(".root"), lines: $(".lines"), line: $(".line"), tr: $(".tr"), pct: $(".pct"), mode: $(".mode"), open: $(".open"), tx: $(".tx"), side: $(".side"), panel: $(".panel"), popup: $(".popup"), toast: $(".toast") };
 
         let cues = [], cues2 = [];
@@ -306,7 +345,7 @@ rt {font-size: .5em; color: #f0f0f0;}
             st.setProperty("--bg", `rgba(0, 0, 0, ${prefs.bg / 100})`);
             ui.root.classList.toggle("serif", prefs.font === "serif");
             ui.root.classList.toggle("round", prefs.font === "round");
-            ui.mode.textContent = [prefs.autoPause ? "⏸ each line" : "", prefs.hideJa ? "👂 listening" : ""].filter(Boolean).join(" · ");
+            ui.mode.textContent = [prefs.autoPause ? L10N("⏸ each line") : "", prefs.hideJa ? L10N("👂 listening") : ""].filter(Boolean).join(" · ");
         };
         const ro = new ResizeObserver(resize);
         ro.observe(container);
@@ -320,7 +359,7 @@ rt {font-size: .5em; color: #f0f0f0;}
         };
         function wordHtml(t) {
             // particles (ぞ, ね, は…) can be looked up too; only content words get a status underline
-            if (!t.b || !/[぀-ヿ㐀-鿿]/.test(t.s)) return esc(t.s);
+            if (!t.b || (lang === "ja" && !/[぀-ヿ㐀-鿿]/.test(t.s))) return esc(t.s);
             const status = statusOf(t.b);
             const cls = t.c && (status === "new" || status === "learning") ? ` ${status}` : "";
             const ruby = t.f && (prefs.furigana === "always" || (prefs.furigana === "unknown" && isUnknown(t.b)))
@@ -333,17 +372,28 @@ rt {font-size: .5em; color: #f0f0f0;}
         // a word's text without its furigana
         const plainOf = (w) => [...w.childNodes].map((n) => (n.nodeName === "RUBY" ? [...n.childNodes].filter((x) => x.nodeName !== "RT").map((x) => x.textContent).join("") : n.textContent)).join("");
         // the whole expression a word is part of, as written here: its neighbours with the same data-ex
+        // (and, in English, the spaces between them)
         function expressionText(w) {
             const same = (n) => n && n.nodeType === 1 && n.dataset.ex === w.dataset.ex;
+            const gap = (n) => n && n.nodeType === 3 && /^[ \t]*$/.test(n.nodeValue);
             let first = w;
-            while (same(first.previousSibling)) first = first.previousSibling;
+            for (;;) {
+                let p = first.previousSibling;
+                if (gap(p) && same(p.previousSibling)) p = p.previousSibling;
+                if (!same(p)) break;
+                first = p;
+            }
             let text = "";
-            for (let n = first; same(n); n = n.nextSibling) text += plainOf(n);
+            for (let n = first; n; n = n.nextSibling) {
+                if (same(n)) text += plainOf(n);
+                else if (gap(n) && same(n.nextSibling)) text += n.nodeValue;
+                else break;
+            }
             return text;
         }
-        const lineHtml = (c) => { const tokens = tokenCache.get(c.text); return tokens ? tokens.map(wordHtml).join("") : esc(c.text); };
+        const lineHtml = (c) => { const tokens = toks(c.text); return tokens ? tokens.map(wordHtml).join("") : esc(c.text); };
         // i+1: exactly one word you don't know yet, the best sentences to mine
-        const unknownIn = (c) => new Set((tokenCache.get(c.text) || []).filter((t) => t.c && isUnknown(t.b)).map((t) => t.b)).size;
+        const unknownIn = (c) => new Set((toks(c.text) || []).filter((t) => t.c && isUnknown(t.b)).map((t) => t.b)).size;
         const STAR = `<span class="star" title="one new word: a good sentence to mine">★</span>`;
         function render(force = false) {
             const v = site.video();
@@ -371,7 +421,7 @@ rt {font-size: .5em; color: #f0f0f0;}
                 autoPausedAt = shown;
                 v.pause();
             }
-            // listening mode: the Japanese stays blurred while it plays
+            // listening mode: the line stays blurred while it plays
             ui.line.classList.toggle("blurred", prefs.hideJa && !v.paused && !pausedByHover);
             // the translation: when paused (or always, or blurred), the line(s) at this moment
             const showTr = prefs.translation === "always" || prefs.translation === "blur" || (prefs.translation === "paused" && (v.paused || pausedByHover));
@@ -388,12 +438,12 @@ rt {font-size: .5em; color: #f0f0f0;}
 
         function renderPct() {
             let total = 0, known = 0;
-            for (const c of cues) for (const t of tokenCache.get(c.text) || []) {
+            for (const c of cues) for (const t of toks(c.text) || []) {
                 if (!t.c || statusOf(t.b) === "ignored") continue;
                 total++;
                 if (!isUnknown(t.b)) known++;
             }
-            ui.pct.textContent = total ? `${Math.round((known / total) * 100)}% 理解` : "";
+            ui.pct.textContent = total ? `${Math.round((known / total) * 100)}% ${lang === "en" ? "understood" : "理解"}` : "";
         }
 
         // ----- the transcript: every line, the one playing marked; click a line to go there -----
@@ -407,7 +457,7 @@ rt {font-size: .5em; color: #f0f0f0;}
                     <button class="close" title="close (Shift+T)">✕</button></div>
                 <ol>${cues.map((c, i) => {
                     const one = unknownIn(c) === 1;
-                    return `<li data-i="${i}"${one ? ` class="one"` : ""}><time>${clock(c.start)}</time><span class="t" lang="ja">${lineHtml(c)}</span>${one ? `<span class="st1" title="one new word">★</span>` : ""}</li>`;
+                    return `<li data-i="${i}"${one ? ` class="one"` : ""}><time>${clock(c.start)}</time><span class="t" lang="${lang}">${lineHtml(c)}</span>${one ? `<span class="st1" title="one new word">★</span>` : ""}</li>`;
                 }).join("")}</ol>`;
             ui.side.querySelector(".close").onclick = () => showTranscript(false);
             ui.side.querySelector(".only1").onchange = (e) => { only1 = e.target.checked; ui.side.classList.toggle("only1", only1); };
@@ -486,17 +536,18 @@ rt {font-size: .5em; color: #f0f0f0;}
             popupWord = { lemma, el: w, surface: plain, expression, grammar: (w.dataset.gr || "").split(" ").filter(Boolean), cue: li ? Number(li.dataset.i) : null };
             const v = site.video();
             if (v && !v.paused) { v.pause(); pausedByHover = true; }
-            ui.popup.innerHTML = `<div class="head"><b>${esc(plain)}</b><button class="x" title="close (Esc)">✕</button></div><p class="msg">辞書を引いています…</p>`;
+            ui.popup.innerHTML = `<div class="head"><b>${esc(plain)}</b><button class="x" title="close (Esc)">✕</button></div><p class="msg">looking up…</p>`;
             place(w);
             ui.popup.querySelector(".x").onclick = closePopup;
             try {
                 const qs = new URLSearchParams();
                 [...new Set([lemma, plain].filter(Boolean))].forEach((q) => qs.append("q", q));
                 qs.set("form", plain);
-                qs.set("lang", "ja");
+                qs.set("lang", lang);
+                if (lang === "en" && native) qs.set("native", native);       // translations into your language
                 // the expression the word is part of, looked up at the same time
                 const [r, ex] = await Promise.all([api(`/api/dict?${qs}`),
-                    expression ? api(`/api/dict?${new URLSearchParams({ q: expression.key, lang: "ja" })}`).catch(() => null) : null]);
+                    expression ? api(`/api/dict?${new URLSearchParams({ q: expression.key, lang, ...(lang === "en" && native ? { native } : {}) })}`).catch(() => null) : null]);
                 if (!popupWord || popupWord.el !== w) return;
                 if (expression && ex && ex.entries && ex.entries[0]) expression.entry = ex.entries[0];
                 await renderEntries(r, lemma, plain);
@@ -519,12 +570,16 @@ rt {font-size: .5em; color: #f0f0f0;}
         function expressionHtml(ex) {
             if (!ex || !ex.entry) return "";
             const e = ex.entry;
-            return `<div class="expr"><span class="lbl">${ex.kind === "i" ? "慣用句 idiom" : "表現 phrase"} · この単語を含む</span>
+            const label = lang === "en" ? `${ex.kind === "i" ? "idiom" : "phrase"} · part of` : `${ex.kind === "i" ? "慣用句 idiom" : "表現 phrase"} · この単語を含む`;
+            return `<div class="expr"><span class="lbl">${label}</span>
                 <button class="mine xmine">+ mine</button>
-                <span class="hw">${esc(e.word)}</span><span class="rd">${e.reading && e.reading !== e.word ? esc(e.reading) : ""}</span>
-                <ol>${e.senses.slice(0, 3).map((x) => `<li>${esc(x.gloss.join("; "))}</li>`).join("")}</ol>
+                <span class="hw" translate="no">${esc(e.word)}</span><span class="rd" translate="no">${e.reading && e.reading !== e.word ? esc(e.reading) : ""}</span>
+                ${trHtml(e)}<ol translate="no">${e.senses.slice(0, 3).map((x) => `<li>${esc(x.gloss.join("; "))}</li>`).join("")}</ol>
                 ${statusButtons(ex.key, "data-xst")}</div>`;
         }
+
+        // English: the word in your language (akko's translations), above the English definitions
+        const trHtml = (e) => (e.tr && e.tr.length ? `<p class="trs" translate="no">${esc(e.tr.slice(0, 3).map((t) => t.words.join(", ")).join(" · "))}</p>` : "");
 
         async function renderEntries(r, lemma, plain) {
             const entries = r.entries || [];
@@ -534,18 +589,18 @@ rt {font-size: .5em; color: #f0f0f0;}
             let akkoUrl = "";
             try { if (lessons.length) akkoUrl = (await chrome.storage.local.get("akkoUrl")).akkoUrl || ""; } catch { /* the extension was reloaded */ }
             const kanji = (r.kanji || []).slice(0, 4);
-            ui.popup.innerHTML = `<div class="head"><b>${esc(plain)}</b>${lemma && lemma !== plain ? `<span>→ ${esc(lemma)}</span>` : ""}<button class="x" title="close (Esc)">✕</button></div>
-                ${r.inflection && r.inflection.length ? `<p class="infl">${esc(plain)} = ${esc(r.query || lemma)} + ${esc(r.inflection.join(" + "))}</p>` : ""}
+            ui.popup.innerHTML = `<div class="head"><b translate="no">${esc(plain)}</b>${lemma && lemma !== plain ? `<span translate="no">→ ${esc(lemma)}</span>` : ""}<button class="x" title="close (Esc)">✕</button></div>
+                ${r.inflection && r.inflection.length ? `<p class="infl" translate="no">${esc(plain)} = ${esc(r.query || lemma)} + ${esc(r.inflection.join(" + "))}</p>` : ""}
                 ${lemma ? statusButtons(lemma) : ""}
                 ${expressionHtml(popupWord && popupWord.expression)}
                 ${entries.length ? entries.slice(0, 4).map((e, i) => `<div class="entry">
                     <button class="mine" data-i="${i}">+ mine</button>
-                    <span class="hw">${esc(e.word)}</span><span class="rd">${e.reading && e.reading !== e.word ? esc(e.reading) : ""}</span>${e.common ? `<span class="tag">common</span>` : ""}<button class="say" data-i="${i}" title="hear it">🔊</button>
-                    ${pitchOf(e).length ? `<span class="pitch" title="pitch accent">${pitchOf(e).map((n) => `${pitchCardHtml(e.reading || e.word, n)}<small>[${n}]</small>`).join(" ")}</span>` : ""}
-                    <ol>${e.senses.slice(0, 4).map((s) => `<li>${esc(s.gloss.join("; "))} <small>${esc(s.pos.join(", "))}</small></li>`).join("")}</ol>
+                    <span class="hw" translate="no">${esc(e.word)}</span><span class="rd" translate="no">${e.reading && e.reading !== e.word ? esc(e.reading) : ""}</span>${e.common ? `<span class="tag">common</span>` : ""}<button class="say" data-i="${i}" title="hear it">🔊</button>
+                    ${pitchOf(e).length ? `<span class="pitch" title="pitch accent" translate="no">${pitchOf(e).map((n) => `${pitchCardHtml(e.reading || e.word, n)}<small>[${n}]</small>`).join(" ")}</span>` : ""}
+                    ${trHtml(e)}<ol translate="no">${e.senses.slice(0, 4).map((s) => `<li>${esc(s.gloss.join("; "))} <small>${esc(s.pos.join(", "))}</small></li>`).join("")}</ol>
                 </div>`).join("") : `<p class="msg">no dictionary entry for this</p>`}
-                ${lessons.length || kanji.length ? `<div class="extra">
-                    ${lessons.map((l) => `<p>文法 <a href="${esc(akkoUrl ? `${akkoUrl}/grammar.html#${encodeURIComponent(l.id)}` : "#")}" target="_blank" rel="noopener"><b>${esc(l.title)}</b></a> ${esc(l.meaning)} <small>${esc(l.level || "")}</small></p>`).join("")}
+                ${lessons.length || kanji.length ? `<div class="extra" translate="no">
+                    ${lessons.map((l) => `<p>${lang === "en" ? "grammar" : "文法"} <a href="${esc(akkoUrl ? `${akkoUrl}/grammar.html#${encodeURIComponent(l.id)}` : "#")}" target="_blank" rel="noopener"><b>${esc(l.title)}</b></a> ${esc(l.meaning)} <small>${esc(l.level || "")}</small></p>`).join("")}
                     ${kanji.map((k) => `<p><b>${esc(k.char)}</b> ${esc((k.meanings || []).slice(0, 3).join(", "))} <small>${esc([(k.on || []).slice(0, 2).join("・"), (k.kun || []).slice(0, 2).join("・"), k.jlpt ? `JLPT ${k.jlpt}` : ""].filter(Boolean).join(" · "))}</small></p>`).join("")}
                 </div>` : ""}`;
             ui.popup.querySelector(".x").onclick = closePopup;
@@ -563,7 +618,7 @@ rt {font-size: .5em; color: #f0f0f0;}
         async function say(e, btn) {
             btn.disabled = true;
             try {
-                const a = await api(`/api/audio?${new URLSearchParams({ word: e.word, reading: e.reading || "", lang: "ja" })}`);
+                const a = await api(`/api/audio?${new URLSearchParams({ word: e.word, reading: e.reading || "", lang })}`);
                 const type = { mp3: "audio/mpeg", ogg: "audio/ogg", opus: "audio/ogg", wav: "audio/wav", m4a: "audio/mp4", webm: "audio/webm" }[a.ext] || "audio/mpeg";
                 const bytes = Uint8Array.from(atob(a.data), (ch) => ch.charCodeAt(0));
                 const url = URL.createObjectURL(new Blob([bytes], { type }));
@@ -715,6 +770,7 @@ rt {font-size: .5em; color: #f0f0f0;}
                 const wants = (src) => Object.values(map).includes(src);
                 const t = c ? c.start : v ? v.currentTime : 0;
                 const item = {
+                    lang,
                     forms: entry.forms || [],
                     word: entry.word,
                     reading: entry.reading || "",
@@ -729,7 +785,7 @@ rt {font-size: .5em; color: #f0f0f0;}
                 // akko's mined list (and 復習, which shows the sentence) gets every card
                 const added = Date.now();
                 const forAkko = {
-                    ...item, id: `${added}-${Math.random().toString(36).slice(2, 8)}`, added,
+                    ...item, id: `${added}-${Math.random().toString(36).slice(2, 8)}`, added, lang,
                     source: site.title(), time: clock(t), videoName: site.title(),
                     cueStart: c ? c.start : null, cueEnd: c ? c.end : null,
                 };
@@ -767,7 +823,7 @@ rt {font-size: .5em; color: #f0f0f0;}
                 if (line && anki.audio && wants("audio")) audio.push({ data: line.data, filename: `${stamp}.${line.ext}`, fields: fieldsFor("audio") });
                 if (anki.wordAudio && wants("wordAudio")) {
                     try {
-                        const a = await api(`/api/audio?${new URLSearchParams({ word: item.word, reading: item.reading, lang: "ja" })}`);
+                        const a = await api(`/api/audio?${new URLSearchParams({ word: item.word, reading: item.reading, lang })}`);
                         audio.push({ data: a.data, filename: `${stamp}_word.${a.ext}`, fields: fieldsFor("wordAudio") });
                     } catch (err) { problems.push("word audio: " + err.message); }
                 }
@@ -804,19 +860,19 @@ rt {font-size: .5em; color: #f0f0f0;}
             const check = (cls, on, text) => `<label><input class="${cls}" type="checkbox" ${on ? "checked" : ""}> ${text}</label>`;
             ui.panel.innerHTML = `
                 <h3>Subtitles</h3>
-                <label>Japanese subtitles<select class="tracks">${tracks.length ? opt(tracks, current) : `<option>none found on this video</option>`}</select></label>
+                <label>${LANG_NAMES[lang]} subtitles<select class="tracks">${tracks.length ? opt(tracks, current) : `<option>none found on this video</option>`}</select></label>
                 ${translations.length ? `<label>translation<select class="trs">${opt(translations, currentTr, "none")}</select></label>` : ""}
                 <label>show the translation <small>(R)</small><select class="trmode">
                     <option value="paused">when paused</option><option value="always">always</option>
                     <option value="blur">always, blurred until the mouse is on it</option><option value="off">never</option></select></label>
-                <label>furigana<select class="furi"><option value="unknown">on words I don't know</option><option value="always">always</option><option value="off">off</option></select></label>
+                ${lang === "ja" ? `<label>furigana<select class="furi"><option value="unknown">on words I don't know</option><option value="always">always</option><option value="off">off</option></select></label>` : ""}
                 ${check("iplus1", prefs.iPlusOne, "★ lines with exactly one new word (the best to mine)")}
                 <label>timing <small>(when the subtitles are early or late)</small></label>
                 <div class="row"><button class="earlier" title="show the subtitles earlier">− 0.25 s</button><span class="delay" style="align-self:center;min-width:5em;text-align:center">${delay > 0 ? "+" : ""}${delay.toFixed(2)} s</span><button class="later" title="show the subtitles later">+ 0.25 s</button></div>
                 <h3>Watching</h3>
                 ${check("hover", prefs.hoverPause, "pause when the mouse is on the subtitles")}
                 ${check("autopause", prefs.autoPause, "pause at the end of every line <small>(A)</small>")}
-                ${check("hideja", prefs.hideJa, "listening practice: blur the Japanese until paused <small>(L)</small>")}
+                ${check("hideja", prefs.hideJa, `listening practice: blur the ${LANG_NAMES[lang]} until paused <small>(L)</small>`)}
                 <div class="row"><button class="prev" title="previous line ([)">⏮ line</button><button class="again" title="replay the line (P)">↻</button><button class="slow" title="replay the line slowly (Shift+P)">🐢</button><button class="next" title="next line (])">line ⏭</button></div>
                 <div class="row"><button class="transcript" title="all the lines (Shift+T)">☰ all the lines</button></div>
                 <h3>Look</h3>
@@ -833,13 +889,13 @@ rt {font-size: .5em; color: #f0f0f0;}
                 <div class="row"><button class="off" title="turn akko off on ${esc(site.name)}">turn off here</button></div>`;
             const $p = (s) => ui.panel.querySelector(s);
             $p(".trmode").value = prefs.translation;
-            $p(".furi").value = prefs.furigana;
+            if ($p(".furi")) $p(".furi").value = prefs.furigana;
             $p(".font").value = prefs.font;
             $p(".mineto").value = prefs.mineTo;
             $p(".tracks").onchange = (e) => site.onTrack(e.target.value);
             if ($p(".trs")) $p(".trs").onchange = (e) => site.onTranslation(e.target.value);
             $p(".trmode").onchange = (e) => savePrefs({ translation: e.target.value });
-            $p(".furi").onchange = (e) => savePrefs({ furigana: e.target.value });
+            if ($p(".furi")) $p(".furi").onchange = (e) => savePrefs({ furigana: e.target.value });
             // sliders: live while dragging, saved when let go
             for (const key of ["size", "position", "bg"]) {
                 $p(`.${key}`).oninput = (e) => { prefs[key] = Number(e.target.value); resize(); };
@@ -929,7 +985,7 @@ rt {font-size: .5em; color: #f0f0f0;}
             toast(`${label}: ${prefs[key] ? "off" : "on"}`);
         }
 
-        // ----- time with Japanese: counts in akko for today and the streak -----
+        // ----- time with the language: counts in akko for today and the streak -----
         // every 15 s of playing (the video's own time moving, at any speed) is added up here, and
         // goes to akko once a minute
         const TICK = 15;
@@ -944,7 +1000,7 @@ rt {font-size: .5em; color: #f0f0f0;}
         function flushTime() {
             if (!counted) return;
             const url = site.url(0).replace(/[?&]t=\d+s?$/, "");
-            toAkko([{ kind: "time", day: today(), seconds: counted, site: site.name, key: url, title: site.title(), url }]).catch(() => {});
+            toAkko([{ kind: "time", day: today(), seconds: counted, site: site.name, key: url, title: site.title(), url, lang }]).catch(() => {});
             counted = 0;
         }
         // akko's word list and Anki settings: now, then every minute while watching
@@ -968,6 +1024,14 @@ rt {font-size: .5em; color: #f0f0f0;}
                 }
             },
             setTranslation(list) { cues2 = list; shownTr = null; render(true); },
+            // the subtitles' language ("ja" | "en"), when it's only known later
+            setLang(l) {
+                lang = l === "en" ? "en" : "ja";
+                ui.line.lang = lang;
+                ui.root.classList.toggle("en", lang === "en");
+                closePopup();
+                if (!ui.panel.hidden) renderPanel();
+            },
             setTracks(list, cur) { tracks = list; current = cur; if (!ui.panel.hidden) renderPanel(); },
             setTranslations(list, cur) { translations = list; currentTr = cur; if (!ui.panel.hidden) renderPanel(); },
             toast,
@@ -989,5 +1053,5 @@ rt {font-size: .5em; color: #f0f0f0;}
         return api0;
     }
 
-    window.akkoCompanion = { ready, overlay, ask, api, prefs: () => prefs, savePrefs, esc, wait };
+    window.akkoCompanion = { ready, overlay, ask, api, prefs: () => prefs, savePrefs, esc, wait, learning, langOfText, LANG_NAMES };
 })();

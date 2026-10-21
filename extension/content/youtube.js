@@ -1,6 +1,8 @@
-// akko companion on YouTube: on a video with Japanese subtitles (made by people, or YouTube's
-// automatic ones), puts akko's clickable subtitles over it (content/common.js), with a translation
-// from the video's own subtitles or YouTube's translation. The subtitle files come from
+// akko companion on YouTube: on a video with subtitles in the language you learn (Japanese or
+// English; made by people, or YouTube's automatic ones), puts akko's clickable subtitles over it
+// (content/common.js), with a translation from the video's own subtitles or YouTube's translation.
+// English subtitles on a video spoken in another language are a translation, not English to learn:
+// those are left alone (the automatic track tells the spoken language). The subtitle files come from
 // page/youtube.js, which catches them as YouTube's player downloads them.
 
 (async () => {
@@ -10,7 +12,22 @@
     const ASK = (type, extra = {}) => window.postMessage({ source: "akko-companion-ask", type, ...extra }, "*");
     const waiting = new Map();          // key -> {resolve, reject}
     let ov = null;
-    let state = { videoId: null, title: "", tracks: [], languages: [], main: null };
+    let state = { videoId: null, title: "", tracks: [], languages: [], main: null, lang: "ja" };
+    const isLang = (l) => (t) => new RegExp(`^${l}\\b`, "i").test(t.lang || "");
+
+    // the language akko shows this video in: the first one you learn that it has subtitles for
+    // (the spoken one first), and its tracks
+    function pick(tracks) {
+        const spoken = (tracks.find((t) => t.kind === "asr") || {}).lang || "";
+        const wanted = A.learning().slice().sort((a, b) => isLang(b)({ lang: spoken }) - isLang(a)({ lang: spoken }));
+        for (const l of wanted) {
+            const list = tracks.filter(isLang(l));
+            if (!list.length) continue;
+            if (l === "en" && spoken && !isLang("en")({ lang: spoken })) continue;
+            return { lang: l, list };
+        }
+        return null;
+    }
 
     const player = () => document.getElementById("movie_player");
     // (none while an ad plays: the same video element plays the ad, with the ad's own time)
@@ -78,16 +95,17 @@
     function cleanup() {
         if (ov) { ov.destroy(); ov = null; }
         hideNative(false);
-        state = { videoId: null, title: "", tracks: [], languages: [], main: null };
+        state = { videoId: null, title: "", tracks: [], languages: [], main: null, lang: "ja" };
     }
 
     async function onTracks(d) {
         if (!d.videoId || d.videoId !== videoIdNow()) return;
         if (ov && state.videoId === d.videoId) return;
         cleanup();
-        const ja = d.tracks.filter((t) => /^ja\b/i.test(t.lang));
-        if (!ja.length) return;              // not a Japanese video: stay out of the way
-        state = { videoId: d.videoId, title: d.title, tracks: d.tracks, languages: d.languages, main: null };
+        const found = pick(d.tracks);
+        if (!found) return;                  // not in a language you learn: stay out of the way
+        const ja = found.list;
+        state = { videoId: d.videoId, title: d.title, tracks: d.tracks, languages: d.languages, main: null, lang: found.lang };
         const container = player();
         if (!container) return;
         ov = A.overlay(container, site);
@@ -101,10 +119,10 @@
 
     // the translation: subtitles in your language if the video has them, else YouTube's translation
     function translationChoices() {
-        const own = state.tracks.filter((t) => !/^ja\b/i.test(t.lang) && t.kind !== "asr").map((t) => ({ id: `track:${idOf(t)}`, label: labelOf(t) }));
+        const own = state.tracks.filter((t) => !isLang(state.lang)(t) && t.kind !== "asr").map((t) => ({ id: `track:${idOf(t)}`, label: labelOf(t) }));
         const want = [A.prefs().translateTo, "en", "pt", "es", "fr", "de", "ko", "zh-Hans", "zh-Hant", "it", "ru", "id", "vi", "th"];
         const auto = state.main && state.main.translatable
-            ? [...new Set(want)].map((code) => state.languages.find((l) => l.code === code)).filter(Boolean).map((l) => ({ id: `tl:${l.code}`, label: `${l.name} (YouTube's translation)` }))
+            ? [...new Set(want)].filter((code) => code !== state.lang).map((code) => state.languages.find((l) => l.code === code)).filter(Boolean).map((l) => ({ id: `tl:${l.code}`, label: `${l.name} (YouTube's translation)` }))
             : [];
         return [...own, ...auto];
     }
@@ -118,7 +136,7 @@
 
     async function useTrack(t) {
         state.main = t;
-        ov.setTracks(state.tracks.filter((x) => /^ja\b/i.test(x.lang)).map((x) => ({ id: idOf(x), label: labelOf(x) })), idOf(t));
+        ov.setTracks(state.tracks.filter(isLang(state.lang)).map((x) => ({ id: idOf(x), label: labelOf(x) })), idOf(t));
         try {
             const cues = await load(t.lang, t.kind);
             if (!ov || state.main !== t) return;
@@ -149,6 +167,7 @@
 
     const site = {
         name: "youtube",
+        get lang() { return state.lang; },
         video,
         recordable: true,
         screenshot: true,
@@ -160,8 +179,10 @@
 
     // ---------- YouTube is one page: watch for moving to another video ----------
     let lastId = null;
+    let lastLearn = A.learning().join();
     function check() {
         const id = videoIdNow();
+        if (A.learning().join() !== lastLearn) { lastLearn = A.learning().join(); cleanup(); lastId = null; }
         if (!A.prefs().on.youtube || !location.pathname.startsWith("/watch")) {
             if (ov) cleanup();
             lastId = null;

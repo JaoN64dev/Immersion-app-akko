@@ -28,3 +28,5 @@ a {color: var(--link);}
 .here button {font: inherit; font-weight: 600; cursor: pointer; padding: 5px 12px; border-radius: 8px; border: 1px solid #8e8d98; background: #fff;}
 .here .hint {margin: 6px 0 0;}
 #allow-frame {margin-top: 6px;}
+.learn {display: block; margin: 8px 0;}
+.learn select {display: block; width: 100%; margin-top: 3px; font: inherit;}

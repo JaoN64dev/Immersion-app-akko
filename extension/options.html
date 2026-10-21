@@ -19,13 +19,13 @@
     <section>
         <h2>Your words</h2>
         <p id="words-status" class="status"></p>
-        <p class="hint">Your word list, Anki settings and language come from akko by themselves while akko is running (the desktop app or <code>npm start</code>). Words you mark, cards you mine and the time you watch go back to akko: they show in its Stats and 復習, and count for today and your streak. If akko is closed, they wait here until it's back.</p>
+        <p class="hint" data-l="options-words">Your word list, Anki settings and language come from akko by themselves while akko is running (the desktop app or <code>npm start</code>). Words you mark, cards you mine and the time you watch go back to akko: they show in its Stats and 復習, and count for today and your streak. If akko is closed, they wait here until it's back.</p>
         <label>or import them from an akko backup file <input id="backup" type="file" accept=".json,application/json"></label>
     </section>
 
     <section>
         <h2>Anki</h2>
-        <p class="hint">Cards go through akko to Anki (with the AnkiConnect add-on, 2055492159), and into akko's mined list. These settings come from akko's own Anki settings; you can also set them here. In the player's akko ▾ menu you can choose to send cards only to akko.</p>
+        <p class="hint" data-l="options-anki">Cards go through akko to Anki (with the AnkiConnect add-on, 2055492159), and into akko's mined list. These settings come from akko's own Anki settings; you can also set them here. In the player's akko ▾ menu you can choose to send cards only to akko.</p>
         <p id="anki-status" class="status"></p>
         <button id="anki-load">load decks from Anki</button>
         <div id="anki-form" hidden>
@@ -51,6 +51,7 @@
     </section>
 
     <p id="msg" class="status"></p>
+    <script src="lang.js"></script>
     <script src="options.js"></script>
 </body>
 </html>

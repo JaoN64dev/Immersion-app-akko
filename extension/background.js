@@ -4,8 +4,10 @@
 //   {type: "status"}                      -> {ok, url, version} : is akko running, and where
 //   {type: "text", url}                   -> a subtitle file from Netflix's servers, as text
 //   {type: "log", entries}                -> for akko: word statuses, mined words, time watched
-//   {type: "sync"}                        -> send those to akko, and copy akko's word list,
-//                                            Anki settings and language here
+//   {type: "sync"}                        -> send those to akko, and copy akko's word lists (words:
+//                                            Japanese, wordsEn: English), Anki settings, your language
+//                                            (native), what akko is learning (akkoTarget) and akko's
+//                                            interface language (akkoUi) here
 //   {type: "tabAudioStart"} / {type: "tabAudioStop"} -> {data, ext}: the tab's sound (offscreen.js),
 //   {type: "tabShot"} -> {data}: a picture of the tab; for Netflix, whose video can't be recorded directly
 // Keeping in step with akko goes through akko's server (server/companion.js), so it works with
@@ -93,10 +95,18 @@ function sync() {
         }
         const app = await akko({ path: "/api/companion?from=extension" });
         const store = await chrome.storage.local.get(["anki", "prefs", "outbox"]);
-        const words = { ...(app.words || {}) };
-        for (const e of store.outbox || []) if (e.kind === "status") { if (e.status === "new") delete words[e.lemma]; else words[e.lemma] = e.status; }
+        const lists = { ja: { ...(app.words || {}) }, en: { ...(app.wordsEn || {}) } };
+        // what's still waiting to go to akko wins
+        for (const e of store.outbox || []) {
+            if (e.kind !== "status") continue;
+            const words = lists[e.lang === "en" ? "en" : "ja"];
+            if (e.status === "new") delete words[e.lemma]; else words[e.lemma] = e.status;
+        }
         // (no list until an akko page has been open once: keep what's here)
-        const out = app.at ? { words, synced: Date.now() } : { synced: Date.now() };
+        const out = app.at ? { words: lists.ja, wordsEn: lists.en, synced: Date.now() } : { synced: Date.now() };
+        out.akkoTarget = app.target === "en" ? "en" : "ja";
+        out.akkoUi = app.ui || "";
+        out.native = app.native || "";
         const a = app.anki;
         if (a && a.deck && a.model) {
             out.anki = { ...(store.anki || {}), deck: a.deck, model: a.model, maps: { ...((store.anki || {}).maps || {}), ...(a.maps || {}) },
@@ -106,7 +116,7 @@ function sync() {
         if (app.native && !prefs.translateToSet) out.prefs = { ...prefs, translateTo: LANGS[app.native] || app.native };
         await chrome.storage.local.set(out);
         lastSync = Date.now();
-        return { words: Object.keys(words).length };
+        return { words: Object.keys(lists.ja).length + Object.keys(lists.en).length };
     });
 }
 

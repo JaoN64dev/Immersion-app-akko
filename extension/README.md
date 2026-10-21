@@ -1,6 +1,8 @@
 # akko companion (Chrome extension)
 
-akko's clickable subtitles on **YouTube**, **Netflix** and **any other video site** (with a subtitle file you bring): hover or click a word to get akko's dictionary, mark it new / learning / known / ignored, and mine it to Anki with the sentence, the translation, the line's audio and a screenshot.
+akko's clickable subtitles on **YouTube**, **Netflix** and **any other video site** (with a subtitle file you bring), for **Japanese** and **English**: hover or click a word to get akko's dictionary, mark it new / learning / known / ignored, and mine it to Anki with the sentence, the translation, the line's audio and a screenshot. Idioms and set phrases (膝が笑う, 首を長くする, give up, under the weather) are underlined, and the popup explains them as a whole.
+
+Its menus follow akko's interface language: English, 日本語, Português or Español.
 
 It uses **your akko**: the dictionary, word splitting, word audio and Anki all go through the akko app running on your computer, and what you do while watching goes back into akko. akko has to be open while you watch.
 
@@ -17,19 +19,21 @@ After updating the extension (or clicking reload in `chrome://extensions`), relo
 
 ## Requirements
 
-- akko 1.8 or newer, open. The extension looks for it at 127.0.0.1 / localhost on ports 3417 and 3000; set a different address in the options page.
+- akko 2.0 or newer, open (1.8 and 1.9 work for Japanese). The extension looks for it at 127.0.0.1 / localhost on ports 3417 and 3000; set a different address in the options page.
 - For mining to Anki: Anki with AnkiConnect. akko passes the cards on, so AnkiConnect needs no extra setup. The deck, note type and fields come from akko's own Anki settings; you can also set them in the options page.
 
 ## Using it
 
-On a YouTube video with Japanese subtitles (made by people, or YouTube's automatic ones), or a Netflix title with Japanese subtitles, akko's subtitles replace the site's own. The **akko ▾** pill (top right of the video) shows how much of the video you know, and opens the settings:
+**What you learn**: in the toolbar popup, **I'm learning**: what akko is learning (the default: it follows akko's own choice), Japanese, English, or both. On a YouTube video or a Netflix title with subtitles in that language (made by people, or YouTube's automatic ones), akko's subtitles replace the site's own. Your words, mined cards and the time you watch go to that language's list in akko. On YouTube, English subtitles on a video spoken in another language are a translation, not English to learn, so they're left alone.
 
-Click a word for akko's dictionary: its meanings, 🔊 its pronunciation, its pitch accent, how it's conjugated (見てみてください = 見る + て-form + 〜てみる + 〜てください), its kanji, and the grammar it's part of, linked to akko's lesson.
+For English: no furigana; the popup shows the word's pronunciation (IPA), its translation into your language (akko's **your language** setting) and its English definitions; grammar links go to akko's English lessons. The **akko ▾** pill (top right of the video) shows how much of the video you know, and opens the settings:
+
+Click a word for akko's dictionary: its meanings, 🔊 its pronunciation, its pitch accent, how it's conjugated (見てみてください = 見る + て-form + 〜てみる + 〜てください), its kanji, and the grammar it's part of, linked to akko's lesson. If the word is part of an idiom (膝が笑ってしまった), the idiom comes first, with its own status and **+ mine** (the card has the whole idiom in bold).
 
 **☰** (or `Shift+T`) lists every line of the video: click a line to go there, or a word to look it up (and mine it with that line as the sentence). Lines with exactly one word you don't know yet get a **★**: those make the best cards ("i+1"); tick "only ★" to see just those.
 
-- **Subtitles:** which Japanese track; the translation (the video's own subtitles in another language, or YouTube's translation) and when it shows: when paused, always, always but blurred until the mouse is on it, or never; furigana on all words, unknown words only, or none; the ★ on i+1 lines; the timing, when the subtitles come early or late
-- **Watching:** pause when the mouse is on the subtitles; pause at the end of every line; listening practice (the Japanese stays blurred while it plays: listen first, then pause or hover to read)
+- **Subtitles:** which track (in the language you learn); the translation (the video's own subtitles in another language, or YouTube's translation) and when it shows: when paused, always, always but blurred until the mouse is on it, or never; furigana on all words, unknown words only, or none; the ★ on i+1 lines; the timing, when the subtitles come early or late
+- **Watching:** pause when the mouse is on the subtitles; pause at the end of every line; listening practice (the subtitles stay blurred while they play: listen first, then pause or hover to read)
 - **Look:** size, height, background, font (gothic, mincho, rounded)
 - **Mining:** "+ mine" sends the card to Anki and akko's mined list, or only to akko (send it to Anki later from akko's Watch page); the line's audio and a picture are kept in akko too, for 復習 (a switch turns that off)
 - turning akko off for that site
@@ -48,7 +52,7 @@ Click a word for akko's dictionary: its meanings, 🔊 its pronunciation, its pi
 
 ## Any other site
 
-On a site with a video that isn't YouTube or Netflix (Crunchyroll, Disney+, a course site, a video you host…), click the **akko companion** button in Chrome's toolbar, then **▶ Use akko on this page**. Drop a subtitle file on the video, or pick one (.srt, .vtt or .ass): a Japanese file becomes akko's clickable subtitles, a file in another language the translation (drop both). Everything else works as on YouTube: the dictionary, ☰ the lines, ★, mining, the keys and the timing buttons (subtitle files often come a little early or late).
+On a site with a video that isn't YouTube or Netflix (Crunchyroll, Disney+, a course site, a video you host…), click the **akko companion** button in Chrome's toolbar, then **▶ Use akko on this page**. Drop a subtitle file on the video, or pick one (.srt, .vtt or .ass): a file in the language you learn becomes akko's clickable subtitles, a file in another language the translation (drop both). Everything else works as on YouTube: the dictionary, ☰ the lines, ★, mining, the keys and the timing buttons (subtitle files often come a little early or late).
 
 - The line's audio and the picture come from the tab, so they work even on copy-protected video. The click on the toolbar button is what allows that.
 - If the video is inside a frame from another address (Crunchyroll's player is), the popup says so and asks your permission for that address, once.
@@ -56,7 +60,7 @@ On a site with a video that isn't YouTube or Netflix (Crunchyroll, Disney+, a co
 
 ## Netflix
 
-On Netflix, Japanese subtitles come either from the title's subtitle list or, if Netflix doesn't send that, from the subtitle file its player downloads: turn on Japanese in Netflix's own subtitle menu and akko's subtitles take over. Switch Netflix's menu to another language for a moment to get that one as the translation.
+On Netflix, the subtitles come either from the title's subtitle list or, if Netflix doesn't send that, from the subtitle file its player downloads: turn on Japanese (or English) in Netflix's own subtitle menu and akko's subtitles take over. Switch Netflix's menu to another language for a moment to get that one as the translation.
 
 ## With akko
 

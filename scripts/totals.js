@@ -38,9 +38,9 @@ export function watchStats() {
     return { count: all.length, finished, seconds, recent };
 }
 
-// YouTube / Netflix with the browser extension (scripts/core/companion.js): Japanese only
+// YouTube / Netflix / other sites with the browser extension (scripts/core/companion.js)
 export function companionStats() {
-    const all = learningEnglish() ? [] : Object.values(store.get(COMPANION_KEY, {}));
+    const all = Object.values(store.get(COMPANION_KEY, {})).filter((r) => (r.lang || "ja") === (learningEnglish() ? "en" : "ja"));
     const seconds = all.reduce((n, r) => n + (r.seconds || 0), 0);
     const recent = all.map((r) => ({
         type: r.site === "netflix" ? "netflix" : "youtube", title: r.title, url: r.url,

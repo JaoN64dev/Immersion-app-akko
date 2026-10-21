@@ -3,11 +3,13 @@
 
 const $ = (id) => document.getElementById(id);
 const ask = (msg) => new Promise((resolve) => chrome.runtime.sendMessage(msg, (r) => resolve(r || {})));
+const { t } = akkoLang;          // the interface's language (lang.js); text set later is translated by itself
+akkoLang.watch(document.body);
 
 // ---------- any other site: akko on this page's video ----------
 function setUpHere(tab) {
     const msg = (text, good = false) => { $("here-msg").hidden = false; $("here-msg").textContent = text; $("here-msg").className = `status ${good ? "good" : "bad"}`; };
-    const inject = () => chrome.scripting.executeScript({ target: { tabId: tab.id, allFrames: true }, files: ["content/common.js", "content/generic.js"] });
+    const inject = () => chrome.scripting.executeScript({ target: { tabId: tab.id, allFrames: true }, files: ["lang.js", "content/common.js", "content/generic.js"] });
     async function run() {
         let results;
         try { results = await inject(); } catch {
@@ -15,7 +17,7 @@ function setUpHere(tab) {
         }
         const found = results.map((r) => r.result).filter(Boolean);
         if (found.some((r) => r.video)) {
-            msg("✓ akko is on: drop a Japanese subtitle file on the video (another language for the translation).", true);
+            msg("✓ akko is on: drop a subtitle file in the language you learn on the video (another language for the translation).", true);
             setTimeout(() => window.close(), 2500);
             return;
         }
@@ -42,8 +44,16 @@ function setUpHere(tab) {
 
 (async () => {
     await ask({ type: "sync" });           // fresh from akko, if it's running
-    const s = await chrome.storage.local.get(["prefs", "anki", "words", "outbox", "akkoUrl"]);
+    const s = await chrome.storage.local.get(["prefs", "anki", "words", "wordsEn", "outbox", "akkoUrl", "akkoTarget"]);
     const prefs = s.prefs || {};
+    // Japanese, English, both, or what akko is learning now
+    const learn = $("learn");
+    learn.options[0].textContent = `what akko is learning (${s.akkoTarget === "en" ? "English" : "Japanese"})`;
+    learn.value = prefs.learn || "auto";
+    learn.addEventListener("change", async () => {
+        const now = (await chrome.storage.local.get("prefs")).prefs || {};
+        await chrome.storage.local.set({ prefs: { ...now, learn: learn.value } });
+    });
     const on = { youtube: true, netflix: true, ...(prefs.on || {}) };
     for (const site of ["youtube", "netflix"]) {
         $(`on-${site}`).checked = on[site];
@@ -52,12 +62,14 @@ function setUpHere(tab) {
             await chrome.storage.local.set({ prefs: { ...now, on: { ...on, ...(now.on || {}), [site]: e.target.checked } } });
         });
     }
-    const words = Object.values(s.words || {});
-    $("words").textContent = words.length
-        ? `${words.filter((w) => w === "known").length} known · ${words.filter((w) => w === "learning").length} learning words (from akko)`
-        : "no word list yet: open akko on this computer";
+    const count = (list) => { const v = Object.values(list || {}); return { all: v.length, known: v.filter((w) => w === "known").length, learning: v.filter((w) => w === "learning").length }; };
+    const ja = count(s.words), en = count(s.wordsEn);
+    // (each part translated on its own: put together, they'd match no row)
+    const lists = [ja.all ? t(`Japanese: ${ja.known} known · ${ja.learning} learning`) : "", en.all ? t(`English: ${en.known} known · ${en.learning} learning`) : ""].filter(Boolean).join(" | ");
     const waiting = (s.outbox || []).length;
-    if (waiting) $("words").textContent += ` · ${waiting} change${waiting > 1 ? "s" : ""} waiting for akko`;
+    $("words").textContent = !lists ? "no word list yet: open akko on this computer"
+        : waiting ? t(`{lists} (from akko) · ${waiting === 1 ? "1 change" : `${waiting} changes`} waiting for akko`).replace("{lists}", lists)
+        : t("{lists} (from akko)").replace("{lists}", lists);
     $("anki").textContent = s.anki && s.anki.deck && s.anki.model ? `Anki: ${s.anki.deck} · ${s.anki.model}` : "Anki: not set up yet (see options)";
 
     // opening this popup on a Netflix tab is what lets the extension record that tab (Chrome's rule)

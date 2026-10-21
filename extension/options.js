@@ -13,6 +13,9 @@ const SOURCES = { "": "(leave empty)", word: "word", reading: "reading", furigan
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
 const get = () => chrome.storage.local.get(["akkoUrl", "words", "anki", "prefs"]);
+// the interface's language (lang.js): text set later is translated by itself
+akkoLang.watch(document.body);
+akkoLang.ready.then(() => { document.title = akkoLang.t(document.title); });
 const say = (text, bad = false) => { $("msg").textContent = text; $("msg").className = `status ${bad ? "bad" : "good"}`; };
 
 async function showAkko() {
@@ -89,8 +92,9 @@ $("backup").addEventListener("change", async (e) => {
         const file = JSON.parse(await f.text());
         if (file.app !== "akko-immersion" || !file.data) throw new Error("that isn't an akko backup file");
         const words = JSON.parse(file.data["akko-words"] || "{}");
-        await chrome.storage.local.set({ words });
-        say(`imported ${Object.keys(words).length} words ✓`);
+        const wordsEn = JSON.parse(file.data["akko-words-en"] || "{}");
+        await chrome.storage.local.set({ words, wordsEn });
+        say(`imported ${Object.keys(words).length + Object.keys(wordsEn).length} words ✓`);
         showWords();
     } catch (err) { say(err.message, true); }
 });

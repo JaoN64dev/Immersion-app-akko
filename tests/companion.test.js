@@ -66,9 +66,25 @@ test('the extension logs, akko windows catch up, the word list goes back out', a
     await json(`${base}/log`, 'POST', { entries: [{ kind: 'status', lemma: '猫', status: 'new' }] });
     assert.deepEqual((await json(base)).words, { 犬: 'known', 鳥: 'learning' });
 
+    // English: statuses into the English list, time and mined words marked English
+    assert.equal((await json(`${base}/app`, 'PUT', { anki: null, native: 'pt', target: 'en', ui: 'pt' })).ok, true);
+    const before = (await json(`${base}/log?after=0&epoch=${log.epoch}`)).last;
+    await json(`${base}/log`, 'POST', { entries: [
+      { kind: 'status', lemma: 'give up', status: 'learning', lang: 'en' },
+      { kind: 'mined', item: { word: 'give up', sentence: 'She gave up.', lang: 'en' } },
+      { kind: 'time', day: '2026-10-12', seconds: 60, key: 'e', lang: 'en' },
+    ] });
+    const both = await json(base);
+    assert.deepEqual(both.wordsEn, { 'give up': 'learning' });
+    assert.equal(both.words['give up'], undefined, "the Japanese list doesn't get it");
+    assert.equal(both.target, 'en');
+    assert.equal(both.ui, 'pt');
+    const en = (await json(`${base}/log?after=${before}&epoch=${log.epoch}`)).entries;
+    assert.deepEqual(en.map((e) => [e.kind, e.lang || e.item.lang]), [['mined', 'en'], ['time', 'en']]);
+
     // it's all saved
     companion.reset();
-    assert.equal((await json(`${base}/log?after=0&epoch=${log.epoch}`)).entries.length, 2);
+    assert.equal((await json(`${base}/log?after=0&epoch=${log.epoch}`)).entries.length, 4);
     assert.ok(fs.existsSync(companion.FILE));
     assert.equal((await json(`${base}/app`, 'PUT', { anki: [1] })).status, 400);
 

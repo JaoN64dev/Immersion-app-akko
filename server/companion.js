@@ -5,13 +5,16 @@
 //     spent on Japanese videos. Every akko window applies the log to its own storage
 //     (scripts/core/companion.js) and remembers how far it got, so the desktop app and akko in a
 //     browser both get everything.
-//   - akko's windows send their Anki settings and language; the extension reads them, and the word list.
+//   - akko's windows send their Anki settings, your language, the language you're learning and the
+//     interface's; the extension reads them, and the word lists (Japanese and English).
+// Everything from the extension says which language it was in (lang "ja" or "en"; "ja" when missing,
+// as older versions of the extension only did Japanese).
 // Saved in DATA/companion.json. The log keeps the last 5000 entries, 60 days at most.
 //
-//   GET  /api/companion[?from=extension] -> {words (the Japanese word list), anki, native, at, seen}
-//   PUT  /api/companion/app  {anki, native}                           (akko's pages)
+//   GET  /api/companion[?from=extension] -> {words, wordsEn (the word lists), anki, native, target, ui, at, seen}
+//   PUT  /api/companion/app  {anki, native, target, ui}               (akko's pages)
 //   POST /api/companion/log  {entries: [...]}                         (the extension)
-//        {kind: "status", lemma, status} | {kind: "mined", item} | {kind: "time", day, seconds, site, key, title, url}
+//        {kind: "status", lemma, status, lang} | {kind: "mined", item (with lang)} | {kind: "time", day, seconds, site, key, title, url, lang}
 //   GET  /api/companion/log?after=<seq>&epoch=<epoch> -> {epoch, last, entries: [{seq, at, kind, ...}]}
 //        epoch changes if the file is started again, and then the whole log comes back
 //   GET  /api/companion/extension -> {folder, version}; POST /api/companion/extension/open (the computer only)
@@ -50,18 +53,19 @@ function save() {
 }
 
 const text = (v, max = 2000) => String(v ?? '').slice(0, max);
+const langOf = (l) => (l === 'en' ? 'en' : 'ja');
 
 // only what each kind needs, in sensible sizes
 function clean(e) {
   if (!e || typeof e !== 'object') return null;
   if (e.kind === 'status') {
     if (!STATUSES.includes(e.status) || !e.lemma || String(e.lemma).length > 100) return null;
-    return { kind: 'status', lemma: String(e.lemma), status: e.status };
+    return { kind: 'status', lemma: String(e.lemma), status: e.status, lang: langOf(e.lang) };
   }
   if (e.kind === 'time') {
     const seconds = Math.round(Number(e.seconds));
     if (!/^\d{4}-\d\d-\d\d$/.test(e.day) || !(seconds > 0 && seconds <= 3600)) return null;
-    return { kind: 'time', day: e.day, seconds, site: text(e.site, 20), key: text(e.key, 300), title: text(e.title, 300), url: text(e.url, 500) };
+    return { kind: 'time', day: e.day, seconds, site: text(e.site, 20), key: text(e.key, 300), title: text(e.title, 300), url: text(e.url, 500), lang: langOf(e.lang) };
   }
   if (e.kind === 'mined') {
     const m = e.item || {};
@@ -78,7 +82,7 @@ function clean(e) {
       // which recordings were sent with it (POST /media): {audio: "webm", picture: "jpg"}
       media: m.media && typeof m.media === 'object'
         ? Object.fromEntries(['audio', 'picture'].filter((k) => MEDIA_TYPES[m.media[k]]).map((k) => [k, m.media[k]])) : undefined,
-      lang: 'ja', added: Number.isFinite(m.added) ? m.added : Date.now(),
+      lang: langOf(m.lang), added: Number.isFinite(m.added) ? m.added : Date.now(),
     } };
   }
   return null;
@@ -88,14 +92,15 @@ router.get('/', (req, res) => {
   const c = read();
   // when the extension last asked (shown in akko's settings); written at most once a minute
   if (req.query.from === 'extension') { const was = c.seen; c.seen = Date.now(); if (c.seen - was > 60e3) save(); }
-  res.json({ words: wordList.words('ja'), anki: c.app.anki, native: c.app.native, at: c.app.at || 1, seen: c.seen });
+  res.json({ words: wordList.words('ja'), wordsEn: wordList.words('en'), anki: c.app.anki, native: c.app.native,
+    target: c.app.target || 'ja', ui: c.app.ui || '', at: c.app.at || 1, seen: c.seen });
 });
 
 router.put('/app', express.json({ limit: '20mb' }), (req, res) => {
   const c = read();
   const b = req.body || {};
   if (b.anki !== undefined && b.anki !== null && (typeof b.anki !== 'object' || Array.isArray(b.anki))) return res.status(400).json({ error: 'bad Anki settings' });
-  c.app = { anki: b.anki || null, native: text(b.native, 20), at: Date.now() };
+  c.app = { anki: b.anki || null, native: text(b.native, 20), target: langOf(b.target), ui: /^(en|ja|pt|es)$/.test(b.ui) ? b.ui : '', at: Date.now() };
   save();
   res.json({ ok: true });
 });
@@ -106,15 +111,15 @@ router.post('/log', express.json({ limit: '5mb' }), (req, res) => {
   const c = read();
   const now = Date.now();
   let added = 0;
-  const statuses = {};
+  const statuses = { ja: {}, en: {} };
   for (const raw of list.slice(0, 1000)) {
     const e = clean(raw);
     if (!e) continue;
     added++;
-    if (e.kind === 'status') { statuses[e.lemma] = e.status; continue; }     // straight into the word list
+    if (e.kind === 'status') { statuses[e.lang][e.lemma] = e.status; continue; }     // straight into the word list
     c.log.push({ seq: c.next++, at: now, ...e });
   }
-  wordList.apply('ja', statuses);
+  for (const lang of ['ja', 'en']) if (Object.keys(statuses[lang]).length) wordList.apply(lang, statuses[lang]);
   const oldest = now - KEEP_DAYS * 864e5;
   c.log = c.log.filter((e) => e.at >= oldest).slice(-KEEP);
   save();

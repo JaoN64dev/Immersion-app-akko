@@ -1,5 +1,6 @@
-// akko companion on Netflix (EXPERIMENTAL): on a title with Japanese subtitles, akko's clickable
-// subtitles go over the video, with a translation from another subtitle track. The track list
+// akko companion on Netflix (EXPERIMENTAL): on a title with subtitles in the language you learn
+// (Japanese or English: the first one you learn that it has), akko's clickable subtitles go over
+// the video, with a translation from another subtitle track. The track list
 // comes from page/netflix.js; the subtitle files (WebVTT) are downloaded by background.js.
 // Netflix's video is copy-protected, so a card's line audio and picture are taken from the tab.
 
@@ -12,7 +13,7 @@
     let latest = { at: 0, tracks: [] }; // the last list, for when Netflix's id differs from the address
     let watchSince = 0;                // when the current /watch page was opened
     let tracks = [];                   // the title being watched
-    let state = { movieId: null, main: null, translation: "" };
+    let state = { movieId: null, main: null, translation: "", lang: "ja" };
 
     const video = () => document.querySelector(".watch-video video, video");
     const movieIdNow = () => (location.pathname.match(/^\/watch\/(\d+)/) || [])[1] || null;
@@ -70,17 +71,21 @@
         const { text } = await A.ask({ type: "text", url: t.url });
         return t.format === "ttml" || /^\s*</.test(text) ? parseTtml(text) : parseVtt(text);
     };
-    const isJa = (t) => /^ja\b/i.test(t.lang);
+    const isLang = (l) => (t) => new RegExp(`^${l}\\b`, "i").test(t.lang || "");
+    const isMain = (t) => isLang(state.lang)(t);
+    // the first language you learn that the title has subtitles for
+    const pick = (list) => A.learning().find((l) => list.some(isLang(l))) || "";
+    const names = () => A.learning().map((l) => A.LANG_NAMES[l]).join(" or ");
 
     function cleanup() {
         if (ov) { ov.destroy(); ov = null; }
         hideNative(false);
-        state = { movieId: null, main: null, translation: "" };
+        state = { movieId: null, main: null, translation: "", lang: "ja" };
     }
 
     async function useTrack(t) {
         state.main = t;
-        ov.setTracks(tracks.filter(isJa).map((x) => ({ id: x.url, label: x.label })), t.url);
+        ov.setTracks(tracks.filter(isMain).map((x) => ({ id: x.url, label: x.label })), t.url);
         try {
             const cues = await loadTrack(t);
             if (ov && state.main === t) await ov.setCues(cues, `${t.label}: ${cues.length} lines`);
@@ -88,7 +93,7 @@
     }
 
     async function useTranslation(url) {
-        const others = tracks.filter((t) => !isJa(t)).map((t) => ({ id: t.url, label: t.label }));
+        const others = tracks.filter((t) => !isMain(t)).map((t) => ({ id: t.url, label: t.label }));
         state.translation = url;
         ov.setTranslations(others, url);
         if (!url) { ov.setTranslation([]); return; }
@@ -96,8 +101,10 @@
     }
 
     let starting = false;
+    let lastLearn = A.learning().join();
     async function start() {
         const id = movieIdNow();
+        if (A.learning().join() !== lastLearn) { lastLearn = A.learning().join(); if (ov) cleanup(); }
         if (!id) { watchSince = 0; if (ov) cleanup(); return; }
         if (!watchSince) watchSince = Date.now();
         const v = video();
@@ -105,27 +112,31 @@
         if (ov && state.movieId === id) return;
         if (starting) return;
         tracks = byMovie.get(id) || (latest.at >= watchSince - 5000 ? latest.tracks : []);
-        if (!tracks.filter(isJa).length && caughtFor(id).some(isJa)) tracks = caughtFor(id);
+        if (!pick(tracks) && pick(caughtFor(id))) tracks = caughtFor(id);
         if (!tracks.length) {
             window.postMessage({ source: "akko-companion-ask", type: "nf-tracks", movieId: id }, "*");
-            hint("no subtitle list from Netflix yet: turn on Japanese subtitles in Netflix's subtitle menu");
+            hint(`no subtitle list from Netflix yet: turn on ${names()} subtitles in Netflix's subtitle menu`);
             return;
         }
-        const ja = tracks.filter(isJa);
-        if (!ja.length) { hint(`this title's subtitles: ${tracks.map((t) => t.lang).join(", ") || "none"}; no Japanese`); return; }
+        const lang = pick(tracks);
+        if (!lang) { hint(`this title's subtitles: ${tracks.map((t) => t.lang).join(", ") || "none"}; no ${names()}`); return; }
+        state.lang = lang;
+        const ja = tracks.filter(isMain);
         starting = true;
         try { await begin(id, v, ja); } finally { starting = false; }
     }
     async function begin(id, v, ja) {
+        const lang = state.lang;
         cleanup();
         state.movieId = id;
+        state.lang = lang;
         const container = v.closest(".watch-video") || v.parentElement;
         ov = A.overlay(container, site);
         hideNative(true);
         await useTrack(ja.find((t) => !/\[CC\]/.test(t.label)) || ja[0]);
         const want = A.prefs().translateTo || "en";
         const tr = A.prefs().translation === "off" ? null
-            : tracks.find((t) => !isJa(t) && t.lang.startsWith(want)) || tracks.find((t) => !isJa(t) && t.lang.startsWith("en")) || tracks.find((t) => !isJa(t) && t.cues);
+            : tracks.find((t) => !isMain(t) && t.lang.startsWith(want)) || tracks.find((t) => !isMain(t) && t.lang.startsWith("en")) || tracks.find((t) => !isMain(t) && t.cues);
         await useTranslation(tr ? tr.url : "");
     }
 
@@ -141,18 +152,17 @@
         const xml = /^\s*</.test(text);
         const cues = xml ? parseTtml(text) : parseVtt(text);
         if (!cues.length) return;
-        // which language: the file says so (TTML), or there's kana in it
+        // which language: the file says so (TTML), or what's in it
         const declared = xml ? (text.match(/xml:lang="([^"]+)"/) || [])[1] : "";
-        const sample = cues.slice(0, 40).map((c) => c.text).join("");
-        const lang = /[぀-ヿ]/.test(sample) ? "ja" : declared && !/^ja\b/i.test(declared) ? declared : "other";
-        const t = { lang, label: `${lang === "ja" ? "Japanese" : lang} (from Netflix's player)`, url: `caught:${lang}`, cues };
+        const lang = A.langOfText(cues.map((c) => c.text)) || declared || "other";
+        const t = { lang, label: `${A.LANG_NAMES[lang] || lang} (from Netflix's player)`, url: `caught:${lang}`, cues };
         const list = caughtFor(id).filter((x) => x.url !== t.url);
         caughtByMovie.set(id, [...list, t]);
         hint(`caught ${lang} subtitles (${cues.length} lines)`);
         if (!ov) { start(); return; }
         if (state.movieId !== id || !tracks.some((x) => x.cues)) return;     // the overlay uses Netflix's list
         tracks = caughtFor(id);
-        if (isJa(t)) useTrack(t);
+        if (isMain(t)) useTrack(t);
         else if (!state.translation) useTranslation(t.url);
     }
 
@@ -167,6 +177,7 @@
 
     const site = {
         name: "netflix",
+        get lang() { return state.lang; },
         video,
         recordable: "tab",                 // copy-protected: the line's audio and the picture come from the
         screenshot: "tab",                 // whole tab (background.js, offscreen.js), not the video
