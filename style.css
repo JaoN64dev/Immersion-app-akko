@@ -1682,3 +1682,7 @@ main .ex-say {position: absolute; right: 0; top: .7em; padding: 0 .45em; font-si
 .expr-box ol {margin: .2em 0 .3em;}
 :is(:root.theme-dark, :root.dark-auto) .expr-box {background: #12302d; border-left-color: #2dd4bf;}
 :is(:root.theme-dark, :root.dark-auto) .expr-box .expr-label {color: #5eead4;}
+
+/* the small word under each tab is translated (scripts/i18n.js); in Japanese it would repeat the
+   kanji label next to it, so it only shows there when that label is hidden (learning English) */
+html[lang="ja"] body:not(.target-en) .tab .tab-word {display: none;}

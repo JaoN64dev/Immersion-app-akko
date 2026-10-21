@@ -17,15 +17,15 @@
         <button type="button" class="menu-btn" aria-expanded="false" aria-controls="sidebar" aria-label="this page's menu">&#9776;</button>
         <a class="brand" href="/" translate="no">akko</a>
         <div class="topbar-tabs">
-            <a class="tab" href="/course.html"><span class="ja-only">道 </span><small translate="no">course</small></a>
-            <a class="tab" href="/"><span class="ja-only">観る </span><small translate="no">watch</small></a>
-            <a class="tab" href="/reading.html"><span class="ja-only">読む </span><small translate="no">read</small></a>
-            <a class="tab" href="/podcasts.html"><span class="ja-only">聴く </span><small translate="no">listen</small></a>
-            <a class="tab ja-only" href="/listening.html"><span class="ja-only">聴解 </span><small translate="no">drills</small></a>
-            <a class="tab" href="/grammar.html"><span class="ja-only">文法 </span><small translate="no">grammar</small></a>
-            <a class="tab" href="/review.html"><span class="ja-only">復習 </span><small translate="no">review</small></a>
-            <a class="tab" href="/settings.html" aria-current="page"><span class="ja-only">設定 </span><small translate="no">settings</small></a>
-            <a class="tab" href="/about.html"><span class="ja-only">私 </span><small translate="no">about</small></a>
+            <a class="tab" href="/course.html"><span class="ja-only">道 </span><small class="tab-word">course</small></a>
+            <a class="tab" href="/"><span class="ja-only">観る </span><small class="tab-word">watch</small></a>
+            <a class="tab" href="/reading.html"><span class="ja-only">読む </span><small class="tab-word">read</small></a>
+            <a class="tab" href="/podcasts.html"><span class="ja-only">聴く </span><small class="tab-word">listen</small></a>
+            <a class="tab ja-only" href="/listening.html"><span class="ja-only">聴解 </span><small class="tab-word">drills</small></a>
+            <a class="tab" href="/grammar.html"><span class="ja-only">文法 </span><small class="tab-word">grammar</small></a>
+            <a class="tab" href="/review.html"><span class="ja-only">復習 </span><small class="tab-word">review</small></a>
+            <a class="tab" href="/settings.html" aria-current="page"><span class="ja-only">設定 </span><small class="tab-word">settings</small></a>
+            <a class="tab" href="/about.html"><span class="ja-only">私 </span><small class="tab-word">about</small></a>
         </div>
     </nav>
     <div id="container">
@@ -90,6 +90,8 @@
                     <div class="choice-row" role="radiogroup" aria-label="interface language">
                         <button class="choice" data-lang="en" role="radio" translate="no"><b lang="en">English</b></button>
                         <button class="choice" data-lang="ja" role="radio" translate="no"><b lang="ja">日本語</b></button>
+                        <button class="choice" data-lang="pt" role="radio" translate="no"><b lang="pt">Português</b></button>
+                        <button class="choice" data-lang="es" role="radio" translate="no"><b lang="es">Español</b></button>
                     </div>
                 </div>
             </section>
@@ -156,7 +158,7 @@
                             </div>
                         </div>
                     </div>
-                    <p class="hint">The first time, Windows may ask whether akko can use the network: allow it on <b>private networks</b>. The phone keeps its own words and progress, like another browser: move them with Backup / Restore.</p>
+                    <p class="hint" data-i18n="phone-hint">The first time, Windows may ask whether akko can use the network: allow it on <b>private networks</b>. The phone keeps its own words and progress, like another browser: move them with Backup / Restore.</p>
                     <p id="phone-msg" class="status dark"></p>
                 </div>
             </section>
@@ -165,14 +167,14 @@
             <section id="companion-section" class="ja-only">
                 <h2 class="dashed-heading">YouTube and Netflix</h2>
                 <div class="note settings-note">
-                    <p>With the <b>akko companion</b> browser extension (Chrome or Edge), YouTube videos and Netflix titles with Japanese subtitles get akko's clickable subtitles: the dictionary, your word colours, and "+ mine" to Anki. Words you mark and mine while watching come back here, and the time counts for today and your streak.</p>
+                    <p data-i18n="companion-intro">With the <b>akko companion</b> browser extension (Chrome or Edge), YouTube videos and Netflix titles with Japanese subtitles get akko's clickable subtitles: the dictionary, your word colours, and "+ mine" to Anki. Words you mark and mine while watching come back here, and the time counts for today and your streak.</p>
                     <p id="companion-status" class="status dark">…</p>
                     <ol class="companion-steps">
-                        <li>In Chrome, open <b translate="no">chrome://extensions</b> (Edge: <b translate="no">edge://extensions</b>) and turn on <b>Developer mode</b>.</li>
+                        <li data-i18n="companion-step1">In Chrome, open <b translate="no">chrome://extensions</b> (Edge: <b translate="no">edge://extensions</b>) and turn on <b>Developer mode</b>.</li>
                         <li>Click <b>Load unpacked</b> and pick akko's extension folder: <button type="button" id="companion-open">open the extension folder</button> <span class="muted" id="companion-folder" translate="no"></span></li>
                         <li>Open a YouTube video with Japanese subtitles. akko needs to be open while you watch.</li>
                     </ol>
-                    <p class="hint">The folder comes with akko (and is updated with it: after an update, click the extension's reload arrow in chrome://extensions). It's also on each <a href="https://github.com/JaoN64dev/Immersion-app-akko/releases/latest" target="_blank" rel="noopener">release</a> as <b>akko-companion.zip</b>.</p>
+                    <p class="hint" data-i18n="companion-hint">The folder comes with akko (and is updated with it: after an update, click the extension's reload arrow in chrome://extensions). It's also on each <a href="https://github.com/JaoN64dev/Immersion-app-akko/releases/latest" target="_blank" rel="noopener">release</a> as <b>akko-companion.zip</b>.</p>
                 </div>
             </section>
 

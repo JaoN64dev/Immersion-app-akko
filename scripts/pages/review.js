@@ -88,7 +88,7 @@ function nothingDue() {
     const cards = store.get(CARDS, {});
     const learning = Object.keys(words).filter((w) => words[w] === "learning");
     if (!learning.length) {
-        return `<p class="review-empty">No words to review. Mark words as <b>learning</b> with key <kbd>2</kbd> while you watch or read (mining a word does it too).</p>`;
+        return `<p class="review-empty" data-i18n="review-empty">No words to review. Mark words as <b>learning</b> with key <kbd>2</kbd> while you watch or read (mining a word does it too).</p>`;
     }
     const next = learning.map((w) => cardOf(cards, w)).filter(Boolean).reduce((m, c) => Math.min(m, c.due), Infinity);
     const waiting = learning.filter((w) => !cardOf(cards, w)).length;
