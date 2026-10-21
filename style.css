@@ -1686,3 +1686,26 @@ main .ex-say {position: absolute; right: 0; top: .7em; padding: 0 .45em; font-si
 /* the small word under each tab is translated (scripts/i18n.js); in Japanese it would repeat the
    kanji label next to it, so it only shows there when that label is hidden (learning English) */
 html[lang="ja"] body:not(.target-en) .tab .tab-word {display: none;}
+
+/* Settings → Report a problem (scripts/pages/help.js) */
+.report-form label {display: block; margin: .5em 0;}
+.report-form textarea, .report-form input[type=email] {display: block; width: 100%; box-sizing: border-box; margin-top: .2em; font: inherit;}
+.report-form .check {display: flex; gap: .4em; align-items: baseline;}
+.report-preview pre {max-height: 18em; overflow: auto; font-size: .8em; white-space: pre-wrap; word-break: break-word; background: var(--bg-soft, #0001); padding: .6em; border-radius: 8px;}
+#report-msg.bad {color: #c0392b;}
+
+/* a page error: "report it?" (scripts/core/oops.js) */
+.oops {position: fixed; right: 16px; bottom: 16px; z-index: 9000; max-width: min(340px, calc(100vw - 32px)); background: var(--note-bg, #fff); color: var(--ink, #222);
+    border: 2px solid #e2725b; border-radius: 12px; padding: .7em 1em; box-shadow: 0 6px 22px #0004;}
+.oops p {margin: 0 0 .3em;}
+
+/* the welcome tour (scripts/core/tour.js) */
+.tour {position: fixed; z-index: 8000; width: min(300px, calc(100vw - 16px)); background: #ff6565; color: #fff; border-radius: 12px; padding: .7em .9em; box-shadow: 0 6px 22px #0005; font-size: .95em; line-height: 1.4;}
+.tour.floating {left: 50%; bottom: 16px; transform: translateX(-50%);}
+.tour p {margin: 0 0 .5em;}
+.tour .tour-actions {display: flex; align-items: center; gap: .5em; justify-content: space-between;}
+.tour .tour-count {opacity: .8; font-size: .85em;}
+.tour button {background: #fff; color: #c0392b; border: 0; border-radius: 8px; padding: .25em .7em; font-weight: bold; cursor: pointer;}
+.tour-target {outline: 3px solid #ff6565; outline-offset: 3px; border-radius: 6px; animation: tour-pulse 1.4s ease-in-out infinite;}
+@keyframes tour-pulse {50% {outline-color: #ff656555;}}
+@media (prefers-reduced-motion: reduce) {.tour-target {animation: none;}}

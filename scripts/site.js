@@ -14,6 +14,8 @@ import * as autoBackup from "./core/auto-backup.js";
 import * as themes from "./core/theme.js";
 import * as companion from "./core/companion.js";
 import * as wordsSync from "./core/words-sync.js";
+import * as tour from "./core/tour.js";
+import * as oops from "./core/oops.js";
 
 today.start();          // count today's minutes (watching, listening, reading)
 autoBackup.start();     // every few days, a backup to the server's data folder
@@ -166,6 +168,7 @@ function welcome() {
         const b = e.target.closest("[data-target]");
         if (!b) return;
         if (b.dataset.target === current) return close();
+        if (first) tour.begin(b.dataset.target);       // the very first choice: the welcome tour next
         setTarget(b.dataset.target);
         location.reload();
     });
@@ -177,3 +180,5 @@ function welcome() {
 
 if (!chosen() || (welcomeOn() && !shownThisTime() && !fromAkko())) welcome();
 markShown();
+tour.start();
+oops.start();

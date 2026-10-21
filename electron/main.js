@@ -11,7 +11,7 @@
 
 const path = require('path');
 const fs = require('fs');
-const { app, BrowserWindow, shell, dialog, Menu, Tray, nativeImage, screen, nativeTheme } = require('electron');
+const { app, BrowserWindow, shell, dialog, Menu, Tray, nativeImage, screen, nativeTheme, clipboard } = require('electron');
 
 // Its own port, so the desktop app and `npm start` (3000) can run at the same time.
 // Never change it: the pages' storage belongs to this address, so a new port = empty app.
@@ -123,6 +123,24 @@ function openWindow() {
 }
 
 const openBrowser = () => shell.openExternal(url);
+
+// a page of akko where akko is open: the app window, or the browser when akko lives in the tray
+function openPage(page) {
+  if (tray && !win) return shell.openExternal(url + page);
+  openWindow();
+  win.loadURL(url + page);
+}
+
+// Help → Copy diagnostics (server/diagnostics.js): what akko runs on, for asking for help
+async function copyDiagnostics() {
+  try {
+    const r = await fetch(url + '/api/diagnostics');
+    clipboard.writeText(JSON.stringify(await r.json(), null, 2));
+    dialog.showMessageBox({ type: 'info', message: 'The diagnostics are copied.', detail: "Paste them wherever you're asking for help. They say what akko runs on and how its parts are doing, nothing personal." });
+  } catch (err) {
+    dialog.showErrorBox('akko', `Couldn't get the diagnostics: ${err.message}`);
+  }
+}
 
 // ---------- links (every window: the main one, and any a link opens) ----------
 //
@@ -256,6 +274,9 @@ function buildMenu() {
     {
       label: 'Help',
       submenu: [
+        { label: 'Report a problem…', click: () => openPage('/settings.html#help-section') },
+        { label: 'Copy diagnostics', click: copyDiagnostics },
+        { type: 'separator' },
         { label: 'Check for updates', click: () => checkForUpdate({ quiet: false }) },
         { label: 'Project page', click: () => shell.openExternal('https://github.com/JaoN64dev/Immersion-app-akko') },
       ],

@@ -83,5 +83,12 @@ function setUpHere(tab) {
     const st = r.data || {};
     $("akko").textContent = st.ok ? `✓ akko ${st.version} at ${st.url.replace(/^https?:\/\//, "")}` : "✗ akko isn't running: open akko on this computer";
     $("akko").classList.add(st.ok ? "good" : "bad");
-    if (st.ok) { $("open-akko").href = st.url; $("open-akko").hidden = false; }
+    if (st.ok) {
+        $("open-akko").href = st.url;
+        $("open-akko").hidden = false;
+        // akko's Report a problem form, saying it's about the extension, which version, on which site
+        const q = new URLSearchParams({ report: "extension", ext: chrome.runtime.getManifest().version, site: host || "" });
+        $("report").href = `${st.url}/settings.html?${q}#help-section`;
+        $("report-wrap").hidden = false;
+    }
 })();

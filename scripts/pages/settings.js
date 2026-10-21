@@ -9,6 +9,7 @@ import { lang, setLang, t } from "../i18n.js";
 import { bindWordDisplay } from "../words/display.js";
 import * as backup from "../backup.js";
 import * as phone from "./phone.js";
+import * as help from "./help.js";
 import "./stats.js";
 
 // learning: switching reloads, since every page keeps that language's data
@@ -235,3 +236,6 @@ phone.init();
         });
     } catch { open.hidden = true; }
 })();
+
+// ---------- Help: report a problem, diagnostics ----------
+help.init();

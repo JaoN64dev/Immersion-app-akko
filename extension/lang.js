@@ -29,6 +29,7 @@
         ["(experimental)", "（試験的）", "(experimental)", "(experimental)"],
         ["open akko ↗", "akko を開く ↗", "abrir o akko ↗", "abrir akko ↗"],
         ["options", "オプション", "opções", "opciones"],
+        ["report a problem", "問題を報告", "relatar um problema", "informar un problema"],
         ["akko can't run on this page (Chrome's own pages and the Web Store are off-limits).", "このページでは akko を使えません（Chrome 自身のページとウェブストアは対象外です）。", "o akko não pode rodar nesta página (as páginas do próprio Chrome e a Web Store são proibidas).", "akko no puede funcionar en esta página (las páginas del propio Chrome y la Web Store están vedadas)."],
         ["✓ akko is on: drop a subtitle file in the language you learn on the video (another language for the translation).", "✓ akko がオンになりました: 学んでいる言語の字幕ファイルを動画の上にドロップしてください（ほかの言語は翻訳になります）。", "✓ o akko está ligado: solte sobre o vídeo um arquivo de legenda no idioma que você aprende (outro idioma vira a tradução).", "✓ akko está activado: suelta sobre el vídeo un archivo de subtítulos en el idioma que aprendes (otro idioma será la traducción)."],
         ["The video is inside a frame from {hosts}. akko needs your permission to work there.", "動画は {hosts} のフレームの中にあります。そこで動くには akko に許可が必要です。", "O vídeo está dentro de um quadro de {hosts}. O akko precisa da sua permissão para funcionar ali.", "El vídeo está dentro de un marco de {hosts}. akko necesita tu permiso para funcionar ahí."],

@@ -44,6 +44,7 @@
                 <li><a href="#dictionary-section">dictionaries</a></li>
                 <li><a href="#backup-section">backup / restore</a></li>
                 <li><a href="#phone-section">use on your phone</a></li>
+                <li><a href="#help-section">help / report a problem</a></li>
             </ul>
             </details>
             </nav>
@@ -219,6 +220,28 @@
                         <ul id="auto-backup-list" class="auto-backup-list"></ul>
                         <p class="hint">Kept in <code id="auto-backup-folder" translate="no">…</code></p>
                     </div>
+                </div>
+            </section>
+
+            <!-- HELP: report a problem, the diagnostics (server/diagnostics.js, scripts/pages/help.js) -->
+            <section id="help-section">
+                <h2 class="dashed-heading">Report a problem</h2>
+                <div class="note settings-note">
+                    <p>Something not working, or an idea? Tell me here. A report becomes an issue on akko's GitHub page (without your e-mail), where you can follow it.</p>
+                    <form id="report-form" class="report-form">
+                        <label>What happened? <textarea id="report-what" rows="3" required></textarea></label>
+                        <label>What did you expect instead? <small>(optional)</small> <textarea id="report-expected" rows="2"></textarea></label>
+                        <label>How to make it happen again <small>(optional)</small> <textarea id="report-steps" rows="2"></textarea></label>
+                        <label>Your e-mail, for a reply <small>(optional, never published)</small> <input id="report-contact" type="email" autocomplete="email"></label>
+                        <label>A picture of the problem <small>(optional)</small> <input id="report-picture" type="file" accept="image/png,image/jpeg,image/webp"></label>
+                        <label class="check"><input id="report-diag" type="checkbox" checked> include the diagnostics <small>(what akko runs on and its last error messages; nothing personal)</small></label>
+                        <details class="report-preview"><summary>exactly what will be sent</summary><pre id="report-preview" translate="no"></pre></details>
+                        <div class="row-buttons"><button type="submit">send the report</button></div>
+                        <p id="report-msg" class="status dark"></p>
+                    </form>
+                    <h3>Diagnostics</h3>
+                    <p class="hint">What akko runs on and how its parts are doing, to paste wherever you ask for help.</p>
+                    <div class="row-buttons"><button type="button" id="diag-copy">copy diagnostics</button> <span id="diag-msg" class="muted"></span></div>
                 </div>
             </section>
         </div>

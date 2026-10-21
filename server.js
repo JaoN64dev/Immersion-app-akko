@@ -16,7 +16,10 @@
 //   - /api/speech/voicevox  starts / installs VOICEVOX's engine            server/voicevox.js
 //   - /api/backups  automatic backups of what the pages saved               server/backups.js
 //   - /api/lan      using akko from a phone on the same Wi-Fi (off by default) server/lan.js
+//   - /api/diagnostics, /api/report   what akko runs on; reporting a problem  server/diagnostics.js
 
+// first: it keeps the warnings and errors every other part prints, for the diagnostics
+const diagnostics = require('./server/diagnostics');
 const path = require('path');
 const express = require('express');
 const subtitles = require('./server/subtitles');
@@ -61,6 +64,7 @@ app.use('/api/opensubs', opensubs.router);
 app.use('/api/listening', listening.router);
 // "is this akko?": how the browser extension finds akko among the programs on this computer
 app.get('/api/hello', (req, res) => res.json({ app: 'akko', version: require('./package.json').version }));
+app.use('/api', diagnostics.router);
 app.use('/api/backups', backups.router);
 app.use('/api/lan', lan.router);
 app.use('/api/companion', companion.router);
