@@ -28,6 +28,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { DATA } = require('./paths');
 const wordList = require('./words');
+const sync = require('./sync');
 
 const router = express.Router();
 const FILE = path.join(DATA, 'companion.json');
@@ -117,6 +118,7 @@ router.post('/log', express.json({ limit: '5mb' }), (req, res) => {
     if (!e) continue;
     added++;
     if (e.kind === 'status') { statuses[e.lang][e.lemma] = e.status; continue; }     // straight into the word list
+    if (e.kind === 'time') sync.addSeconds(e.lang, 'extension', e.day, e.seconds);    // today and the streak, once
     c.log.push({ seq: c.next++, at: now, ...e });
   }
   for (const lang of ['ja', 'en']) if (Object.keys(statuses[lang]).length) wordList.apply(lang, statuses[lang]);

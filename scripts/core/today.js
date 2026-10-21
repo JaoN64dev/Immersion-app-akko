@@ -5,6 +5,9 @@
 // scrolling used in the last minute).
 //
 // Saved per language you learn: "akko-days" (Japanese) / "akko-days-en": {"2026-10-05": seconds}.
+// Other devices' days (akko's other windows, browsers, phones, and the browser extension) come in
+// through scripts/core/sync.js as "akko-days-others" / -en {device: days}; "today" and the streak
+// add them all up.
 
 import { store } from "./utils.js";
 import { target } from "./target.js";
@@ -22,11 +25,22 @@ export function dayOf(date = new Date()) {
     return d.toISOString().slice(0, 10);
 }
 
-export const secondsOn = (lang, day = dayOf()) => store.get(daysKey(lang), {})[day] || 0;
+const OTHERS = { ja: "akko-days-others", en: "akko-days-others-en" };
+
+// every device's days added up
+export function allDays(lang) {
+    const days = { ...store.get(daysKey(lang), {}) };
+    for (const other of Object.values(store.get(OTHERS[lang === "en" ? "en" : "ja"], {}))) {
+        for (const [day, s] of Object.entries(other || {})) days[day] = (days[day] || 0) + (Number(s) || 0);
+    }
+    return days;
+}
+
+export const secondsOn = (lang, day = dayOf()) => allDays(lang)[day] || 0;
 
 // days in a row with some time, up to today (today not done yet doesn't break it)
 export function streak(lang, now = new Date()) {
-    const days = store.get(daysKey(lang), {});
+    const days = allDays(lang);
     const d = new Date(now);
     if (!((days[dayOf(d)] || 0) >= STREAK_MIN)) d.setDate(d.getDate() - 1);
     let n = 0;

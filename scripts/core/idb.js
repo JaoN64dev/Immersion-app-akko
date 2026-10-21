@@ -54,6 +54,7 @@ async function write(store, fn) {
 
 export const idbGet = (store, id) => run(store, "readonly", (s) => s.get(id));
 export const idbAll = (store) => run(store, "readonly", (s) => s.getAll());
+export const idbKeys = (store) => run(store, "readonly", (s) => s.getAllKeys());
 export const idbCount = (store) => run(store, "readonly", (s) => s.count());
 export const idbPut = (store, value) => write(store, (s) => s.put(value));
 export const idbPutMany = (store, values) => write(store, (s) => { values.forEach((v) => s.put(v)); });

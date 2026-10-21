@@ -17,6 +17,7 @@
 //   - /api/backups  automatic backups of what the pages saved               server/backups.js
 //   - /api/lan      using akko from a phone on the same Wi-Fi (off by default) server/lan.js
 //   - /api/diagnostics, /api/report   what akko runs on; reporting a problem  server/diagnostics.js
+//   - /api/sync     everything else in step between windows, browsers, phones server/sync.js
 
 // first: it keeps the warnings and errors every other part prints, for the diagnostics
 const diagnostics = require('./server/diagnostics');
@@ -41,6 +42,7 @@ const backups = require('./server/backups');
 const lan = require('./server/lan');
 const companion = require('./server/companion');
 const words = require('./server/words');
+const sync = require('./server/sync');
 
 const hostname = '127.0.0.1';
 
@@ -69,6 +71,7 @@ app.use('/api/backups', backups.router);
 app.use('/api/lan', lan.router);
 app.use('/api/companion', companion.router);
 app.use('/api/words', words.router);
+app.use('/api/sync', sync.router);
 app.use('/api/speech/voicevox', voicevox.router);
 app.use('/api/speech', speech.router);
 

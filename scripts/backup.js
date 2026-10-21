@@ -11,6 +11,7 @@ import { keyFor } from "./core/target.js";
 import { buildBackup, readBackup, applyBackup } from "./core/backup-file.js";
 import { autoBackupOn, setAutoBackup, backupNow } from "./core/auto-backup.js";
 import { restored as wordsRestored } from "./core/words-sync.js";
+import { restored as syncRestored } from "./core/sync.js";
 
 const summary = $("#backup-summary");
 const msg = $("#backup-msg");
@@ -54,6 +55,7 @@ async function restoreFrom(text) {
     try {
         await applyBackup(file);
         wordsRestored();             // the shared word list becomes the backup's (scripts/core/words-sync.js)
+        syncRestored();              // and the rest of what's shared (scripts/core/sync.js)
     } catch (err) {
         msg.textContent = "restore failed: " + err.message;
         return;

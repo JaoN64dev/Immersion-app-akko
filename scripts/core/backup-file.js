@@ -6,6 +6,8 @@
 import { idbAll, idbReplace, IDB_STORES } from "./idb.js";
 
 const PREFIX = "akko-";
+// where the sync got to and the other devices' time: they come back from akko's server (scripts/core/sync.js)
+const NOT_BACKED_UP = new Set(["akko-sync", "akko-days-others", "akko-days-others-en"]);
 export const APP = "akko-immersion";
 
 export function ourKeys() {
@@ -22,7 +24,7 @@ export function ourKeys() {
 // everything, as the backup file's text
 export async function buildBackup() {
     const data = {};
-    ourKeys().forEach((k) => { data[k] = localStorage.getItem(k); });
+    ourKeys().filter((k) => !NOT_BACKED_UP.has(k)).forEach((k) => { data[k] = localStorage.getItem(k); });
     const idb = {};
     for (const s of IDB_STORES) idb[s] = await idbAll(s).catch(() => []);
     return JSON.stringify({ app: APP, version: 3, exported: new Date().toISOString(), data, idb });

@@ -14,6 +14,7 @@ import * as autoBackup from "./core/auto-backup.js";
 import * as themes from "./core/theme.js";
 import * as companion from "./core/companion.js";
 import * as wordsSync from "./core/words-sync.js";
+import * as sync from "./core/sync.js";
 import * as tour from "./core/tour.js";
 import * as oops from "./core/oops.js";
 
@@ -22,6 +23,7 @@ autoBackup.start();     // every few days, a backup to the server's data folder
 themes.start();         // light / dark
 companion.start();      // the browser extension: what you did on YouTube / Netflix comes in
 wordsSync.start();      // one word list for every window, phone and the extension (server/words.js)
+sync.start();           // the rest in step too: positions, 復習, mined words, the library… (server/sync.js)
 
 // ---------- ? shows this page's keys ----------
 // (the same list as the sidebar's "Keys", which is usually folded away)

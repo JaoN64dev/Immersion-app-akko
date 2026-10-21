@@ -3,7 +3,9 @@
 // (scripts/site.js), in the desktop app's window too, every 20 seconds and when the page comes
 // back to the front:
 //   - what you did while watching comes in: mined words (into the mined list, so they show in
-//     Stats and in 復習 with their sentence, and the line's audio and picture: scripts/core/media.js) and the time, which counts for "today" and the streak.
+//     Stats and in 復習 with their sentence, and the line's audio and picture: scripts/core/media.js). The
+//     time counts for "today" and the streak through the server (server/companion.js adds it as a
+//     device of its own, scripts/core/sync.js brings it here), so two akko windows don't count it twice.
 //     How far into the extension's log this window got: "akko-companion-at".
 //   - your Anki settings, your language, the language you're learning and the interface's go out
 //     to the extension. (Word statuses don't pass here:
@@ -13,7 +15,6 @@
 
 import { store } from "./utils.js";
 import { idbPutMany } from "./idb.js";
-import { daysKey } from "./today.js";
 import { keepMedia } from "./media.js";
 import { target } from "./target.js";
 
@@ -26,14 +27,12 @@ let sent = "";
 const local = () => /^(127\.0\.0\.1|localhost)$/.test(location.hostname);    // a phone has its own word list
 
 function apply(entries) {
-    const days = { ja: store.get(daysKey("ja"), {}), en: store.get(daysKey("en"), {}) };
     const watched = store.get(WATCHED, {});
     const mined = [];
     let timeChanged = false;
     for (const e of entries) {
         const lang = e.lang === "en" || (e.item && e.item.lang === "en") ? "en" : "ja";
         if (e.kind === "time") {
-            days[lang][e.day] = (days[lang][e.day] || 0) + e.seconds;
             const key = e.key || e.url || e.title;
             const w = watched[key] || { site: e.site, title: e.title, url: e.url, seconds: 0, when: 0 };
             watched[key] = { ...w, title: e.title || w.title, url: e.url || w.url, seconds: w.seconds + e.seconds, when: Math.max(w.when, e.at), lang };
@@ -43,7 +42,6 @@ function apply(entries) {
         }
     }
     if (timeChanged) {
-        for (const lang of ["ja", "en"]) store.set(daysKey(lang), days[lang]);
         const newest = Object.entries(watched).sort((a, b) => b[1].when - a[1].when).slice(0, KEEP_WATCHED);
         store.set(WATCHED, Object.fromEntries(newest));
     }
