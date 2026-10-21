@@ -33,20 +33,21 @@ test('phone access: off by default, PIN to sign in, the computer alone changes i
   app.get('/lan-login', lan.loginPage);
   app.get('/api/x', (req, res) => res.json({ ok: true }));
   app.get('/', (req, res) => res.send('home'));
-  // phone access answers on the main port + 1: pick a port whose neighbour is free (other test
-  // files run side by side and have servers of their own)
-  const freeNext = (p) => new Promise((r) => { const t = net.createServer().once('error', () => r(false)).listen(p + 1, '0.0.0.0', () => t.close(() => r(true))); });
-  let main = null;
-  for (let i = 0; i < 20 && !main; i++) {
-    const s = await new Promise((r) => { const x = app.listen(0, '127.0.0.1', () => r(x)); });
-    if (await freeNext(s.address().port)) main = s; else s.close();
-  }
+  // phone access normally answers on the main port + 1. Here it gets a free port of its own, away
+  // from the ones the system hands out (other test files run side by side, with servers of their
+  // own, and on Windows those come one after another: the neighbour is often taken)
+  const free = (p) => new Promise((r) => { const t = net.createServer().once('error', () => r(false)).listen(p, '0.0.0.0', () => t.close(() => r(true))); });
+  let lanPort = 0;
+  for (let i = 0; i < 50 && !lanPort; i++) { const p = 20000 + Math.floor(Math.random() * 10000); if (await free(p)) lanPort = p; }
+  const main = await new Promise((r) => { const x = app.listen(0, '127.0.0.1', () => r(x)); });
   const port = main.address().port;
-  const lanPort = port + 1;
-  lan.start(app, port);
+  lan.start(app, port, lanPort);
   try {
-    // off: nothing answers on the second port
-    await assert.rejects(ask(lanPort));
+    // off: the second address isn't listening (asked of akko, not the port: another test file's
+    // server may happen to take that port meanwhile)
+    const off = JSON.parse((await ask(port, { path: '/api/lan' })).body);
+    assert.equal(off.enabled, false);
+    assert.equal(off.running, false);
     // the computer turns it on
     const on = JSON.parse((await ask(port, { method: 'POST', path: '/api/lan', body: { enabled: true } })).body);
     assert.equal(on.enabled, true);

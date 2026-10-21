@@ -94,10 +94,10 @@ function close() {
   if (server) { server.close(); server.closeAllConnections?.(); server = null; }
 }
 
-// server.js: after the main server is up
-function start(expressApp, mainPort) {
+// server.js: after the main server is up. The phone address is the next port (own: another one, for tests)
+function start(expressApp, mainPort, own = 0) {
   app = expressApp;
-  lanPort = mainPort + 1;
+  lanPort = own || mainPort + 1;
   listen();
 }
 
