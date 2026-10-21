@@ -9,15 +9,21 @@ import { PROGRESS_KEY as GRAMMAR_KEY } from "./grammar/lessons.js";
 import { keyFor, ofTarget, learningEnglish, understood } from "./core/target.js";
 import { readingOf } from "./reader/library.js";
 import { WATCHED as COMPANION_KEY } from "./core/companion.js";
+import { EXPRESSIONS_KEY } from "./words/render.js";
 
 const MANGA_KEY = "akko-manga";             // manga is Japanese only
 const POD_KEY = keyFor("akko-podcast-progress");
 const WORDS_KEY = keyFor("akko-words");
 
+// expressions (首を長くする, give up) share the word list but are counted on their own
 export function wordStats() {
     const words = store.get(WORDS_KEY, {});
-    const c = { known: 0, learning: 0, ignored: 0 };
-    Object.values(words).forEach((s) => { c[s] = (c[s] || 0) + 1; });
+    const met = store.get(EXPRESSIONS_KEY, {});
+    const c = { known: 0, learning: 0, ignored: 0, expressions: { met: Object.keys(met).length, known: 0 } };
+    Object.entries(words).forEach(([w, s]) => {
+        if (w in met) { if (s === "known") c.expressions.known++; return; }
+        c[s] = (c[s] || 0) + 1;
+    });
     return c;
 }
 

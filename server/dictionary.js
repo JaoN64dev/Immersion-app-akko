@@ -22,12 +22,15 @@ const { UA, cached, fetchText, asyncRoute } = require('./http');
 const grammar = require('./grammar');
 const english = require('./english');
 const dictionaries = require('./dictionaries');
+const { ExpressionIndex, meaningfulJa, hasKanji: anyKanji } = require('./expressions');
 
 const { DATA } = require('./paths');
 const DICT_FILE = path.join(DATA, 'dict.json');
 const ZIP_FILE = path.join(DATA, 'jmdict.zip');
 const KANJI_FILE = path.join(DATA, 'kanji.json');
 const ACCENTS_FILE = path.join(DATA, 'accents.txt');
+const EXPRESSIONS_FILE = path.join(DATA, 'expressions.json');
+const EXPRESSIONS_VERSION = 2;     // bump when the way expressions are indexed changes
 const ACCENTS_URL = 'https://raw.githubusercontent.com/mifunetoshiro/kanjium/master/data/source_files/raw/accents.txt';
 
 let dict = null;          // { entries (an Entries), tags, version }
@@ -35,7 +38,9 @@ let index = null;         // Map(text -> entry number, or [entry numbers] when s
 let tokenizer = null;
 let kanji = null;         // { 雨: {m, on, kun, j, s, g} }
 let pitch = null;         // Map("word\treading" -> [accent numbers])
-const ready = { dict: false, tokenizer: false, kanji: false, pitch: false, error: null };
+let expressions = null;   // ExpressionIndex (server/expressions.js), once built
+let expressionCandidates = [];   // [{key, forms, kind}] from JMdict, gathered while indexing it
+const ready = { dict: false, tokenizer: false, kanji: false, pitch: false, expressions: false, error: null };
 
 // ---------- downloads ----------
 
@@ -158,6 +163,7 @@ function readDict(buf) {
 // Put a word dictionary in use. Lookups keep using the old one until the new one is indexed.
 function useDict(d) {
   const idx = new Map();
+  const candidates = [];
   d.entries.forEach((e, i) => {
     for (const text of new Set([...e.k, ...e.r, ...(e.h || [])])) {
       const v = idx.get(text);
@@ -165,10 +171,67 @@ function useDict(d) {
       else if (typeof v === 'number') idx.set(text, [v, i]);
       else v.push(i);
     }
+    // expressions, idioms, proverbs, four-character idioms: indexed by their words later
+    const idiom = e.s.some((sense) => (sense.m || []).some((m) => m === 'id' || m === 'proverb' || m === 'yoji'));
+    if (idiom || e.s.some((sense) => sense.p.includes('exp'))) {
+      const forms = (e.k.length ? e.k : e.r).filter(anyKanji);
+      if (forms.length) candidates.push({ key: forms[0], forms, kind: idiom ? 'i' : 'p' });
+    }
   });
   dict = d;
   index = idx;
+  expressionCandidates = candidates;
   ready.dict = true;
+  // a new dictionary (Settings → Dictionaries): its expressions are indexed again
+  if (ready.expressions) { ready.expressions = false; expressions = null; buildExpressions().catch((err) => console.error('expressions failed:', err.message)); }
+}
+
+// ---------- expressions (server/expressions.js) ----------
+
+// the dictionary forms of a text's words, as tokenizeLine gives them
+function wordForms(text) {
+  const groups = groupTokens(tokenizer.tokenize(text));
+  const out = [];
+  for (const g of groups) {
+    const s = g.tokens.map((t) => t.surface_form).join('');
+    if (g.head.pos === '記号' || !/[\p{L}\p{N}]/u.test(s)) continue;
+    out.push(lemmaOf(g, s));
+  }
+  return out;
+}
+
+// Indexes JMdict's expressions by their words: from the cache file when it was made from this
+// dictionary, else built in the background (a few seconds, letting requests through) and saved.
+async function buildExpressions() {
+  if (!dict || !tokenizer) return;
+  const stamp = `${EXPRESSIONS_VERSION}:${dict.version || ''}:${dict.entries.length}`;
+  try {
+    const cache = JSON.parse(fs.readFileSync(EXPRESSIONS_FILE, 'utf8'));
+    if (cache.stamp === stamp) {
+      expressions = ExpressionIndex.fromList(cache.ja);
+      ready.expressions = true;
+      console.log(`expressions: ${expressions.size} ready`);
+      return;
+    }
+  } catch { /* no cache yet */ }
+  const started = Date.now();
+  const built = new ExpressionIndex();
+  const list = expressionCandidates;
+  for (let i = 0; i < list.length; i++) {
+    const { key, forms, kind } = list[i];
+    for (const form of forms) {
+      const seq = wordForms(form);
+      if (seq.length >= 2 && seq.length <= 12 && meaningfulJa(seq)) built.add(key, seq, kind);
+    }
+    if (i % 400 === 399) await new Promise((r) => setImmediate(r));       // let other requests through
+  }
+  expressions = built.finish();
+  ready.expressions = true;
+  console.log(`expressions: ${expressions.size} indexed (${Date.now() - started} ms)`);
+  try {
+    fs.mkdirSync(DATA, { recursive: true });
+    fs.writeFileSync(EXPRESSIONS_FILE, JSON.stringify({ stamp, ja: expressions.toList() }));
+  } catch { /* next start builds it again */ }
 }
 const hitsOf = (text) => { const v = index.get(text); return v === undefined ? null : typeof v === 'number' ? [v] : v; };
 
@@ -339,7 +402,10 @@ function init() {
   // kanji + pitch are extras: if they fail, lookups still work without them
   loadKanji().catch((err) => console.error('kanji data failed:', err.message));
   loadPitch().catch((err) => console.error('pitch accent data failed:', err.message));
-  return Promise.all([loadDict(), loadTokenizer()]).catch((err) => {
+  return Promise.all([loadDict(), loadTokenizer()]).then(() => {
+    // after both: needs the dictionary's expressions and the word splitter
+    buildExpressions().catch((err) => console.error('expressions failed:', err.message));
+  }).catch((err) => {
     ready.error = err.message;
     console.error('dictionary/tokenizer failed:', err.message);
   });
@@ -436,6 +502,7 @@ function tokenizeLine(line) {
     out.push(tok);
   }
   markGrammar(raw, groups, out);
+  if (expressions) expressions.mark(out);
   return out;
 }
 

@@ -1,13 +1,32 @@
 // Turning Japanese (or English) text into clickable, coloured words (used by every page)
 
-import { escapeHtml, postJson } from "../core/utils.js";
+import { escapeHtml, postJson, store } from "../core/utils.js";
 import { wordStatus, counts, isUnknown } from "./status.js";
-import { target } from "../core/target.js";
+import { target, keyFor } from "../core/target.js";
+
+// The expressions met so far (idioms seen in a text, any expression given a status in the popup):
+// key -> when first met, for the stats page's "idioms known / met". Saved a moment later, once.
+export const EXPRESSIONS_KEY = keyFor("akko-expressions");
+let metLater = null;
+export function noteExpression(key) {
+    if (!metLater) {
+        metLater = new Set();
+        setTimeout(() => {
+            const met = store.get(EXPRESSIONS_KEY, {});
+            let added = false;
+            for (const k of metLater) if (!met[k]) { met[k] = Date.now(); added = true; }
+            metLater = null;
+            if (added) store.set(EXPRESSIONS_KEY, met);
+        }, 1000);
+    }
+    metLater.add(key);
+}
 
 const segmenter = "Segmenter" in Intl ? new Intl.Segmenter(target(), { granularity: "word" }) : null;
 
 // A token from /api/tokenize: {s: surface, b: dictionary form, f: furigana parts, c: counts as a word, n: name,
-// gr: ids of grammar lessons it's part of}.
+// gr: ids of grammar lessons it's part of, ex: the expression it's part of (首を長くする, give up),
+// et: that expression's kind ("i" idiom: underlined, "p" everyday phrase: popup only; server/expressions.js)}.
 // offset (optional) = where the token starts in its line, kept as data-o for finding the sentence.
 export function tokenHtml(t, offset) {
     if (t.s === "\n") return "<br>";
@@ -17,7 +36,9 @@ export function tokenHtml(t, offset) {
         : escapeHtml(t.s);
     const cls = t.c ? `w s-${wordStatus(t.b)}` : t.n ? "w name" : "w g";
     const gr = t.gr ? ` data-gr="${escapeHtml(t.gr.join(" "))}"` : "";
-    return `<span class="${cls}" data-b="${escapeHtml(t.b)}"${t.c ? ` data-c="1"` : ""}${gr}${offset !== undefined ? ` data-o="${offset}"` : ""}>${inner}</span>`;
+    if (t.ex && t.et === "i") noteExpression(t.ex);
+    const ex = t.ex ? ` data-ex="${escapeHtml(t.ex)}" data-et="${t.et === "i" ? "i" : "p"}" data-exs="${wordStatus(t.ex)}"` : "";
+    return `<span class="${cls}" data-b="${escapeHtml(t.b)}"${t.c ? ` data-c="1"` : ""}${gr}${ex}${offset !== undefined ? ` data-o="${offset}"` : ""}>${inner}</span>`;
 }
 
 export function tokensHtml(tokens, { offsets = false } = {}) {
@@ -45,6 +66,30 @@ export function recolor(root) {
         const flash = w.classList.contains("flash");
         w.className = `w s-${wordStatus(w.dataset.b)}${flash ? " flash" : ""}`;
     });
+    // an expression's underline goes once it's known
+    root.querySelectorAll(".w[data-ex]").forEach((w) => { w.dataset.exs = wordStatus(w.dataset.ex); });
+}
+
+// The text of the whole expression a word is part of: the neighbouring words with the same data-ex
+// (and, in English, the spaces between them)
+export function expressionText(w) {
+    const key = w.dataset.ex;
+    const same = (n) => n && n.nodeType === 1 && n.dataset && n.dataset.ex === key;
+    const gap = (n) => n && n.nodeType === 3 && /^[ \t]*$/.test(n.nodeValue);
+    let first = w;
+    for (;;) {
+        let p = first.previousSibling;
+        if (gap(p) && same(p.previousSibling)) p = p.previousSibling;
+        if (!same(p)) break;
+        first = p;
+    }
+    let text = "";
+    for (let n = first; n; n = n.nextSibling) {
+        if (same(n)) text += plainText(n);
+        else if (gap(n) && same(n.nextSibling)) text += n.nodeValue;
+        else break;
+    }
+    return text;
 }
 
 // text of an element without the furigana

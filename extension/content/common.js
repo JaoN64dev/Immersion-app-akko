@@ -203,6 +203,8 @@
 .w:hover {background: #ff5a7acc;}
 .w.new {text-decoration: underline #ff5a7a .12em; text-underline-offset: .22em;}
 .w.learning {text-decoration: underline #f2c94c .12em; text-underline-offset: .22em;}
+/* idioms (膝が笑う, 首を長くする): a teal line under the whole expression until it's known */
+.w[data-et="i"]:not([data-exs="known"]):not([data-exs="ignored"]) {box-shadow: inset 0 -.14em 0 #5eead4;}
 rt {font-size: .5em; color: #f0f0f0;}
 .pill {position: absolute; top: 12px; right: 12px; pointer-events: auto; display: flex; gap: 6px; align-items: center; font: 600 13px/1.2 system-ui, sans-serif;}
 .pill button, .panel button, .popup button {font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid #ffffff55; background: #000000b3; color: #fff; padding: 4px 10px;}
@@ -236,6 +238,9 @@ rt {font-size: .5em; color: #f0f0f0;}
 .popup .say {padding: 0 6px; margin-left: 6px; font-size: .9em;}
 .popup .pitch {display: inline-block; margin-left: 8px; color: #384775; font-family: "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;}
 .popup .pitch small {margin-left: 2px;}
+.popup .expr {margin: 0 0 8px; padding: 6px 8px; border-radius: 8px; background: #e6f6f4; border-left: 4px solid #14a89b;}
+.popup .expr .lbl {display: block; font-size: .78em; font-weight: 700; color: #0f766e;}
+.popup .expr .st {margin: 6px 0 0;}
 .popup .extra {border-top: 1px dashed #ccc; margin-top: 8px; padding-top: 6px; font-size: .9em;}
 .popup .extra p {margin: 2px 0;}
 .popup .extra b {font-family: "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif; font-size: 1.15em;}
@@ -321,7 +326,20 @@ rt {font-size: .5em; color: #f0f0f0;}
             const ruby = t.f && (prefs.furigana === "always" || (prefs.furigana === "unknown" && isUnknown(t.b)))
                 ? t.f.map((p) => (p.r ? `<ruby>${esc(p.t)}<rt>${esc(p.r)}</rt></ruby>` : esc(p.t))).join("") : esc(t.s);
             const gr = t.gr && t.gr.length ? ` data-gr="${esc(t.gr.join(" "))}"` : "";
-            return `<span class="w${cls}" data-b="${esc(t.b)}"${gr}>${ruby}</span>`;
+            // the idiom or set phrase it's part of (server/expressions.js)
+            const ex = t.ex ? ` data-ex="${esc(t.ex)}" data-et="${t.et === "i" ? "i" : "p"}" data-exs="${statusOf(t.ex)}"` : "";
+            return `<span class="w${cls}" data-b="${esc(t.b)}"${gr}${ex}>${ruby}</span>`;
+        }
+        // a word's text without its furigana
+        const plainOf = (w) => [...w.childNodes].map((n) => (n.nodeName === "RUBY" ? [...n.childNodes].filter((x) => x.nodeName !== "RT").map((x) => x.textContent).join("") : n.textContent)).join("");
+        // the whole expression a word is part of, as written here: its neighbours with the same data-ex
+        function expressionText(w) {
+            const same = (n) => n && n.nodeType === 1 && n.dataset.ex === w.dataset.ex;
+            let first = w;
+            while (same(first.previousSibling)) first = first.previousSibling;
+            let text = "";
+            for (let n = first; same(n); n = n.nextSibling) text += plainOf(n);
+            return text;
         }
         const lineHtml = (c) => { const tokens = tokenCache.get(c.text); return tokens ? tokens.map(wordHtml).join("") : esc(c.text); };
         // i+1: exactly one word you don't know yet, the best sentences to mine
@@ -461,10 +479,11 @@ rt {font-size: .5em; color: #f0f0f0;}
 
         async function lookup(w) {
             const lemma = w.dataset.b;
-            const plain = [...w.childNodes].map((n) => (n.nodeName === "RUBY" ? [...n.childNodes].filter((x) => x.nodeName !== "RT").map((x) => x.textContent).join("") : n.textContent)).join("");
+            const plain = plainOf(w);
+            const expression = w.dataset.ex ? { key: w.dataset.ex, kind: w.dataset.et, text: expressionText(w) } : null;
             // a word in the transcript: its own line is the sentence for the card
             const li = w.closest("li[data-i]");
-            popupWord = { lemma, el: w, surface: plain, grammar: (w.dataset.gr || "").split(" ").filter(Boolean), cue: li ? Number(li.dataset.i) : null };
+            popupWord = { lemma, el: w, surface: plain, expression, grammar: (w.dataset.gr || "").split(" ").filter(Boolean), cue: li ? Number(li.dataset.i) : null };
             const v = site.video();
             if (v && !v.paused) { v.pause(); pausedByHover = true; }
             ui.popup.innerHTML = `<div class="head"><b>${esc(plain)}</b><button class="x" title="close (Esc)">✕</button></div><p class="msg">辞書を引いています…</p>`;
@@ -475,8 +494,11 @@ rt {font-size: .5em; color: #f0f0f0;}
                 [...new Set([lemma, plain].filter(Boolean))].forEach((q) => qs.append("q", q));
                 qs.set("form", plain);
                 qs.set("lang", "ja");
-                const r = await api(`/api/dict?${qs}`);
+                // the expression the word is part of, looked up at the same time
+                const [r, ex] = await Promise.all([api(`/api/dict?${qs}`),
+                    expression ? api(`/api/dict?${new URLSearchParams({ q: expression.key, lang: "ja" })}`).catch(() => null) : null]);
                 if (!popupWord || popupWord.el !== w) return;
+                if (expression && ex && ex.entries && ex.entries[0]) expression.entry = ex.entries[0];
                 await renderEntries(r, lemma, plain);
                 if (!popupWord || popupWord.el !== w) return;
                 place(w);
@@ -485,10 +507,23 @@ rt {font-size: .5em; color: #f0f0f0;}
             }
         }
 
-        function statusButtons(lemma) {
+        // attr: data-st for the clicked word (keys 1-4), data-xst for the expression it's part of
+        function statusButtons(lemma, attr = "data-st") {
             const now = statusOf(lemma);
-            return `<div class="st">${[["new", "1 new"], ["learning", "2 learning"], ["known", "3 known ✓"], ["ignored", "4 ignore"]]
-                .map(([s, label]) => `<button data-st="${s}" class="${now === s ? "on" : ""}">${label}</button>`).join("")}</div>`;
+            const keys = attr === "data-st";
+            return `<div class="st">${[["new", "new"], ["learning", "learning"], ["known", "known ✓"], ["ignored", "ignore"]]
+                .map(([s, label], i) => `<button ${attr}="${s}" class="${now === s ? "on" : ""}">${keys ? `${i + 1} ` : ""}${label}</button>`).join("")}</div>`;
+        }
+        // the idiom or set phrase the word is part of, above the word's own entry: its meaning is
+        // usually not its words' (膝が笑う: knees giving way, not "knee" + "laugh")
+        function expressionHtml(ex) {
+            if (!ex || !ex.entry) return "";
+            const e = ex.entry;
+            return `<div class="expr"><span class="lbl">${ex.kind === "i" ? "慣用句 idiom" : "表現 phrase"} · この単語を含む</span>
+                <button class="mine xmine">+ mine</button>
+                <span class="hw">${esc(e.word)}</span><span class="rd">${e.reading && e.reading !== e.word ? esc(e.reading) : ""}</span>
+                <ol>${e.senses.slice(0, 3).map((x) => `<li>${esc(x.gloss.join("; "))}</li>`).join("")}</ol>
+                ${statusButtons(ex.key, "data-xst")}</div>`;
         }
 
         async function renderEntries(r, lemma, plain) {
@@ -502,6 +537,7 @@ rt {font-size: .5em; color: #f0f0f0;}
             ui.popup.innerHTML = `<div class="head"><b>${esc(plain)}</b>${lemma && lemma !== plain ? `<span>→ ${esc(lemma)}</span>` : ""}<button class="x" title="close (Esc)">✕</button></div>
                 ${r.inflection && r.inflection.length ? `<p class="infl">${esc(plain)} = ${esc(r.query || lemma)} + ${esc(r.inflection.join(" + "))}</p>` : ""}
                 ${lemma ? statusButtons(lemma) : ""}
+                ${expressionHtml(popupWord && popupWord.expression)}
                 ${entries.length ? entries.slice(0, 4).map((e, i) => `<div class="entry">
                     <button class="mine" data-i="${i}">+ mine</button>
                     <span class="hw">${esc(e.word)}</span><span class="rd">${e.reading && e.reading !== e.word ? esc(e.reading) : ""}</span>${e.common ? `<span class="tag">common</span>` : ""}<button class="say" data-i="${i}" title="hear it">🔊</button>
@@ -514,7 +550,12 @@ rt {font-size: .5em; color: #f0f0f0;}
                 </div>` : ""}`;
             ui.popup.querySelector(".x").onclick = closePopup;
             ui.popup.querySelectorAll("[data-st]").forEach((b) => { b.onclick = () => markWord(lemma, b.dataset.st); });
-            ui.popup.querySelectorAll(".mine").forEach((b) => { b.onclick = () => mine(entries[Number(b.dataset.i)], b); });
+            ui.popup.querySelectorAll(".mine:not(.xmine)").forEach((b) => { b.onclick = () => mine(entries[Number(b.dataset.i)], b); });
+            // the expression: its own status, and mined as itself (the whole phrase bold in the sentence)
+            const ex = popupWord && popupWord.expression;
+            ui.popup.querySelectorAll("[data-xst]").forEach((b) => { b.onclick = () => markWord(ex.key, b.dataset.xst); });
+            const xmine = ui.popup.querySelector(".xmine");
+            if (xmine) xmine.onclick = () => mine({ ...ex.entry, word: ex.key }, xmine, ex.text);
             ui.popup.querySelectorAll(".say").forEach((b) => { b.onclick = () => say(entries[Number(b.dataset.i)], b); });
         }
 
@@ -545,6 +586,9 @@ rt {font-size: .5em; color: #f0f0f0;}
             try { await setStatus(lemma, status); } catch (err) { toast(err.message, true); return; }
             if (popupWord && popupWord.lemma === lemma) {
                 ui.popup.querySelectorAll("[data-st]").forEach((b) => b.classList.toggle("on", b.dataset.st === status));
+            }
+            if (popupWord && popupWord.expression && popupWord.expression.key === lemma) {
+                ui.popup.querySelectorAll("[data-xst]").forEach((b) => b.classList.toggle("on", b.dataset.xst === status));
             }
             toast(`${lemma}: ${status}`);
         }
@@ -656,7 +700,8 @@ rt {font-size: .5em; color: #f0f0f0;}
             return canvas.toDataURL("image/jpeg", 0.85).split(",")[1];
         }
 
-        async function mine(entry, btn) {
+        // surface: what's bold in the sentence (an expression's own text), else the clicked word
+        async function mine(entry, btn, surface = "") {
             if (!entry) return;
             const c = popupWord && popupWord.cue !== null ? cues[popupWord.cue]
                 : cues[shown] || (site.video() ? cues[lineAt(cues, timeNow(site.video()))] : null);
@@ -675,7 +720,7 @@ rt {font-size: .5em; color: #f0f0f0;}
                     reading: entry.reading || "",
                     pitch: ((entry.pitch || []).find((p) => p.reading === entry.reading) || {}).accents || [],
                     meaning: entry.senses.slice(0, 3).map((s) => s.gloss.join("; ")).join(" / "),
-                    surface: popupWord ? popupWord.surface : "",
+                    surface: surface || (popupWord ? popupWord.surface : ""),
                     sentence: c ? c.text.replace(/\n/g, " ") : "",
                     translation: c ? cues2.filter((x) => x.end > c.start && x.start < c.end).map((x) => x.text).join(" ") : "",
                     source: `${site.title()} ${clock(t)}`.trim(),

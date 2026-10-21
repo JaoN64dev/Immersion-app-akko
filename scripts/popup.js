@@ -7,7 +7,7 @@
 import { $ } from "./core/dom.js";
 import { store, escapeHtml, getJson } from "./core/utils.js";
 import { STATUSES, wordStatus, setWordStatus } from "./words/status.js";
-import { plainText } from "./words/render.js";
+import { plainText, expressionText, noteExpression } from "./words/render.js";
 import { morae, pattern, isHigh } from "./words/pitch.js";
 import * as mining from "./mining.js";
 import * as anki from "./anki/client.js";
@@ -17,7 +17,7 @@ import { saySentence, sayWord } from "./core/say.js";
 import { toast } from "./core/toast.js";
 
 const popup = $("#popup");
-let ctx = null;   // { word, lemma, sentence, info, grammar, resume } for the open popup
+let ctx = null;   // { word, lemma, sentence, info, grammar, expression, resume } for the open popup
 
 const hooks = {
     onOpen: () => null,          // returns something handed back to onClose (e.g. "was playing")
@@ -30,10 +30,11 @@ export const isOpen = () => !popup.hidden;
 
 // word = what was clicked (食べられなかった), lemma = its dictionary form (食べる) if known,
 // info = what it came from ({source, time, videoName, cueStart, cueEnd}) for mined cards,
-// grammar = ids of the grammar lessons the word is part of
-async function lookup(word, { sentence = "", anchor, lemma, info = {}, grammar = [] }) {
+// grammar = ids of the grammar lessons the word is part of,
+// expression = the idiom or set phrase it's part of: {key, kind, text (as written here)}
+async function lookup(word, { sentence = "", anchor, lemma, info = {}, grammar = [], expression = null }) {
     const resume = hooks.onOpen();
-    ctx = { word, lemma, sentence, info, grammar, resume };
+    ctx = { word, lemma, sentence, info, grammar, expression, resume };
 
     // in full screen only the full-screen element is visible, so the popup has to live inside it
     const host = document.fullscreenElement || home;
@@ -48,10 +49,14 @@ async function lookup(word, { sentence = "", anchor, lemma, info = {}, grammar =
         qs.set("form", word);                    // so the server can explain the conjugation
         qs.set("lang", target());
         qs.set("native", nativeLang());          // English words: translations into your language
-        const [result, lessons] = await Promise.all([getJson("/api/dict?" + qs), grammar.length ? lessonMap() : null]);
+        // the expression the word is part of, looked up at the same time
+        const exQuery = expression && new URLSearchParams({ q: expression.key, lang: target(), native: nativeLang() });
+        const [result, lessons, ex] = await Promise.all([getJson("/api/dict?" + qs), grammar.length ? lessonMap() : null,
+            exQuery ? getJson("/api/dict?" + exQuery).catch(() => null) : null]);
         if (!ctx || ctx.word !== word) return;   // another lookup started
         if (!ctx.lemma) ctx.lemma = result.query;
-        render(word, { ...result, grammar: grammar.map((id) => lessons.get(id)).filter(Boolean) });
+        const exEntry = ex && ex.entries && ex.entries[0];
+        render(word, { ...result, grammar: grammar.map((id) => lessons.get(id)).filter(Boolean), expression: exEntry ? { ...expression, entry: exEntry } : null });
     } catch (err) {
         popup.querySelector("p").textContent = "lookup failed: " + err.message;
     }
@@ -59,19 +64,51 @@ async function lookup(word, { sentence = "", anchor, lemma, info = {}, grammar =
 
 // ---------- word status buttons ----------
 
-function statusButtons(lemma) {
+// key: these buttons are for an expression (its own status), not the clicked word
+function statusButtons(lemma, key = "") {
     const cur = wordStatus(lemma);
-    return `<div class="status-buttons" title="how well you know ${escapeHtml(lemma)} (keys 1 2 3 4). ignored words never count as unknown">`
+    return `<div class="status-buttons"${key ? ` data-key="${escapeHtml(key)}"` : ""} title="how well you know ${escapeHtml(lemma)}${key ? "" : " (keys 1 2 3 4)"}. ignored words never count as unknown">`
         + STATUSES.map(([s, label], i) =>
-            `<button class="st st-${s}${s === cur ? " on" : ""}" data-status="${s}">${i + 1} ${label}</button>`).join("")
+            `<button class="st st-${s}${s === cur ? " on" : ""}" data-status="${s}">${key ? "" : `${i + 1} `}${label}</button>`).join("")
         + `</div>`;
 }
 
 export function setPopupStatus(status) {
     if (!ctx || !ctx.lemma) return;
     setWordStatus(ctx.lemma, status);
-    const box = popup.querySelector(".status-buttons");
+    const box = popup.querySelector(".status-buttons:not([data-key])");
     if (box) box.outerHTML = statusButtons(ctx.lemma);
+}
+
+function setExpressionStatus(key, status) {
+    setWordStatus(key, status);
+    noteExpression(key);
+    const box = popup.querySelector(`.status-buttons[data-key="${CSS.escape(key)}"]`);
+    if (box) box.outerHTML = statusButtons(key, key);
+}
+
+// ---------- expressions ----------
+
+// The idiom or set phrase the clicked word is part of, above the word's own entry: its meaning
+// is usually not its words' (膝が笑う: knees giving way, not "knee" + "laugh")
+function expressionHtml(ex) {
+    if (!ex) return "";
+    const e = ex.entry;
+    const en = target() === "en";
+    const label = ex.kind === "i" ? (en ? "idiom" : "慣用句 idiom") : (en ? "phrase" : "表現 phrase");
+    const senses = en
+        ? [...(e.tr || []).slice(0, 2).map((t) => t.words.join(", ")), ...e.senses.slice(0, 3).map((x) => x.gloss.join("; "))].filter(Boolean)
+        : e.senses.slice(0, 3).map((x) => x.gloss.join("; "));
+    return `<div class="expr-box">
+        <span class="expr-label">${label} · ${en ? "part of" : "この単語を含む"}</span>
+        <div class="entry"><div class="entry-head">
+            <span class="headword" lang="${target()}">${escapeHtml(e.word)}</span>
+            ${en ? (e.reading ? `<span class="reading ipa">${escapeHtml(e.reading)}</span>` : "") : readingHtml(e)}
+            <button class="mine expr-mine">+ mine</button>
+        </div>
+        <ol translate="no">${senses.map((g) => `<li>${escapeHtml(g)}</li>`).join("")}</ol></div>
+        ${statusButtons(ex.key, ex.key)}
+    </div>`;
 }
 
 // ---------- pitch accent ----------
@@ -196,7 +233,7 @@ function englishEntryHtml(e, i) {
 
 // ---------- drawing ----------
 
-function render(word, { entries, inflection, kanji, grammar = [], more = [] }) {
+function render(word, { entries, inflection, kanji, grammar = [], more = [], expression = null }) {
     const en = target() === "en";
     const body = entries.length ? entries.map((e, i) => {
         if (en) return englishEntryHtml(e, i);
@@ -227,12 +264,16 @@ function render(word, { entries, inflection, kanji, grammar = [], more = [] }) {
         ${link}
         ${!en && ctx && ctx.sentence && ctx.sentence.length > 1 ? `<button class="say-sentence" title="hear the whole sentence">▶ sentence</button>` : ""}
         <button class="close" title="close">✕</button></div>
+        ${expressionHtml(expression)}
         ${inflectionHtml(lemma || word, inflection)}
         ${grammarHtml(grammar)}
         ${lemma ? statusButtons(lemma) : ""}${body}${moreHtml(more)}${kanjiHtml(kanji)}`;
 
-    popup.querySelectorAll(".mine:not(.more-mine)").forEach((btn) => btn.addEventListener("click", () =>
+    popup.querySelectorAll(".mine:not(.more-mine):not(.expr-mine)").forEach((btn) => btn.addEventListener("click", () =>
         mineEntry(entries[Number(btn.dataset.i)], btn)));
+    // the expression: mined as itself, the whole phrase in bold in the sentence
+    popup.querySelector(".expr-mine")?.addEventListener("click", (e) =>
+        mineEntry(expression.entry, e.currentTarget, { lemma: expression.key, word: expression.text || expression.key }));
     popup.querySelectorAll(".more-mine").forEach((btn) => btn.addEventListener("click", () =>
         mineEntry(minable(more[Number(btn.dataset.d)].entries[Number(btn.dataset.e)]), btn)));
     // remember whether the kanji section is open
@@ -253,17 +294,19 @@ function render(word, { entries, inflection, kanji, grammar = [], more = [] }) {
     popup.querySelector(".say-sentence")?.addEventListener("click", () => saySentence(ctx.sentence).catch(failed));
 }
 
-async function mineEntry(entry, btn) {
+// as: for an expression, its key (its status) and its text as written here (bold in the card)
+async function mineEntry(entry, btn, as = null) {
     const auto = anki.auto();
     btn.disabled = true;
     btn.textContent = auto ? "→ Anki…" : "✓ mined";
     // mining a word means you're learning it (unless you already know it)
-    const lemma = (ctx && ctx.lemma) || entry.word;
+    const lemma = as ? as.lemma : (ctx && ctx.lemma) || entry.word;
     if (wordStatus(lemma) === "new") {
-        if (ctx && ctx.lemma) setPopupStatus("learning");
+        if (as) setExpressionStatus(lemma, "learning");
+        else if (ctx && ctx.lemma) setPopupStatus("learning");
         else setWordStatus(lemma, "learning");
     }
-    const c = ctx || {};
+    const c = as ? { ...(ctx || {}), word: as.word } : ctx || {};
     // an English word's card gets your translation first, then the English definition
     if (entry.tr && entry.tr.length) {
         entry = { ...entry, senses: [{ pos: [], gloss: [[...new Set(entry.tr.slice(0, 2).flatMap((s) => s.words.slice(0, 3)))].slice(0, 4).join(", ")], misc: [] }, ...entry.senses] };
@@ -322,7 +365,8 @@ export function enableWordClicks(container, lineSelector, contextFor = () => ({}
             lookup(selected, { sentence, info: c.info, anchor: { getBoundingClientRect: () => range.getBoundingClientRect() } });
         } else if (w) {
             const grammar = w.dataset.gr ? w.dataset.gr.split(" ") : [];
-            lookup(plainText(w), { sentence, info: c.info, anchor: w, lemma: w.dataset.b, grammar });
+            const expression = w.dataset.ex ? { key: w.dataset.ex, kind: w.dataset.et, text: expressionText(w) } : null;
+            lookup(plainText(w), { sentence, info: c.info, anchor: w, lemma: w.dataset.b, grammar, expression });
         }
     });
 }
@@ -330,7 +374,9 @@ export function enableWordClicks(container, lineSelector, contextFor = () => ({}
 export function init() {
     popup.addEventListener("click", (e) => {
         const btn = e.target.closest(".st");
-        if (btn) setPopupStatus(btn.dataset.status);
+        const key = btn && btn.closest("[data-key]")?.dataset.key;
+        if (btn && key) setExpressionStatus(key, btn.dataset.status);
+        else if (btn) setPopupStatus(btn.dataset.status);
         if (e.target.classList.contains("close")) closePopup();
     });
     document.addEventListener("mousedown", (e) => {

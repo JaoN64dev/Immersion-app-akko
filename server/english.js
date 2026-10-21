@@ -16,6 +16,7 @@ const { fetchBuffer } = require('./http');
 const grammar = require('./grammar');
 const wordnet = require('./wordnet');
 const cmudict = require('./cmudict');
+const { ExpressionIndex } = require('./expressions');
 
 // ---------- irregular forms ----------
 
@@ -288,12 +289,43 @@ function tokenizeLine(line, sentenceStart) {
   return out;
 }
 
+// ---------- expressions (server/expressions.js): WordNet's entries of more than one word ----------
+// "give up", "look forward", "under the weather", "call it a day": indexed by the dictionary forms
+// of their words, so "gave up", "looking forward" match. Underlined (kind "i"): idioms of three
+// words or more ("call it a day", "under the weather") and phrasal verbs whose particle changes the
+// meaning ("give up", "figure out", "put off", "get along"). Everything else ("go to", "look at",
+// "ice cream", "of course") only shows in the popup: WordNet lists many literal pairs too.
+const PARTICLES = new Set(['up', 'out', 'off', 'away', 'over', 'along', 'through', 'down', 'forward', 'ahead', 'apart', 'around', 'together']);
+let expressions = null;
+function englishExpressions() {
+  if (expressions) return expressions;
+  const started = Date.now();
+  const index = new ExpressionIndex();
+  const sets = wordnet.sets();
+  for (const pos of ['verb', 'adj', 'adv', 'noun']) {
+    for (const entry of sets[pos]) {
+      if (!entry.includes(' ')) continue;
+      const words = entry.split(' ');
+      if (words.length > 6 || words.every((w) => FUNCTION_WORDS.has(w))) continue;    // "in that", "as if": grammar
+      if (words.some((w) => !/^[a-z'-]+$/.test(w))) continue;                         // names, numbers, "a.k.a."
+      const idiom = pos !== 'noun' && words[0] !== 'be'
+        && (words.length >= 3 || (pos === 'verb' && words.length === 2 && PARTICLES.has(words[1])));
+      index.add(entry, words.map((w) => lemmatize(w).lemma.toLowerCase()), idiom ? 'i' : 'p');
+    }
+  }
+  expressions = index.finish();
+  console.log(`english expressions: ${expressions.size} ready (${Date.now() - started} ms)`);
+  return expressions;
+}
+const isSpace = (t) => !t.b && /^[ \t]+$/.test(t.s);
+
 function tokenize(text, dict) {
   buildVocab(dict);
+  const ex = englishExpressions();
   const out = [];
   text.split('\n').forEach((line, i) => {
     if (i) out.push({ s: '\n' });
-    out.push(...tokenizeLine(line, i === 0 || /[.!?]["”')]*\s*$/.test(text.split('\n')[i - 1])));
+    out.push(...ex.mark(tokenizeLine(line, i === 0 || /[.!?]["”')]*\s*$/.test(text.split('\n')[i - 1])), { norm: (b) => b.toLowerCase(), skip: isSpace }));
   });
   return out;
 }

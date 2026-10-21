@@ -1671,3 +1671,14 @@ main .ex-say {position: absolute; right: 0; top: .7em; padding: 0 .45em; font-si
 
 /* Watch: the sample, offered while the player is empty (samples/README.md) */
 .stage-empty .try-sample {pointer-events: auto; margin-top: .8em; font-size: .95em;}
+
+/* expressions (server/expressions.js): idioms are underlined in teal until they're known */
+/* (a wavy line: word colours use a bottom shadow and grammar a dotted border, so all three can show) */
+.expression-marks .w[data-et="i"]:not([data-exs="known"]):not([data-exs="ignored"]) {text-decoration: underline wavy #14a89b; text-decoration-thickness: 1.5px; text-underline-offset: .38em; text-decoration-skip-ink: none;}
+.expression-marks .sub-overlay .w[data-et="i"]:not([data-exs="known"]):not([data-exs="ignored"]) {text-decoration-color: #5eead4;}
+.expr-box {margin: .2em 0 .6em; padding: .45em .6em; border-radius: 10px; background: #e6f6f4; border-left: 4px solid #14a89b;}
+.expr-box .expr-label {display: block; font-size: .78em; font-weight: bold; color: #0f766e; margin-bottom: .1em;}
+.expr-box .entry {margin: 0;}
+.expr-box ol {margin: .2em 0 .3em;}
+:is(:root.theme-dark, :root.dark-auto) .expr-box {background: #12302d; border-left-color: #2dd4bf;}
+:is(:root.theme-dark, :root.dark-auto) .expr-box .expr-label {color: #5eead4;}

@@ -49,6 +49,7 @@ function renderTiles({ words, watch, manga, podcast, text, mined, grammar, liste
     document.getElementById("stats-tiles").innerHTML = [
         tile(compact(words.known), "words known"),
         tile(compact(words.learning), "words learning"),
+        words.expressions.met ? tile(compact(words.expressions.known), "idioms known", `of ${compact(words.expressions.met)} met`) : "",
         tile(compact(mined.count), "words mined", mined.anki ? `${mined.anki} sent to Anki` : ""),
         tile(compact(text.chars), "characters read", text.count ? `${text.count} texts` : ""),
         learningEnglish() ? "" : tile(compact(manga.pages), "manga pages read", manga.count ? `${manga.count} volumes` : ""),     // manga is Japanese only

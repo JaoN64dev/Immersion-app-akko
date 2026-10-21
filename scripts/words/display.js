@@ -1,4 +1,4 @@
-// Furigana mode, word colouring and grammar underlines, shared by every page (saved in "akko-settings")
+// Furigana mode, word colouring, grammar and expression underlines, shared by every page (saved in "akko-settings")
 
 import { store } from "../core/utils.js";
 
@@ -6,7 +6,7 @@ const KEY = "akko-settings";
 
 export function wordDisplay() {
     const s = store.get(KEY, {});
-    return { furigana: s.furigana || "unknown", colors: s.colors ?? true, grammar: s.grammar ?? true };
+    return { furigana: s.furigana || "unknown", colors: s.colors ?? true, grammar: s.grammar ?? true, expressions: s.expressions ?? true };
 }
 
 // furigana: always | unknown (only on words you don't know) | hover | off
@@ -15,23 +15,28 @@ export function applyWordDisplay() {
     document.body.dataset.furigana = d.furigana;
     document.body.classList.toggle("color-words", d.colors);
     document.body.classList.toggle("grammar-marks", d.grammar);
+    document.body.classList.toggle("expression-marks", d.expressions);
 }
 
 // Wire a furigana <select> and a colour checkbox (and the page's #grammar-marks checkbox, if it has one)
 export function bindWordDisplay(select, checkbox) {
     const grammar = document.getElementById("grammar-marks");
+    const expressions = document.getElementById("expression-marks");
     const d = wordDisplay();
     select.value = d.furigana;
     checkbox.checked = d.colors;
     if (grammar) grammar.checked = d.grammar;
+    if (expressions) expressions.checked = d.expressions;
     const save = () => {
         const s = { ...store.get(KEY, {}), furigana: select.value, colors: checkbox.checked };
         if (grammar) s.grammar = grammar.checked;
+        if (expressions) s.expressions = expressions.checked;
         store.set(KEY, s);
         applyWordDisplay();
     };
     select.addEventListener("input", save);
     checkbox.addEventListener("input", save);
     if (grammar) grammar.addEventListener("input", save);
+    if (expressions) expressions.addEventListener("input", save);
     applyWordDisplay();
 }
