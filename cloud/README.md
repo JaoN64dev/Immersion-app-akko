@@ -19,7 +19,7 @@ It's a [Cloudflare Worker](https://developers.cloudflare.com/workers/) (`src/wor
    npx wrangler@4 d1 create akko
    npx wrangler@4 r2 bucket create akko-recordings
    ```
-   `d1 create` prints the database's id (that's `CLOUDFLARE_D1_ID`, step 4).
+   `d1 create` prints the database's id (that's `CLOUDFLARE_D1_ID`, step 3).
    **If the bucket step fails with `Please enable R2 through the Cloudflare Dashboard. [code: 10042]`**,
    enable R2 first: dashboard → **R2 Object Storage** → *Enable R2* (it asks for a billing card;
    akko's recordings stay inside the free tier — 10 GB stored, 1 M writes and 10 M reads a month),
@@ -27,14 +27,22 @@ It's a [Cloudflare Worker](https://developers.cloudflare.com/workers/) (`src/wor
    `wrangler.toml` binds it as `MEDIA`.
    Leave the `binding` snippet `d1 create` prints alone: `wrangler.toml` here already binds the
    database as `DB`, and the deploy workflow fills the id in from the secret.
-3. A GitHub token that can open issues on the repository (fine-grained: *Issues: read and write*), for reports:
-   `npx wrangler@4 secret put GITHUB_TOKEN`
-4. In the GitHub repository, **Settings → Secrets and variables → Actions**, add:
+3. In the GitHub repository, **Settings → Secrets and variables → Actions**, add:
    - `CLOUDFLARE_API_TOKEN`: a Cloudflare API token from the *Edit Cloudflare Workers* template, with *D1: Edit* added
    - `CLOUDFLARE_ACCOUNT_ID`: on the Cloudflare dashboard's right side
    - `CLOUDFLARE_D1_ID`: the database's id from step 2
-5. Push a change to `cloud/` (or run the **cloud** workflow by hand): `.github/workflows/cloud.yml` applies `schema.sql` and deploys. The service's address is printed at the end, like `https://akko-cloud.<you>.workers.dev`.
-6. Put that address in akko's `package.json`:
+4. Push a change to `cloud/` (or run the **cloud** workflow by hand): `.github/workflows/cloud.yml` applies `schema.sql` and deploys. The service's address is printed at the end, like `https://akko-cloud.<you>.workers.dev`.
+5. **Only now**, the token that lets problem reports open issues — a fine-grained GitHub token
+   with *Issues: read and write* on the repository, stored on the Worker (not in GitHub):
+   ```
+   cd cloud
+   npx wrangler@4 secret put GITHUB_TOKEN
+   ```
+   Run it **from `cloud/`** (or add `--config cloud/wrangler.toml`): from the repository's root
+   wrangler finds no `wrangler.toml` and says *Required Worker name missing*. It also needs the
+   Worker to exist, so it goes after the first deploy — set before that, wrangler answers that the
+   script doesn't exist. Accounts work without this token; only reports need it.
+6. Put the address from step 4 in akko's `package.json`:
    ```json
    "akko": { "cloud": "https://akko-cloud.<you>.workers.dev" }
    ```
