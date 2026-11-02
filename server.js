@@ -87,6 +87,7 @@ app.get('/settings.html', file('settings.html'));
 app.get('/review.html', file('review.html'));
 app.get('/stats.html', (req, res) => res.redirect('/settings.html#stats-section'));    // stats moved to settings
 app.get('/grammar.html', file('grammar.html'));
+app.get('/expressions.html', file('expressions.html'));
 app.get('/course.html', file('course.html'));
 app.get('/listening.html', file('listening.html'));
 app.get('/about.html', file('about.html'));

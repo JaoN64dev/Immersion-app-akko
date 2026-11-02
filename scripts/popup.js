@@ -56,6 +56,7 @@ async function lookup(word, { sentence = "", anchor, lemma, info = {}, grammar =
         if (!ctx || ctx.word !== word) return;   // another lookup started
         if (!ctx.lemma) ctx.lemma = result.query;
         const exEntry = ex && ex.entries && ex.entries[0];
+        if (exEntry && expression) noteExpression(expression.key, metContext());    // met, and where
         render(word, { ...result, grammar: grammar.map((id) => lessons.get(id)).filter(Boolean), expression: exEntry ? { ...expression, entry: exEntry } : null });
     } catch (err) {
         popup.querySelector("p").textContent = "lookup failed: " + err.message;
@@ -80,9 +81,16 @@ export function setPopupStatus(status) {
     if (box) box.outerHTML = statusButtons(ctx.lemma);
 }
 
+// where it was met, for the Expressions page (the sentence it was used in, and where from)
+const metContext = () => ({
+    sentence: ctx?.sentence || "",
+    source: ctx?.info?.source || "",
+    time: ctx?.info?.time || "",
+});
+
 function setExpressionStatus(key, status) {
     setWordStatus(key, status);
-    noteExpression(key);
+    noteExpression(key, metContext());
     const box = popup.querySelector(`.status-buttons[data-key="${CSS.escape(key)}"]`);
     if (box) box.outerHTML = statusButtons(key, key);
 }

@@ -8,7 +8,7 @@
 
 import "./i18n.js";
 import { chosen, target, setTarget, welcomeOn, setWelcome } from "./core/target.js";
-import { store } from "./core/utils.js";
+import { store, escapeHtml, getJson } from "./core/utils.js";
 import * as today from "./core/today.js";
 import * as autoBackup from "./core/auto-backup.js";
 import * as themes from "./core/theme.js";
@@ -104,6 +104,26 @@ const fromAkko = () => { try { return !!document.referrer && new URL(document.re
 
 const knownWords = (key) => Object.values(store.get(key, {})).filter((s) => s === "known").length;
 
+// The sentence the welcome screen's expression of the day shows: the same one all day, from the
+// dictionary's idioms (/api/expressions/today, server/dictionary.js). Japanese only: the sets are
+// JMdict's. The dictionary may still be starting the first time akko is opened, so it tries again.
+async function expressionOfTheDay(box, attempt = 0) {
+    const line = box.querySelector("#welcome-expression");
+    if (!line || target() === "en") return;
+    let day;
+    try {
+        day = await getJson("/api/expressions/today");
+    } catch {
+        if (attempt < 10) setTimeout(() => expressionOfTheDay(box, attempt + 1), 2000);
+        return;
+    }
+    if (!day || !day.item) return;
+    line.hidden = false;
+    line.innerHTML = `<small>Expression of the day</small>
+        <b lang="ja" translate="no">${escapeHtml(day.item.key)}</b>
+        <span class="welcome-expression-gloss" translate="no">${escapeHtml((day.item.gloss || [])[0] || "")}</span>`;
+}
+
 // "Today: 25 min · 4 days in a row 🔥", for the language you learn now
 function todayLine(lang) {
     const minutes = Math.floor(today.secondsOn(lang) / 60);
@@ -153,7 +173,8 @@ function welcome() {
                 ${option("ja", "日本語", "Japanese", "anime, dramas, manga, books and podcasts in Japanese")}
                 ${option("en", "English", "American English", "shows, films, books and podcasts in English")}
             </div>
-            <p class="target-later">You can switch any time in 設定 Settings, and each language keeps its own progress. The menus can be shown in 日本語 there too.</p>
+            <p id="welcome-expression" class="welcome-expression" hidden></p>
+            <p class="target-later">You can switch any time in 設定 Settings, and each language keeps its own progress. The menus can be shown in English, Português, Español or 日本語 there too.</p>
             ${first ? "" : `<label class="welcome-again"><input type="checkbox" checked> show this when akko opens</label>`}
         </div>`;
 
@@ -177,6 +198,7 @@ function welcome() {
     const again = box.querySelector(".welcome-again input");
     if (again) again.addEventListener("change", () => setWelcome(again.checked));
     document.body.appendChild(box);
+    expressionOfTheDay(box);
     box.querySelector(current ? "button.current" : "button").focus();
 }
 

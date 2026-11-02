@@ -9,6 +9,15 @@ import es from "../scripts/lang/es.js";
 const holes = (s) => (s.match(/\{\w+\}/g) || []).sort().join(" ");
 const links = (s) => (s.match(/href="[^"]*"/g) || []).join(" ");
 
+// the tables themselves: a translation added outside `text` or `html` is never used
+for (const [name, table] of Object.entries({ ja, pt, es })) {
+    test(`${name}: a table is text and html, nothing else`, () => {
+        assert.deepEqual(Object.keys(table).sort(), ["html", "text"],
+            "translations must live inside text (plain sentences) or html (data-i18n blocks)");
+        assert.ok(Object.keys(table.text).length > 500, "the table is filled in");
+    });
+}
+
 for (const [name, table] of Object.entries({ pt, es })) {
     test(`${name}: the same entries as ja`, () => {
         const missing = Object.keys(ja.text).filter((k) => !(k in table.text));

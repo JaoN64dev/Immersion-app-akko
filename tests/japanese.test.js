@@ -1,5 +1,6 @@
 // Japanese: word splitting (Lindera + grouping), furigana, what counts as a word, grammar marks,
-// and dictionary lookups (JMdict, conjugation, kanji, pitch accent).
+// dictionary lookups (JMdict, conjugation, kanji, pitch accent), and the expressions page's
+// catalogue (sets, search, the expression of the day).
 process.env.AKKO_OFFLINE = '1';
 
 const { test, before } = require('node:test');
@@ -67,4 +68,38 @@ test('looking a word up: meaning, conjugation, kanji, pitch accent', () => {
 test('a word that is not in the dictionary falls back to its first word', () => {
   const r = dictionary.lookup(['猫が好き']);
   assert.equal(r.query, '猫');
+});
+
+test('the expressions page: every expression in sets, searchable, and one for the day', async () => {
+  for (let i = 0; i < 600 && !dictionary.ready.expressions; i++) await sleep(50);
+  assert.ok(dictionary.ready.expressions, 'the expressions index is ready');
+  const express = require('express');
+  const app = express();
+  app.use('/api', dictionary.router);
+  const server = await new Promise((r) => { const s = app.listen(0, '127.0.0.1', () => r(s)); });
+  const base = `http://127.0.0.1:${server.address().port}/api`;
+  try {
+    const all = await (await fetch(`${base}/expressions?limit=5`)).json();
+    assert.ok(all.total > 5000, `the catalogue (${all.total})`);
+    assert.equal(all.items.length, 5, 'paged');
+    const counts = Object.fromEntries(all.sets.map((s) => [s.id, s.count]));
+    assert.ok(counts.all >= all.total, 'the "all" button counts everything');
+    assert.ok(counts.idioms > 1000 && counts.yoji > 100 && counts.phrases > 1000, 'the sets have something in them');
+    assert.ok(all.items.every((it) => it.key && typeof it.kind === 'string'), 'each has its words and kind');
+
+    const yoji = await (await fetch(`${base}/expressions?set=yoji&limit=1`)).json();
+    assert.ok(yoji.items[0].sets.includes('yoji'), 'a 四字熟語 from that set');
+
+    const body = await (await fetch(`${base}/expressions?part=${encodeURIComponent('手')}&limit=1`)).json();
+    assert.ok(body.items[0].parts.includes('手'), 'with 手 in it');
+
+    const found = await (await fetch(`${base}/expressions?q=${encodeURIComponent('首を長く')}`)).json();
+    assert.ok(found.items.some((it) => it.key === '首を長くする'), 'search finds 首を長くする');
+
+    const day = await (await fetch(`${base}/expressions/today`)).json();
+    assert.match(day.day, /^\d{4}-\d{2}-\d{2}$/);
+    assert.ok(day.item && day.item.key, 'an expression of the day');
+  } finally {
+    server.close();
+  }
 });

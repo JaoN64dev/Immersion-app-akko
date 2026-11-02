@@ -12,7 +12,7 @@ const SOURCES = { "": "(leave empty)", word: "word", reading: "reading", furigan
     audio: "line audio", wordAudio: "word audio", screenshot: "screenshot", source: "video and time (link)" };
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-const get = () => chrome.storage.local.get(["akkoUrl", "words", "anki", "prefs"]);
+const get = () => chrome.storage.local.get(["akkoUrl", "words", "wordsEn", "anki", "prefs"]);
 // the interface's language (lang.js): text set later is translated by itself
 akkoLang.watch(document.body);
 akkoLang.ready.then(() => { document.title = akkoLang.t(document.title); });
@@ -27,9 +27,10 @@ async function showAkko() {
     } catch (err) { $("akko-status").textContent = err.message; }
 }
 
+// both lists you learn with akko: Japanese (words) and English (wordsEn)
 async function showWords() {
-    const { words = {} } = await get();
-    const v = Object.values(words);
+    const { words = {}, wordsEn = {} } = await get();
+    const v = [...Object.values(words), ...Object.values(wordsEn)];
     $("words-status").textContent = v.length
         ? `${v.filter((w) => w === "known").length} known · ${v.filter((w) => w === "learning").length} learning · ${v.filter((w) => w === "ignored").length} ignored`
         : "no word list yet";

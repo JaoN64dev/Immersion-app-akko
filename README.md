@@ -10,16 +10,18 @@ An immersion app for learning **Japanese** or **American English**, on your own 
 - **Read** books (EPUB, text) and manga.
 - **Listen** to podcasts with transcripts.
 - **Click any word** to see its dictionary entry, kanji and pitch accent, plus any **dictionaries you add** (Yomitan format: Jitendex, monolingual dictionaries…) and how common the word is (frequency lists like JPDB). Hover a word and press 1–4 to mark it new / learning / known / ignored; the app colours words by how well you know them.
-- Send words to **Anki** as flashcards, or review them in akko's own **復習** (spaced repetition, FSRS: each word comes back just before you'd forget it, with its sentence, the scene and the line's audio).
-- **One word list everywhere**: the desktop app, akko in your browser, your phone and the extension share the same list of words you know.
+- Send words to **Anki** as flashcards, or review them in akko's own **復習** (spaced repetition, FSRS: each word comes back just before you'd forget it, with its sentence, the scene and the line's audio). Three card types, switched with **M**: the word alone, a **cloze** (the word hidden in its sentence) or the **line first** (hear it, then the word).
+- **表現 Expressions**: idioms and set phrases are more than their words, so akko underlines the ones you meet — 首を長くする is "to wait eagerly", not a long neck. The [expressions page](expressions.html) keeps the ones you've met (with the sentence and where it came from) and every set JMdict knows: 慣用句, ことわざ, 四字熟語 and everyday phrases, and the ones with 手・口・目・腹・頭・足, with an expression of the day on the welcome screen.
+- **One word list everywhere**: the desktop app, akko in your browser, your phone and the extension share the same list of words you know — and everything else too (positions, 復習, mined words, the library).
 - **Something to try at once**: a short sample video (the opening of 吾輩は猫である, read aloud) and the novel's first chapter in the Read library.
 - Follow the **course**: a step-by-step path from the basics to immersion, built on the AJATT idea, with goals the app checks for you. The Japanese course and the N5 grammar lessons are also in **Portuguese and Spanish** (Settings → Your language).
 - Study **grammar** with short lessons and quizzes (Japanese N5–N1, English A1–C1). Grammar you've studied is underlined in subtitles and texts.
 - Practise **listening** (Japanese, N5–N1), JLPT style: conversations with a question, quick replies, sentences from the grammar lessons, and **dictation** (type what you hear). Mistakes come back until you get them right; **exam mode** plays each question once. Every line is spoken: with [VOICEVOX](https://voicevox.hiroshiba.jp/) (free), in natural-sounding voices. Get it with one button on the 聴解 page, or install it yourself; akko starts it in the background whenever akko opens and closes it when akko quits. Otherwise lines are spoken by your computer's Japanese voices (on Windows: add Japanese in Settings → Time & language → Speech). The script shows afterwards with clickable words and a ▶ on each line. Add your own sets, with your own recordings if you like ([listening/README.md](listening/README.md)), and try the official JLPT samples from the page.
 - A **welcome screen** each time you open akko: pick today's language, see today's minutes and your streak.
 - **Hear any Japanese**: 🔊 plays a word and ▶ reads the whole sentence in the word popup, on every page; grammar examples have a ▶ too. Cards mined from books and lessons get the sentence's audio.
-- **Settings**: the language you learn, the interface language (English / 日本語), a **dark theme** (or like the computer), stats (time per day, listening scores…) and backup.
-- **Automatic backups** every 3 days, the last 10 kept on your computer; restore one from Settings → Backup.
+- **Four interface languages**: English, 日本語, Português and Español (Settings → Display), each remembering its own choice; the extension speaks four languages too.
+- **Settings**: the language you learn, the interface language, a **dark theme** (or like the computer), stats (time per day, listening scores…) and backup.
+- **Backups**: everything as one `.json`, or **everything as a `.zip`, mined words' line audio and pictures included** (restorable either way), and automatic backups every 3 days, the last 10 kept on your computer.
 - **Use it on your phone or tablet** on the same Wi-Fi: turn it on in Settings, scan the QR code, type the PIN (off until you turn it on).
 - Press **?** on any page to see its keys.
 
@@ -108,7 +110,7 @@ From the project folder, after `npm install`:
 
 **Releases are built by GitHub** (`.github/workflows/build.yml`): push a version tag (`git tag 1.9` then `git push origin 1.9`) and GitHub runs the tests, builds akko on Windows, macOS and Linux, and makes a **draft release** with every file. Add the notes on GitHub and publish it. (Actions → build → Run workflow builds all three without a release; the files are kept with the run.)
 
-To make a release by hand instead, upload `akko-setup-<version>.exe`, its `.blockmap`, `latest.yml` (the installed Windows app's updates need these three), `akko-portable-<version>.exe` and `akko-companion-<version>.zip`. Not `builder-debug.yml`: it's a build log with your folders in it.
+To make a release by hand instead, upload `akko-setup-<version>.exe`, its `.blockmap`, `latest.yml` (the installed Windows app's updates need these three), `akko-portable-<version>.exe`, the Mac's `.dmg` and `.zip` and `latest-mac.yml`, the Linux `.AppImage` and `latest-linux.yml` (an AppImage updates itself), and `akko-companion-<version>.zip`. Not `builder-debug.yml`: it's a build log with your folders in it.
 
 The desktop app runs the same server inside the app, on port 3417, so it can run next to `npm start` (port 3000). Its server files (dictionaries, caches, OCR results, OpenSubtitles login) are in your user profile (`%APPDATA%\akko\data` on Windows), reachable from **akko → Open the data folder**. Lessons and the course are built into the app; to edit them, use the web server version.
 
@@ -215,7 +217,7 @@ server.js        starts the local server (port 3000)
 server/          the APIs: dictionary, English, grammar, course, subtitles, Anki, podcasts, OCR, listening, speech, the extension
 electron/        the desktop app: main.js runs the server and opens the window or browser; icons
 scripts/         the code that runs in the browser (scripts/pages/ = one entry script per page)
-*.html           the pages: watch (index), reading, podcasts, grammar, course, review, settings, about
+*.html           the pages: watch (index), reading, podcasts, grammar, expressions, course, review, settings, about
 grammar/         Japanese grammar lessons (Markdown)      grammar-en/   English grammar lessons
 course/          the Japanese course (Markdown)           course-en/    the English course + translations
 data/            offline dictionary files, and what the server saves (OCR, caches)
@@ -225,10 +227,10 @@ listening/       the 聴解 listening exercises (Markdown)
 samples/         the sample video, its subtitles and the sample novel
 tools/           npm run check-lessons, npm run pack-extension
 tests/           npm test
-docs/            how the code works
+docs/            how the code works, how to cut a release (maintaining.md), the 2.0 notes
 ```
 
-How everything fits together, step by step, is in [docs/how-it-works.md](docs/how-it-works.md).
+How everything fits together, step by step, is in [docs/how-it-works.md](docs/how-it-works.md); building a release, in [docs/maintaining.md](docs/maintaining.md).
 
 ## Data sources and licenses
 

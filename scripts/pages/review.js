@@ -2,6 +2,9 @@
 // scheduled with FSRS (scripts/words/fsrs.js): each word comes back just before you'd forget it.
 // A session is the words due, then up to NEW_PER_DAY words never reviewed. A mined word shows its
 // sentence, the scene's picture and plays the line (kept by scripts/core/media.js).
+// How a card asks ("akko-review-mode"): the word alone, a cloze (its sentence with the word hidden)
+// or the line first (hear it, then the word); a card without a sentence or a recording falls back
+// to the word. M cycles them.
 // Grades: 1 again · 2 hard · 3 good · 4 easy, K known (leaves the review). A word whose next
 // review is GRADUATE days away or more becomes known (like Anki's "mature" cards when importing).
 // Saved in "akko-review" / -en {lemma: card} and "akko-review-new" / -en {day, n}.
@@ -14,6 +17,7 @@ import { setWordStatus, wordStatus } from "../words/status.js";
 import { review, preview, isDue, intervalDays, describe } from "../words/fsrs.js";
 import { mediaOf } from "../core/media.js";
 import { dayOf } from "../core/today.js";
+import { t } from "../i18n.js";
 
 const NEW_PER_DAY = 20;
 const GRADUATE = 21;                          // days
@@ -21,7 +25,27 @@ const WORDS = keyFor("akko-words");
 const CARDS = keyFor("akko-review");          // {lemma: {s, d, due, last, reps, lapses}}
 const NEW_TODAY = keyFor("akko-review-new");  // {day, n}
 
-const ui = { card: $("#review-card"), progress: $("#review-progress") };
+const ui = { card: $("#review-card"), progress: $("#review-progress"), modes: $("#review-modes") };
+
+// how the cards ask: word · cloze · line first (the switch above the card, and M)
+const MODE_KEY = "akko-review-mode";
+const MODES = ["word", "cloze", "audio"];
+let mode = store.get(MODE_KEY, "word");
+if (!MODES.includes(mode)) mode = "word";
+
+function renderModes() {
+    if (!ui.modes) return;
+    ui.modes.querySelectorAll("button[data-mode]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === mode)));
+}
+
+function setMode(m) {
+    if (!MODES.includes(m) || m === mode) return;
+    const wasShown = shown;               // the answer is out: keep it out after the redraw
+    mode = m;
+    store.set(MODE_KEY, mode);
+    renderModes();
+    show().then(() => { if (wasShown && !shown) reveal(); });
+}
 
 let queue = [];       // [{lemma, mined, isNew}]
 let at = 0;
@@ -69,11 +93,33 @@ async function startSession() {
 
 const lang = () => target();
 
-function sentenceHtml(m, lemma) {
+// the word as it appears in the sentence (what gets marked, or hidden in a cloze)
+const markOf = (m, lemma) => (m && m.sentence ? [m.surface, m.word, lemma].filter(Boolean).find((w) => m.sentence.includes(w)) : "");
+
+function sentenceHtml(m, lemma, { hide = false } = {}) {
     if (!m || !m.sentence) return "";
-    const mark = [m.surface, m.word, lemma].filter(Boolean).find((w) => m.sentence.includes(w));
+    const mark = markOf(m, lemma);
     const html = escapeHtml(m.sentence);
+    if (hide && mark) {
+        const blank = `<span class="blank">${"＿".repeat(Math.max(3, mark.length))}</span>`;
+        return `<p class="review-sentence review-cloze" lang="${lang()}" title="${escapeHtml(t("the card's sentence, with the word hidden"))}">${html.split(escapeHtml(mark)).join(blank)}</p>`;
+    }
     return `<p class="review-sentence" lang="${lang()}">${mark ? html.split(escapeHtml(mark)).join(`<mark>${escapeHtml(mark)}</mark>`) : html}</p>`;
+}
+
+// the line and the scene (scripts/core/media.js), added to a card's .review-media
+function addAudio(media, box, big = false) {
+    const u = URL.createObjectURL(media.audio);
+    urls.push(u);
+    audio = new Audio(u);
+    box.insertAdjacentHTML("beforeend", `<button class="review-play${big ? " big" : ""}" title="hear the line (P)">▶ ${escapeHtml(t("▶ the line"))}</button>`);
+    box.querySelector(".review-play").addEventListener("click", play);
+}
+
+function addPicture(media, box) {
+    const u = URL.createObjectURL(media.picture);
+    urls.push(u);
+    box.insertAdjacentHTML("beforeend", `<img class="review-picture" src="${u}" alt="the scene the word comes from">`);
 }
 
 function clearMedia() {
@@ -96,9 +142,23 @@ function nothingDue() {
         ${waiting ? `<br>${waiting} new word${waiting > 1 ? "s" : ""} wait${waiting > 1 ? "" : "s"} for tomorrow (${NEW_PER_DAY} new a day).` : ""}</p>`;
 }
 
+// what the front of the card shows: the word, the sentence with it hidden, or the line first
+function frontHtml(kind, lemma, mined) {
+    const word = `<div class="review-word" lang="${lang()}" translate="no">${escapeHtml(lemma)}</div>`;
+    if (kind === "cloze") {
+        return `${sentenceHtml(mined, lemma, { hide: true })}<div class="review-media"></div>`;
+    }
+    if (kind === "audio") {
+        return `<div class="review-media"></div>
+            <p class="review-audio-hint">${escapeHtml(t("hear the line before the word"))}</p>`;
+    }
+    return `${word}${sentenceHtml(mined, lemma)}<div class="review-media"></div>`;
+}
+
 async function show() {
     shown = false;
     clearMedia();
+    renderModes();
     if (!queue.length) {
         ui.card.innerHTML = nothingDue();
         ui.progress.textContent = "";
@@ -106,11 +166,18 @@ async function show() {
     }
     if (at >= queue.length) return finish();
     const { lemma, mined, isNew } = queue[at];
+    // the scene and the line, if the word was mined from a video
+    const media = mined ? await mediaOf(mined.id).catch(() => null) : null;
+    if (at >= queue.length || !queue[at] || queue[at].lemma !== lemma) return;   // graded meanwhile
+    // a card with nothing to hide or nothing to play asks with its word
+    const canCloze = !!(mined && markOf(mined, lemma));
+    const canAudio = !!(media && media.audio);
+    const kind = mode === "cloze" && canCloze ? "cloze" : mode === "audio" && canAudio ? "audio" : "word";
+    queue[at].kind = kind;
+    queue[at].media = media;
     ui.card.innerHTML = `
         ${isNew ? `<p class="review-new">new</p>` : ""}
-        <div class="review-word" lang="${lang()}" translate="no">${escapeHtml(lemma)}</div>
-        ${sentenceHtml(mined, lemma)}
-        <div class="review-media"></div>
+        <div class="review-front">${frontHtml(kind, lemma, mined)}</div>
         <div class="review-answer" hidden></div>
         <div class="review-buttons">
             <button class="review-show">show <kbd>space</kbd></button>
@@ -118,22 +185,11 @@ async function show() {
     ui.card.querySelector(".review-show").addEventListener("click", reveal);
     const left = queue.length - at;
     ui.progress.textContent = `${left} to go`;
-    // the scene and the line, if the word was mined from a video
-    const media = mined ? await mediaOf(mined.id) : null;
-    if (!media || !queue[at] || queue[at].lemma !== lemma) return;
     const box = ui.card.querySelector(".review-media");
-    if (media.picture) {
-        const u = URL.createObjectURL(media.picture);
-        urls.push(u);
-        box.insertAdjacentHTML("beforeend", `<img class="review-picture" src="${u}" alt="the scene the word comes from">`);
-    }
-    if (media.audio) {
-        const u = URL.createObjectURL(media.audio);
-        urls.push(u);
-        audio = new Audio(u);
-        box.insertAdjacentHTML("beforeend", `<button class="review-play" title="hear the line (P)">▶ the line</button>`);
-        box.querySelector(".review-play").addEventListener("click", play);
-    }
+    if (!box) return;
+    if (media && media.audio) addAudio(media, box, kind === "audio");
+    if (media && media.picture && kind === "word") addPicture(media, box);      // not a spoiler there
+    if (kind === "audio") setTimeout(play, 400);                                // the line first
 }
 
 function play() {
@@ -145,9 +201,20 @@ function play() {
 async function reveal() {
     if (shown || at >= queue.length) return;
     shown = true;
-    const { lemma, mined } = queue[at];
+    const { lemma, mined, kind, media } = queue[at];
     const answer = ui.card.querySelector(".review-answer");
     answer.hidden = false;
+    // a cloze or a line-first card: the word, its sentence and the scene, now that the answer is out
+    if (kind && kind !== "word") {
+        const front = ui.card.querySelector(".review-front");
+        if (front) {
+            front.innerHTML = `<div class="review-word" lang="${lang()}" translate="no">${escapeHtml(lemma)}</div>
+                ${sentenceHtml(mined, lemma)}<div class="review-media"></div>`;
+            const box = front.querySelector(".review-media");
+            if (media && media.picture) addPicture(media, box);
+            if (media && media.audio) addAudio(media, box);
+        }
+    }
     answer.innerHTML = `<p class="muted">…</p>`;
     play();
     const when = preview(cardOf(store.get(CARDS, {}), lemma) || {});
@@ -216,8 +283,17 @@ document.addEventListener("keydown", (e) => {
     if (e.ctrlKey || e.metaKey || e.altKey || e.target.matches("input, textarea, select")) return;
     if (e.key === " ") { e.preventDefault(); reveal(); }
     else if (e.key === "p" || e.key === "P") play();
+    else if (e.key === "m" || e.key === "M") setMode(MODES[(MODES.indexOf(mode) + 1) % MODES.length]);
     else if (shown && GRADES[e.key]) grade(e.key);
     else if (shown && (e.key === "k" || e.key === "K")) grade("known");
 });
+
+if (ui.modes) {
+    ui.modes.addEventListener("click", (e) => {
+        const b = e.target.closest("button[data-mode]");
+        if (b) setMode(b.dataset.mode);
+    });
+    renderModes();
+}
 
 startSession();

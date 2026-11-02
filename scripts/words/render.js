@@ -5,21 +5,37 @@ import { wordStatus, counts, isUnknown } from "./status.js";
 import { target, keyFor } from "../core/target.js";
 
 // The expressions met so far (idioms seen in a text, any expression given a status in the popup):
-// key -> when first met, for the stats page's "idioms known / met". Saved a moment later, once.
+// key -> when it was met, for the stats page's "idioms known / met" and the Expressions page
+// ({at: Date.now(), sentence, source, time} when the page that met it knew them; older ones are the
+// date alone). Saved a moment later, once.
 export const EXPRESSIONS_KEY = keyFor("akko-expressions");
 let metLater = null;
-export function noteExpression(key) {
+export function noteExpression(key, context = null) {
+    // only what we know (a page with no sentence still records the day)
+    const clean = context ? Object.fromEntries(Object.entries(context).filter(([, v]) => v !== "" && v !== null && v !== undefined)) : null;
+    const known = clean && Object.keys(clean).length ? clean : null;
     if (!metLater) {
-        metLater = new Set();
+        metLater = new Map();
         setTimeout(() => {
             const met = store.get(EXPRESSIONS_KEY, {});
             let added = false;
-            for (const k of metLater) if (!met[k]) { met[k] = Date.now(); added = true; }
+            for (const [k, c] of metLater) {
+                const had = met[k];
+                if (!had) {
+                    met[k] = c ? { at: Date.now(), ...c } : Date.now();
+                    added = true;
+                } else if (c && typeof had === "number") {
+                    met[k] = { at: had, ...c };        // met before the context was kept
+                    added = true;
+                }
+            }
             metLater = null;
             if (added) store.set(EXPRESSIONS_KEY, met);
         }, 1000);
     }
-    metLater.add(key);
+    if (!metLater.has(key) || known) {
+        metLater.set(key, known ? { ...(metLater.get(key) || {}), ...known } : null);
+    }
 }
 
 const segmenter = "Segmenter" in Intl ? new Intl.Segmenter(target(), { granularity: "word" }) : null;

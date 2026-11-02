@@ -180,3 +180,8 @@ show();
 watch();
 // another tab switched language
 window.addEventListener("storage", (e) => { if (e.key === KEY && document.documentElement.lang !== lang()) show(); });
+// this tab got settings from somewhere else (the sync: scripts/core/sync.js, an akko account, a phone):
+// no "storage" event fires here, so watch what the store saves
+window.addEventListener("akko-saved", () => queueMicrotask(() => {
+    if (document.documentElement.lang !== lang()) show();
+}));
