@@ -87,7 +87,7 @@ function contextHtml(key) {
 
 function statusHtml(key) {
     const s = wordStatus(key);
-    return s && s !== "new" ? `<span class="expression-status st-${s}">${escapeHtml(s)}</span>` : "";
+    return s && s !== "new" ? `<span class="expression-status st-${s}">${escapeHtml(t(s))}</span>` : "";
 }
 
 function itemHtml(it) {
@@ -234,9 +234,20 @@ function pick(list) {
     });
 }
 
+// met in this or another tab since the page loaded (mining, the popup, a sync): show it
+function watchMet() {
+    window.addEventListener("storage", (e) => {
+        if (e.key !== MET && e.key !== null) return;
+        metMap = store.get(MET, {});
+        renderCount();
+        renderMet();
+    });
+}
+
 async function start() {
     metMap = store.get(MET, {});
     mined = await loadMined().catch(() => []);
+    watchMet();
     search();
     pick(ui.sets);
     pick(ui.parts);

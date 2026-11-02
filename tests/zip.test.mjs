@@ -40,3 +40,15 @@ test("a Blob (a recording) goes in and comes back as bytes", async () => {
 test("something that isn't a zip is refused", async () => {
     await assert.rejects(() => readZip(new TextEncoder().encode("not a zip at all, just text")), /zip/);
 });
+
+test("a damaged entry is caught, not restored as garbage", async () => {
+    const binary = new Uint8Array(256).map((_, i) => i);
+    const zip = await makeZip([{ name: "media/one.picture", data: binary }], new Date());
+    const bytes = await bytesOf(zip);
+    // the entry is stored, so its data sits right after the 30-byte local header and the name
+    const at = 30 + "media/one.picture".length + 40;
+    bytes[at] ^= 0xff;
+    await assert.rejects(() => readZip(bytes), /damaged/);
+    // and the untouched zip still reads
+    assert.equal((await readZip(await bytesOf(zip)))[0].size, 256);
+});

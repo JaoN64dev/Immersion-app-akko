@@ -40,10 +40,11 @@ function renderModes() {
 
 function setMode(m) {
     if (!MODES.includes(m) || m === mode) return;
+    const wasShown = shown;               // the answer is out: keep it out after the redraw
     mode = m;
     store.set(MODE_KEY, mode);
     renderModes();
-    show();
+    show().then(() => { if (wasShown && !shown) reveal(); });
 }
 
 let queue = [];       // [{lemma, mined, isNew}]

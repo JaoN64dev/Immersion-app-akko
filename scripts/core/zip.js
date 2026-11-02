@@ -43,8 +43,8 @@ async function deflate(bytes) {
     try {
         const stream = new CompressionStream("deflate-raw");
         const writer = stream.writable.getWriter();
-        writer.write(bytes);
-        writer.close();
+        await writer.write(bytes);         // a rejected write must land in the catch below
+        await writer.close();
         return new Uint8Array(await new Response(stream.readable).arrayBuffer());
     } catch {
         return null;                       // stored, then
@@ -54,8 +54,8 @@ async function deflate(bytes) {
 async function inflate(bytes) {
     const stream = new DecompressionStream("deflate-raw");
     const writer = stream.writable.getWriter();
-    writer.write(bytes);
-    writer.close();
+    await writer.write(bytes);
+    await writer.close();
     return new Uint8Array(await new Response(stream.readable).arrayBuffer());
 }
 
@@ -122,6 +122,7 @@ export async function makeZip(files, when = new Date()) {
         central.push(record);
 
         offset += local.length + bytes.length;
+        if (offset > 0xffffffff) throw new Error("this backup is too big for one zip (4 GB)");
     }
 
     const centralSize = central.reduce((n, c) => n + c.length, 0);
@@ -162,6 +163,7 @@ export async function readZip(data) {
     for (let i = 0; i < count; i++) {
         if (view.getUint32(at, true) !== SIG_CENTRAL) throw new Error("this zip is damaged");
         const method = view.getUint16(at + 10, true);
+        const crc = view.getUint32(at + 16, true);
         const compSize = view.getUint32(at + 20, true);
         const nameLength = view.getUint16(at + 28, true);
         const extraLength = view.getUint16(at + 30, true);
@@ -179,6 +181,7 @@ export async function readZip(data) {
         if (method === 0) bytes = raw;
         else if (method === 8) bytes = await inflate(raw);
         else throw new Error(`this zip uses a compression akko doesn't know (${method})`);
+        if (crc32(bytes) !== crc) throw new Error(`"${name}" in this zip is damaged`);
         out.push({
             name,
             size: bytes.length,
