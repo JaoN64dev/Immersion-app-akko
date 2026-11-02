@@ -12,7 +12,7 @@ GITHUB_REPO = "JaoN64dev/Immersion-app-akko"
 [[d1_databases]]
 binding = "DB"
 database_name = "akko"
-database_id = "D1_DATABASE_ID"
+database_id = "aef1de6a-930b-401b-81a3-5821ba02523a"
 
 [[r2_buckets]]
 binding = "MEDIA"
