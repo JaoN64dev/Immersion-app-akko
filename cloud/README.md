@@ -19,7 +19,14 @@ It's a [Cloudflare Worker](https://developers.cloudflare.com/workers/) (`src/wor
    npx wrangler@4 d1 create akko
    npx wrangler@4 r2 bucket create akko-recordings
    ```
-   `d1 create` prints the database's id.
+   `d1 create` prints the database's id (that's `CLOUDFLARE_D1_ID`, step 4).
+   **If the bucket step fails with `Please enable R2 through the Cloudflare Dashboard. [code: 10042]`**,
+   enable R2 first: dashboard → **R2 Object Storage** → *Enable R2* (it asks for a billing card;
+   akko's recordings stay inside the free tier — 10 GB stored, 1 M writes and 10 M reads a month),
+   then run the bucket command again. `wrangler deploy` fails without the bucket, because
+   `wrangler.toml` binds it as `MEDIA`.
+   Leave the `binding` snippet `d1 create` prints alone: `wrangler.toml` here already binds the
+   database as `DB`, and the deploy workflow fills the id in from the secret.
 3. A GitHub token that can open issues on the repository (fine-grained: *Issues: read and write*), for reports:
    `npx wrangler@4 secret put GITHUB_TOKEN`
 4. In the GitHub repository, **Settings → Secrets and variables → Actions**, add:
