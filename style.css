@@ -1719,3 +1719,54 @@ html[lang="ja"] body:not(.target-en) .tab .tab-word {display: none;}
 .account-devices li {margin: .3em 0;}
 .account-devices button {margin-left: .5em;}
 #account-status.bad, #account-msg.bad {color: #c0392b;}
+
+/* =========================================================
+   表現 expressions (expressions.html, scripts/pages/expressions.js)
+   ========================================================= */
+.expression-today {display: flex; flex-wrap: wrap; align-items: baseline; gap: .2em .6em; color: var(--ink); padding: .7em 1.2em; margin-bottom: 1em;}
+.expressions-today-label {font-size: .75em; letter-spacing: .06em; text-transform: uppercase; font-weight: bold; color: var(--main-color);}
+.expression-today .expression-key {font-size: 1.2em;}
+.expression-today .expression-gloss {flex-basis: 100%; margin: .2em 0 0; padding-left: 1.2em;}
+.expressions-tools {margin: 0 0 10px;}
+.expressions-tools input[type=search] {flex: 1 1 14em; font: inherit; padding: .35em .6em; border-radius: 8px; border: 2px solid var(--border-color); background: var(--card); color: var(--ink);}
+.expressions-hint {font-size: .85em; color: var(--on-panel);}
+.expressions-sets {display: flex; flex-wrap: wrap; align-items: center; gap: 4px; background: var(--text-bg); padding: 4px; border-radius: 10px; margin: 0 0 8px;}
+main .expressions-sets button {border: 0; background: transparent; color: var(--on-panel); padding: .15em .6em; font-size: .9em; cursor: pointer; border-radius: 6px;}
+main .expressions-sets button[aria-selected="true"] {background: var(--post-bg); color: var(--dark-link-color);}
+main .expressions-sets button small {font-size: .8em; opacity: .75;}
+.expressions-parts-label {font-size: .8em; color: var(--on-panel); padding: 0 .3em;}
+.expressions-count {margin: 0 0 8px; font-size: .85em; color: var(--on-panel);}
+.expressions-list {list-style: none; margin: 0; padding: .7em .9em; display: grid; gap: .55em;}
+.expression {background: var(--card); border-left: 4px solid var(--border-color); border-radius: 8px; padding: .45em .8em;}
+.expression.met {border-left-color: var(--extra4);}
+.expression-head {display: flex; flex-wrap: wrap; align-items: baseline; gap: .2em .6em;}
+.expression-key {font-size: 1.12em; color: var(--ink);}
+.expression-reading {font-size: .85em; color: var(--ink-soft);}
+.expression-tags {display: inline-flex; gap: .3em;}
+.expression-tags .tag {font-size: .7em; background: var(--extra4); color: var(--ink); padding: 0 .4em; border-radius: 4px; font-weight: bold;}
+.expression-status {font-size: .72em; padding: 0 .45em; border-radius: 999px; background: var(--post-bg); color: var(--ink);}
+.expression-status.st-learning {background: var(--extra3);}
+.expression-status.st-known {background: var(--extra4);}
+.expression-status.st-ignored {background: var(--extra1);}
+.expression-met-mark {margin-left: auto; color: #2e7d32; font-weight: bold;}
+.expression-gloss {margin: .25em 0 0; padding-left: 1.3em; font-size: .92em; color: var(--ink);}
+.expression-context {margin-top: .35em; padding-top: .3em; border-top: 1px dashed var(--border-color);}
+.expression-met {margin: 0; font-size: .78em; color: var(--ink-soft);}
+.expression-sentence {margin: .25em 0 0; padding: .25em .5em; font-size: .9em; color: var(--ink); background: var(--post-bg); border-radius: 6px;}
+.expressions-loading {margin: 0; color: var(--ink-soft);}
+.expressions-more {margin-top: .8em;}
+
+/* the welcome screen's expression of the day (scripts/site.js) */
+.welcome-expression {margin: .8em 0 0; padding-top: .6em; border-top: 1px dashed var(--border-color); font-size: .9em; color: var(--ink); text-align: center;}
+.welcome-expression b {font-size: 1.1em;}
+.welcome-expression small {display: block; font-size: .8em; color: var(--visited-link-color);}
+.welcome-expression .welcome-expression-gloss {color: var(--ink-soft);}
+
+/* 復習's card types: the word, the sentence with the word hidden, or the line first (scripts/pages/review.js) */
+.review-modes {display: flex; flex-wrap: wrap; gap: 4px; background: var(--text-bg); padding: 4px; border-radius: 10px; margin: 0 0 10px;}
+main .review-modes button {border: 0; background: transparent; color: var(--on-panel); padding: .15em .6em; font-size: .9em; cursor: pointer; border-radius: 6px;}
+main .review-modes button[aria-selected="true"] {background: var(--post-bg); color: var(--dark-link-color);}
+.review-cloze {font-size: 1.15em; color: var(--ink);}
+.review-cloze .blank {letter-spacing: .08em; color: var(--main-color);}
+.review-audio-hint {font-size: .85em; color: var(--ink-soft); margin: 0;}
+.review-play.big {font-size: 1.1em; padding: .4em 1em;}

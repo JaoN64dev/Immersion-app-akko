@@ -23,6 +23,7 @@
             <a class="tab" href="/podcasts.html"><span class="ja-only">聴く </span><small class="tab-word">listen</small></a>
             <a class="tab ja-only" href="/listening.html"><span class="ja-only">聴解 </span><small class="tab-word">drills</small></a>
             <a class="tab" href="/grammar.html"><span class="ja-only">文法 </span><small class="tab-word">grammar</small></a>
+            <a class="tab" href="/expressions.html"><span class="ja-only">表現 </span><small class="tab-word">expressions</small></a>
             <a class="tab" href="/review.html"><span class="ja-only">復習 </span><small class="tab-word">review</small></a>
             <a class="tab" href="/settings.html" aria-current="page"><span class="ja-only">設定 </span><small class="tab-word">settings</small></a>
             <a class="tab" href="/about.html"><span class="ja-only">私 </span><small class="tab-word">about</small></a>
@@ -265,14 +266,15 @@
                     <p id="backup-summary" class="backup-summary"></p>
                     <div class="backup-actions">
                         <button id="backup-export">⬇ download backup</button>
-                        <label class="btn">⬆ restore from backup
-                            <input id="backup-import" type="file" accept=".json,application/json" hidden>
+                        <button id="backup-export-zip" title="the .zip has your recordings too: the line audio and the pictures of mined words (it's bigger)">⬇ download everything (.zip)</button>
+                        <label class="btn">⬆ restore from a backup (.json or .zip)
+                            <input id="backup-import" type="file" accept=".json,.zip,application/json,application/zip" hidden>
                         </label>
                     </div>
                     <p id="backup-msg" class="status dark"></p>
                     <div class="auto-backup">
                         <h3>Automatic backups</h3>
-                        <p class="hint">Every 3 days, a backup is saved by itself on this computer; the last 10 are kept.</p>
+                        <p class="hint">Every 3 days, a backup is saved by itself on this computer; the last 10 are kept. They're text only: the .zip above carries the recordings.</p>
                         <div class="backup-actions">
                             <label><input id="auto-backup-on" type="checkbox" checked> make them</label>
                             <button id="auto-backup-now" type="button">back up now</button>

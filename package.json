@@ -1,13 +1,16 @@
 {
   "name": "akko",
   "productName": "akko",
-  "version": "1.9.0",
+  "version": "2.0.0",
   "description": "Learn Japanese or English by immersion: watch, read and listen with a pop-up dictionary, grammar lessons and Anki mining.",
   "main": "electron/main.js",
   "author": "akko (JaoN64Dev)",
   "license": "MIT",
   "repository": "github:JaoN64dev/Immersion-app-akko",
   "type": "commonjs",
+  "engines": {
+    "node": ">=22.13"
+  },
   "scripts": {
     "start": "node server.js",
     "desktop": "node electron/run.js",
@@ -17,18 +20,18 @@
     "pack-extension": "node tools/pack-extension.js"
   },
   "dependencies": {
-    "@ffmpeg/core": "^0.12.10",
-    "@ffmpeg/ffmpeg": "^0.12.15",
-    "adm-zip": "^0.6.1",
-    "cmu-pronouncing-dictionary": "^3.0.0",
-    "electron-updater": "^6.8.9",
-    "express": "^5.2.1",
+    "@ffmpeg/core": "0.12.10",
+    "@ffmpeg/ffmpeg": "0.12.15",
+    "adm-zip": "0.6.1",
+    "cmu-pronouncing-dictionary": "3.0.0",
+    "electron-updater": "6.8.9",
+    "express": "5.2.1",
     "lindera-wasm-nodejs-ipadic": "2.0.0",
-    "wordnet-db": "^3.1.14"
+    "wordnet-db": "3.1.14"
   },
   "devDependencies": {
-    "electron": "^44.5.1",
-    "electron-builder": "^26.15.3"
+    "electron": "44.5.1",
+    "electron-builder": "26.15.3"
   },
   "build": {
     "appId": "io.github.jaon64dev.akko",
@@ -74,6 +77,13 @@
       "target": [
         {
           "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
           "arch": [
             "arm64",
             "x64"

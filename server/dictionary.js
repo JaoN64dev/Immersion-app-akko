@@ -235,6 +235,66 @@ async function buildExpressions() {
 }
 const hitsOf = (text) => { const v = index.get(text); return v === undefined ? null : typeof v === 'number' ? [v] : v; };
 
+// ---------- the Expressions page: everything JMdict knows, in sets ----------
+// The same expressions tokenize marks (the index above), each with its reading, its meanings and
+// the sets it belongs to, for expressions.html. Made once, on the page's first request: reading
+// 13,000 entries takes a moment, and most sessions never open the page.
+
+const BODY_PARTS = ['手', '口', '目', '腹', '頭', '足'];      // the kanji the page has a set for
+const SETS = ['idioms', 'yoji', 'kotowaza', 'phrases'];      // 慣用句, 四字熟語, ことわざ,  everyday phrases
+let catalog = null;
+let catalogSets = null;          // the buttons' counts, made once with it
+
+function buildCatalog() {
+  if (catalog) return catalog;
+  if (!expressions || !dict) return null;
+  const kinds = new Map();          // key -> its kind (what the popup shows), once per expression
+  for (const list of expressions.byFirst.values()) for (const e of list) if (!kinds.has(e.key)) kinds.set(e.key, e.kind);
+  const items = [];
+  for (const [key, kind] of kinds) {
+    const hits = hitsOf(key);
+    if (!hits) continue;
+    const entry = dict.entries.get(hits[0]);
+    const tags = new Set();
+    const gloss = [];
+    for (const sense of entry.s) {
+      (sense.m || []).forEach((m) => tags.add(m));
+      if (sense.g && sense.g.length) gloss.push(sense.g.join('; '));
+    }
+    const sets = [];
+    if (kind === 'i') sets.push('idioms');
+    if (tags.has('yoji')) sets.push('yoji');
+    if (tags.has('proverb')) sets.push('kotowaza');
+    if (kind === 'p') sets.push('phrases');
+    items.push({
+      key,
+      reading: (entry.r || [])[0] || '',
+      gloss,
+      kind,
+      sets,
+      parts: BODY_PARTS.filter((k) => key.includes(k)),
+    });
+  }
+  items.sort((a, b) => a.key.localeCompare(b.key, 'ja'));
+  catalog = items;
+  catalogSets = {
+    sets: [{ id: 'all', count: items.length }, ...SETS.map((id) => ({ id, count: items.filter((it) => it.sets.includes(id)).length }))],
+    parts: BODY_PARTS.map((id) => ({ id, count: items.filter((it) => it.parts.includes(id)).length })),
+  };
+  console.log(`expressions page: ${items.length} to browse`);
+  return catalog;
+}
+
+// the same one all day, a different one tomorrow
+function expressionOfTheDay(items) {
+  if (!items.length) return null;
+  const idioms = items.filter((it) => it.sets.includes('idioms'));
+  const day = new Date().toLocaleDateString('sv-SE');           // YYYY-MM-DD, this computer's day
+  let n = 0;
+  for (const c of day) n = (n * 31 + c.charCodeAt(0)) % 1000003;
+  return { day, item: (idioms.length ? idioms : items)[n % (idioms.length || items.length)] };
+}
+
 let loadingDict = false;      // true while the start-up load (maybe a first download + build) runs
 
 async function loadDict() {
@@ -704,6 +764,34 @@ router.get('/dict', asyncRoute(async (req, res) => {
   }
   res.json(withMore(ready.dict ? lookup(qs, form) : await jishoLookup(qs[0]), 'ja'));
 }));
+
+// ---------- the Expressions page (server/dictionary.js above) ----------
+
+// Sets, search and paging for expressions.html; ?set=idioms|yoji|kotowaza|phrases, ?part=手…
+router.get('/expressions', (req, res) => {
+  const items = buildCatalog();
+  if (!items) return res.status(503).json({ error: ready.error || 'the dictionary is still starting' });
+  const set = String(req.query.set || 'all');
+  const part = String(req.query.part || '');
+  const q = String(req.query.q || '').trim().toLowerCase();
+  let list = items;
+  if (set !== 'all') list = list.filter((it) => it.sets.includes(set));
+  if (part) list = list.filter((it) => it.parts.includes(part));
+  if (q) {
+    list = list.filter((it) => it.key.includes(q) || it.reading.includes(q)
+      || it.gloss.some((g) => g.toLowerCase().includes(q)));
+  }
+  const offset = Math.max(0, Number(req.query.offset) || 0);
+  const limit = Math.min(500, Math.max(1, Number(req.query.limit) || 120));
+  res.json({ total: list.length, offset, limit, ...catalogSets, items: list.slice(offset, offset + limit) });
+});
+
+// one for the welcome screen: the same all day, a different one tomorrow
+router.get('/expressions/today', (req, res) => {
+  const items = buildCatalog();
+  if (!items) return res.status(503).json({ error: ready.error || 'the dictionary is still starting' });
+  res.json(expressionOfTheDay(items));
+});
 
 // ---------- Settings → Dictionary ----------
 

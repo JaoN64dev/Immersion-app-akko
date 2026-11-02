@@ -1,5 +1,6 @@
-// Settings → Backup: download everything as one .json file, restore one, and the automatic backups
-// the server keeps (scripts/core/auto-backup.js). What a backup is: scripts/core/backup-file.js.
+// Settings → Backup: download everything as one .json file (or a .zip with the recordings too),
+// restore either, and the automatic backups the server keeps (scripts/core/auto-backup.js).
+// What a backup is: scripts/core/backup-file.js.
 
 import { $ } from "./core/dom.js";
 import { store, download, getJson, escapeHtml } from "./core/utils.js";
@@ -8,7 +9,7 @@ import { wordCounts } from "./words/status.js";
 import { KEY as PROGRESS_KEY } from "./progress.js";
 import { t } from "./i18n.js";
 import { keyFor } from "./core/target.js";
-import { buildBackup, readBackup, applyBackup } from "./core/backup-file.js";
+import { buildBackup, buildBackupZip, readBackup, readBackupFile, applyBackup } from "./core/backup-file.js";
 import { autoBackupOn, setAutoBackup, backupNow } from "./core/auto-backup.js";
 import { restored as wordsRestored } from "./core/words-sync.js";
 import { restored as syncRestored } from "./core/sync.js";
@@ -37,23 +38,31 @@ async function exportBackup() {
     renderSummary();
 }
 
-// restore from a backup's text (a file you picked, or an automatic one)
-async function restoreFrom(text) {
-    let file;
+// everything, the mined words' line audio and pictures too: a .zip
+async function exportZip() {
+    msg.textContent = t("putting the recordings in…");
     try {
-        file = readBackup(text);
-    } catch {
-        msg.textContent = "that isn't an akko backup file";
-        return;
+        const zip = await buildBackupZip();
+        store.set("akko-last-backup", Date.now());
+        download(`akko-backup-${new Date().toISOString().slice(0, 10)}.zip`, zip, "application/zip");
+        msg.textContent = "backup downloaded ✓";
+    } catch (err) {
+        msg.textContent = "backup failed: " + err.message;
     }
-    const { data, idb } = file;
+    renderSummary();
+}
+
+// restore from a backup (a picked file, or an automatic one's text)
+async function restoreFrom(backup) {
+    const { data, idb } = backup;
     const parse = (k, fallback) => { try { return JSON.parse(data[k]) ?? fallback; } catch { return fallback; } };
     const minedCount = (Array.isArray(idb.mined) ? idb.mined.length : 0) + parse("akko-mined", []).length;
     const what = describe(parse(keyFor("akko-words"), {}), minedCount,
-        Object.keys(parse(PROGRESS_KEY, {})).length, (idb.texts || []).length);
-    if (!confirm(t(`Restore the backup from ${new Date(file.exported).toLocaleString()}?\n\n${what}\n\nThis replaces everything saved in this browser right now.`))) return;
+        Object.keys(parse(PROGRESS_KEY, {})).length, (idb.texts || []).length)
+        + (Array.isArray(backup.media) ? ` · ${t("{n} recordings").replace("{n}", backup.media.length)}` : "");
+    if (!confirm(t(`Restore the backup from ${new Date(backup.exported).toLocaleString()}?\n\n${what}\n\nThis replaces everything saved in this browser right now.`))) return;
     try {
-        await applyBackup(file);
+        await applyBackup(backup);
         wordsRestored();             // the shared word list becomes the backup's (scripts/core/words-sync.js)
         syncRestored();              // and the rest of what's shared (scripts/core/sync.js)
     } catch (err) {
@@ -64,10 +73,35 @@ async function restoreFrom(text) {
     setTimeout(() => location.reload(), 600);
 }
 
+// a picked .json or .zip file
+async function restoreFile(file) {
+    msg.textContent = t("reading the backup…");
+    let backup;
+    try {
+        backup = await readBackupFile(file);
+    } catch {
+        msg.textContent = "that isn't an akko backup file";
+        return;
+    }
+    await restoreFrom(backup);
+}
+
+// an automatic backup, which is the .json the server keeps (server/backups.js)
+async function restoreText(text) {
+    let backup;
+    try {
+        backup = readBackup(text);
+    } catch {
+        msg.textContent = "that isn't an akko backup file";
+        return;
+    }
+    await restoreFrom(backup);
+}
+
 async function restoreBackup() {
     const f = input.files[0];
     input.value = "";
-    if (f) restoreFrom(await f.text());
+    if (f) restoreFile(f);
 }
 
 // ---------- automatic backups ----------
@@ -87,6 +121,7 @@ async function renderAuto() {
 
 export function init() {
     $("#backup-export").addEventListener("click", exportBackup);
+    $("#backup-export-zip").addEventListener("click", exportZip);
     input.addEventListener("change", restoreBackup);
     autoUi.on.addEventListener("input", () => setAutoBackup(autoUi.on.checked));
     $("#auto-backup-now").addEventListener("click", async () => {
@@ -101,7 +136,7 @@ export function init() {
         try {
             const res = await fetch(`/api/backups/${encodeURIComponent(b.dataset.name)}`);
             if (!res.ok) throw new Error(`${res.status}`);
-            restoreFrom(await res.text());
+            restoreText(await res.text());
         } catch (err) {
             msg.textContent = "couldn't read that backup: " + err.message;
         }

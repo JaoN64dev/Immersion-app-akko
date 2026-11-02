@@ -355,15 +355,21 @@ async function checkForUpdate({ quiet }) {
     if (!quiet) dialog.showMessageBox({ type: 'info', message: 'You have the newest akko', detail: `Version ${app.getVersion()}.` });
     return;
   }
-  // the installed app can update itself; the portable one (and a copy run from the code) can't
-  const canInstall = app.isPackaged && process.platform === 'win32' && !process.env.PORTABLE_EXECUTABLE_DIR;
+  // The installed app can update itself: the Windows installer, and the Linux AppImage (which
+  // replaces itself). Not the portable .exe, a copy run from the code, or a distro's package.
+  // macOS can't: Squirrel.Mac only installs an update signed with the same Developer ID as the
+  // running app, and akko's builds are unsigned (build.yml), so it opens the download page.
+  const canInstall = app.isPackaged && (
+    (process.platform === 'win32' && !process.env.PORTABLE_EXECUTABLE_DIR)
+    || (process.platform === 'linux' && !!process.env.APPIMAGE));
   const { response } = await dialog.showMessageBox({
     type: 'info',
     title: 'akko',
     message: `akko ${version} is out`,
     detail: canInstall
       ? `You have ${app.getVersion()}. akko can download it and install it when you restart: your words and progress are kept.`
-      : `You have ${app.getVersion()}. Download the new version from the release page: your words and progress are kept.`,
+      : `You have ${app.getVersion()}. Download the new version from the release page: your words and progress are kept.`
+        + (process.platform === 'darwin' ? '\n\nmacOS only lets a signed app update itself, and akko is unsigned.' : ''),
     buttons: [canInstall ? 'Update' : 'Open the download page', 'Later', 'Skip this version'],
     defaultId: 0,
     cancelId: 1,

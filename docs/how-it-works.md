@@ -1,6 +1,6 @@
 # How akko works
 
-This explains the code behind the app: how the pieces fit, where each feature lives, how data moves and where it's saved. It's for anyone changing the code. To *use* the app, see the main [README](../README.md); to write lessons, see [grammar/README.md](../grammar/README.md) and [course/README.md](../course/README.md).
+This explains the code behind the app: how the pieces fit, where each feature lives, how data moves and where it's saved. It's for anyone changing the code. To *use* the app, see the main [README](../README.md); to cut a release, [maintaining.md](maintaining.md); to write lessons, see [grammar/README.md](../grammar/README.md) and [course/README.md](../course/README.md).
 
 ## The big picture
 
@@ -24,7 +24,7 @@ A third, optional piece is the **browser extension** (`extension/`), which bring
 
 Start the server with `npm start` (or `start-akko.bat` on Windows, which also opens the browser). It listens on `http://127.0.0.1:3000`, only reachable from your own computer. Websites open in your browser can still send requests to it, so `server/guard.js` answers only at 127.0.0.1 / localhost (against DNS rebinding) and refuses POST/PUT/DELETE whose `Origin` is another site, and any `/api/` request a browser marks as cross-site (`Sec-Fetch-Site`). The one exception is akko's own extension, `chrome-extension://cflgdipimeohhbeadldfgaohdcnnkcol` (its id is fixed by the `key` in its manifest; `AKKO_EXTENSIONS=<id>,…` adds others). Tested in `tests/guard.test.js`.
 
-The **desktop app** (`electron/main.js`, built with `npm run dist`) is the same thing in a window. It sets `AKKO_DATA` to a folder in the user profile, copies the bundled dictionary files there on the first start, calls `start(3417)` from `server.js`, and opens a window on that address. The port never changes, because the window's storage (words, books…) belongs to the address. Links to other sites open in the normal browser, unless the link says `target="akko-window"`: then the site opens in a new window inside akko (sandboxed like a browser tab, and free to browse); `target="_blank"` on an akko page opens a new akko window. These rules apply to every window (`web-contents-created` in `electron/main.js`). New windows that a site opened this way asks for (ads, pop-ups) stay inside akko too, so they never reach the normal browser. Once a day, and from Help → Check for updates, the app asks GitHub for the newest release (`checkForUpdate`; `AKKO_UPDATE_URL` points it elsewhere for testing): the installed app downloads it with electron-updater and installs it when you restart, the portable one offers to open the download page. On each start it asks (a native dialog, before the server starts) whether to open the **app window** or the **browser**, unless `--browser` / `--window` is given or a choice was remembered (`desktop.json` in the user profile; the akko menu → When akko starts). In **browser mode** no window opens: the app shows a tray icon, keeps the server running and opens the address in the default browser. `npm run desktop` runs it from the code (through `electron/run.js`, which removes `ELECTRON_RUN_AS_NODE`: VS Code terminals set it, and it stops Electron from opening a window).
+The **desktop app** (`electron/main.js`, built with `npm run dist`) is the same thing in a window. It sets `AKKO_DATA` to a folder in the user profile, copies the bundled dictionary files there on the first start, calls `start(3417)` from `server.js`, and opens a window on that address. The port never changes, because the window's storage (words, books…) belongs to the address. Links to other sites open in the normal browser, unless the link says `target="akko-window"`: then the site opens in a new window inside akko (sandboxed like a browser tab, and free to browse); `target="_blank"` on an akko page opens a new akko window. These rules apply to every window (`web-contents-created` in `electron/main.js`). New windows that a site opened this way asks for (ads, pop-ups) stay inside akko too, so they never reach the normal browser. Once a day, and from Help → Check for updates, the app asks GitHub for the newest release (`checkForUpdate`; `AKKO_UPDATE_URL` points it elsewhere for testing): the installed app downloads it with electron-updater and installs it when you restart (the Linux AppImage replaces itself; the portable `.exe` and a Mac, whose unsigned builds Squirrel won't install, offer to open the download page). On each start it asks (a native dialog, before the server starts) whether to open the **app window** or the **browser**, unless `--browser` / `--window` is given or a choice was remembered (`desktop.json` in the user profile; the akko menu → When akko starts). In **browser mode** no window opens: the app shows a tray icon, keeps the server running and opens the address in the default browser. `npm run desktop` runs it from the code (through `electron/run.js`, which removes `ELECTRON_RUN_AS_NODE`: VS Code terminals set it, and it stops Electron from opening a window).
 
 ## Folders
 
@@ -150,7 +150,7 @@ JMdict and KANJIDIC2 can be replaced while the app runs, from **Settings → Dic
 
 **Word status** (new / learning / known / ignored) is stored per dictionary form in `akko-words` (or `akko-words-en`) by `scripts/words/status.js`. Keys 1–4 set it for the word in the popup or under the mouse (`scripts/keys.js`, `scripts/words/hover.js`). Any change fires a `akko-words-changed` event, and every page re-colours itself. The list is shared through the server (see [One word list](#one-word-list)): changes made on a page wait in `akko-words-pending` until the server has them.
 
-**Mining** (`scripts/mining.js`): "+ mine" saves a card into IndexedDB `mined` with the word, reading, meaning (for English: your translation first, then the definition), the sentence and where it came from. If Anki is set up, it's sent through `/api/anki` → AnkiConnect (`scripts/anki/client.js`). The card can include a screenshot and the line's audio, recorded from the video with `MediaRecorder`, plus the word's pronunciation from `/api/audio`. The screenshot and the line's audio are also kept in akko, with or without Anki (IndexedDB `media`, keyed by the card's id, `scripts/core/media.js`; the Anki panel's "keep … in akko" switch, `keep` in `akko-anki`), so 復習 can show the scene and play the line. They're left out of backups (a backup is text).
+**Mining** (`scripts/mining.js`): "+ mine" saves a card into IndexedDB `mined` with the word, reading, meaning (for English: your translation first, then the definition), the sentence and where it came from. If Anki is set up, it's sent through `/api/anki` → AnkiConnect (`scripts/anki/client.js`). The card can include a screenshot and the line's audio, recorded from the video with `MediaRecorder`, plus the word's pronunciation from `/api/audio`. The screenshot and the line's audio are also kept in akko, with or without Anki (IndexedDB `media`, keyed by the card's id, `scripts/core/media.js`; the Anki panel's "keep … in akko" switch, `keep` in `akko-anki`), so 復習 can show the scene and play the line. They're left out of the plain `.json` backup (a backup is text); Settings → Backup's **download everything (.zip)** carries them.
 
 ## The pages
 
@@ -162,8 +162,9 @@ JMdict and KANJIDIC2 can be replaced while the app runs, from **Settings → Dic
 | 聴解 Listening (`listening.html`, Japanese only) | `pages/listening.js` | `listening/speech.js` (audio from `/api/speech`, or the browser's voice), sets from `/api/listening` (`server/listening.js`), sentence drills from the grammar examples |
 | Grammar | `pages/grammar.js` | `grammar/lessons.js` (list from `/api/grammar`, each lesson from `/api/grammar/<id>` when opened), `grammar/markdown.js` (a small Markdown renderer) |
 | Course | `pages/course.js` | `/api/course` (`server/course.js`), `totals.js` to measure goals |
-| Review | `pages/review.js` | flashcards of "learning" words, scheduled by `words/fsrs.js` (see [復習](#復習-spaced-repetition-fsrs)), with the mined sentence, picture and line (`core/media.js`) |
-| Settings | `pages/settings.js` | learning / interface / your language, display, OpenSubtitles key, `pages/stats.js`, `backup.js` |
+| 表現 Expressions (`expressions.html`, Japanese sets) | `pages/expressions.js` | `/api/expressions` and `/api/expressions/today` (`server/dictionary.js`: the expressions `server/expressions.js` indexed, with their readings, meanings and JMdict's tags), the ones you've met from `akko-expressions` and the mined words |
+| Review (`review.html`) | `pages/review.js` | flashcards of "learning" words, scheduled by `words/fsrs.js` (see [復習](#復習-spaced-repetition-fsrs)), with the mined sentence, picture and line (`core/media.js`); three card types (word, cloze, line first) |
+| Settings | `pages/settings.js` | learning / interface / your language, display, OpenSubtitles key, `pages/stats.js`, `backup.js` (JSON, or the .zip with the recordings via `core/zip.js`) |
 
 `scripts/site.js` runs first on every page: interface language, the target-language classes, and the first-visit chooser.
 
@@ -227,6 +228,14 @@ The desktop app ships the folder next to itself (`resources/extension`, outside 
 
 `scripts/words/fsrs.js` is FSRS-4.5 with its default weights (what Anki uses): a card has a stability (days until the chance to remember it drops to 90%) and a difficulty; each grade (again / hard / good / easy) updates both, and the next review is when the chance is 90%. Pure functions, tested in `tests/fsrs.test.mjs`. `scripts/pages/review.js` builds a session from the "learning" words: the ones due, then up to 20 never reviewed (`akko-review-new` counts them per day). "Again" brings a word back in the same session. A word whose next review is 21 days or more away becomes known (the same rule as the Anki import). Cards are in `akko-review` / `-en` (`{s, d, due, last, reps, lapses}`); older cards (`{last, again, good}`) start again as new.
 
+**How a card asks** (`akko-review-mode`, or the switch above the card / `M`): *word* (the word alone), *cloze* (its sentence with the word hidden behind `＿`, the picture held back until the answer) or *line first* (the mined line plays and the word is hidden). A card with no sentence can't be a cloze and one with no recording can't be line-first: those fall back to the word. The answer always adds the word, its reading and meanings, the sentence and the scene.
+
+## 表現: the expressions page
+
+`server/expressions.js` indexes JMdict's idioms (and WordNet's phrases, for English) by the dictionary forms of their words, so a line's words can be matched against them (`ex` / `et` on a token, `scripts/words/render.js`). The same index feeds `expressions.html`: `/api/expressions` (`server/dictionary.js`) reads every expression the index holds — 13,000 — once, on the page's first request, and returns the reading, the meanings, JMdict's tags (ことわざ `proverb`, 四字熟語 `yoji`, 慣用句 `id`, everyday `exp`, the kanji 手・口・目・腹・頭・足) and the sets they make, filtered and paged. `/api/expressions/today` picks one by the date (the same all day).
+
+What you've met is `akko-expressions` / `-en`: an idiom underlined in a text, or any expression opened in the popup, with the sentence and source when the page knew them (`noteExpression`), and anything mined (`mined`, for its sentence, source and line).
+
 ## The samples
 
 `samples/` (served at `/samples`, see [samples/README.md](../samples/README.md)): `wagahai.webm` + `.srt` (Watch → "try a sample", `pages/watch.js`) and `wagahai-1.txt`, added to the Read library the first time it’s empty (`addSample` in `pages/read.js`, once per language: `akko-sample-text` / `-en`; English gets `alice-1.txt`).
@@ -250,9 +259,11 @@ The desktop app ships the folder next to itself (`resources/extension`, outside 
 | `akko-companion-at`, `akko-companion-watched` | how far this window got in the extension's log; the YouTube / Netflix videos watched (Stats) |
 | `akko-words-pending` / `-en`, `akko-words-sync` | word statuses not yet sent to the server; where this page got to in the shared list |
 | `akko-review-new` / `-en`, `akko-sample-text` | new words reviewed today; whether the sample novel was added |
+| `akko-review-mode` | how 復習 asks: `word`, `cloze` or `audio` (line first) |
+| `akko-expressions` / `-en` | the expressions you've met: `{key: {at, sentence, source, time}}` (older ones just the date) |
 | IndexedDB `akko` → `texts`, `mined`, `media` | books (whole), mined words, a mined word's picture and line audio (not in backups) |
 
-`scripts/backup.js` downloads every `akko-*` key and both IndexedDB stores as one JSON file, and restores it.
+`scripts/backup.js` downloads every `akko-*` key and both IndexedDB stores as one JSON file, and restores it. **download everything (.zip)** is the same JSON plus the `media` store: `akko-backup.json`, `media.json` (which file is whose, and its type) and `media/<id>.audio` / `media/<id>.picture`, written by `scripts/core/zip.js` (no library: stored entries, deflated when that's smaller). Restoring accepts either file; a plain `.json` leaves the recordings where they are, a `.zip` replaces them with its own.
 
 **On the server** (`data/`, or `AKKO_DATA` if set: the desktop app uses `%APPDATA%\akko\data`; `server/paths.js`):
 
@@ -290,14 +301,14 @@ The desktop app ships the folder next to itself (`resources/extension`, outside 
 - **Dark theme** (`scripts/core/theme.js`): colours are CSS variables; the dark set is at the end of `style.css`, used when the computer is dark ("auto", through `prefers-color-scheme`, no class) or when picked (`theme-dark` on `<html>`). `--card`, `--ink`, `--on-panel`… are the light/dark-sensitive ones; use them instead of fixed colours.
 - **Automatic backups**: every page calls `autoBackup.start()`; every 3 days one tab builds the same file as Settings → Backup (`scripts/core/backup-file.js`) and posts it to `/api/backups`, which keeps the last 10.
 - **Phones** (`server/lan.js`): off by default. When on, a second server listens on all addresses at port + 1; `server/guard.js` sends those requests through `lanGuard` (private addresses only, an IP address as Host, a sign-in cookie from the PIN) before the usual checks. `/api/lan` (settings, PIN) answers the computer only.
-- **Builds for every system** (`.github/workflows/build.yml`): a version tag starts it. The tests run on Linux, then akko is built on Windows, macOS (`.dmg`, Apple Silicon and Intel) and Linux (`.AppImage`), each on its own GitHub runner, unsigned (`CSC_IDENTITY_AUTO_DISCOVERY=false`), and all the files go into a draft release. The Windows-only parts check `process.platform` (VOICEVOX's installer, Windows' voices, the update installer), so the Mac and Linux apps leave them out; their update check opens the download page.
-- **Updates** (`electron/main.js`): the GitHub check decides whether there's a newer version; the installed app then uses electron-updater, which reads the release's `latest.yml` (made by `npm run dist`; upload it with the installer and its `.blockmap`, plus the portable `.exe` and the extension's zip).
+- **Builds for every system** (`.github/workflows/build.yml`): a version tag starts it — or Actions → build → Run workflow, which keeps the files with the run. The tests run on Windows, macOS and Linux, then akko is built on each (Windows `.exe` + portable, macOS `.dmg` and `.zip` for Apple Silicon and Intel, Linux `.AppImage`), unsigned (`CSC_IDENTITY_AUTO_DISCOVERY=false`), and all the files go into a draft release. The Windows-only parts check `process.platform` (VOICEVOX's installer, Windows' voices), so the Mac and Linux apps leave them out.
+- **Updates** (`electron/main.js`): the GitHub check decides whether there's a newer version; the installed app then uses electron-updater, which reads the release's `latest.yml` (Windows) or `latest-linux.yml` (AppImage), made by `npm run dist` — upload them with the installers and their `.blockmap` files, plus the portable `.exe`, the mac `.zip` and the extension's zip. macOS can't install an update by itself unless the app is signed with a Developer ID (Squirrel.Mac checks it) and akko's builds are unsigned, so there it opens the download page; `docs/maintaining.md` has the rest.
 - **Installer size**: `package.json`'s `build.files` leaves out what akko never loads (ffmpeg's `umd` copy, WordNet's `index.sense`, tests, docs, the website, your data), and `electronLanguages` keeps Chromium's own texts in English, Portuguese, Spanish and Japanese only.
 - **Hearing Japanese anywhere** (`scripts/core/say.js`): the popup's 🔊 / ▶ sentence and the grammar examples use the listening page's voices; Anki cards without a recorded line get `/api/speech` audio of the sentence.
 
 ## Tests
 
-`npm test` runs `tests/*.test.*` with Node's built-in test runner (no extra packages). It runs offline: `AKKO_OFFLINE=1` makes the English lookup skip Wiktionary and Commons.
+`npm test` runs `tests/*.test.*` with Node's built-in test runner (no extra packages), on Windows, macOS and Linux in CI (`build.yml`: Node 22.13 or newer). It runs offline: `AKKO_OFFLINE=1` makes the English lookup skip Wiktionary and Commons. Two tests skip themselves where the system can't do them (Windows' Japanese voice, VOICEVOX's installer).
 
 | File | Covers |
 |---|---|
@@ -312,6 +323,17 @@ The desktop app ships the folder next to itself (`resources/extension`, outside 
 | `tests/fsrs.test.mjs` | 復習's schedule: first intervals, gaps growing, lapses, helpers |
 | `tests/companion.test.js` | the extension's log (only valid entries kept), akko windows catching up, the word list the extension sees, the extension folder (not shown to or opened by a phone) |
 | `tests/browser.test.mjs` | browser modules with a pretend localStorage: per-language storage keys, your-language default, word statuses, tokens to HTML, % understood, sentences, the Markdown renderer (including that it's safe), and the Japanese interface dictionary (no repeated keys, placeholders kept) |
+| `tests/zip.test.mjs` | the backup's `.zip` (`scripts/core/zip.js`): text and Blobs in and out, deflated entries, something that isn't a zip refused |
+| `tests/expressions.test.js` | the expression index: what matches (`首を長くして`), what doesn't (too far apart), the longer expression winning, grammatical nouns left to the grammar lessons, the cache file |
+| `tests/i18n.test.mjs` | the interface's `ja` / `pt` / `es` tables have the same entries, the same `{placeholders}` and the same `data-i18n` links |
+| `tests/sync.test.js` | everything else in step (`server/sync.js`): the last change wins per record, deletions reach the others, a page catches up from where it was, time per device, recordings follow their mined words |
+| `tests/cloud.test.mjs` | the online service (`cloud/src/worker.js`) on Node's SQLite and an in-memory R2: accounts, recovery codes, devices, sync, recordings, export, reports, deleting an account |
+| `tests/cloud-sync.test.mjs` | two computers with one account, end to end: words, mined words and recordings both ways, deletions, quiet rounds, signing out |
+| `tests/diagnostics.test.js` | what a report carries (nothing personal), that only this computer sees the diagnostics, reports to the service and the GitHub-issue fallback |
+| `tests/dictionary-install.test.js` | Settings → Dictionary: a jmdict-simplified upload replaces the dictionary, and a damaged one is refused |
+| `tests/yomitan.test.js` | Yomitan dictionaries you add: entries under JMdict in your order, frequency lists (all of Yomitan's value formats), and nothing unsafe in the page |
+| `tests/extension-lang.test.js` | the extension's four languages: the same rows, the same `{placeholders}`, and every English row is text it really shows |
+| `tests/syntax.test.js` | every script parses (the page scripts only run in a browser, where a typo is a broken page) |
 
 `scripts/package.json` (`"type": "module"`) lets Node load the browser modules; browsers ignore it.
 

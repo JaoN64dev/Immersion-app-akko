@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>表現 akko</title>
+    <link href="/style.css" rel="stylesheet" type="text/css" media="all">
+    <script type="module" src="/scripts/site.js"></script>
+    <script type="module" src="/scripts/pages/expressions.js"></script>
+</head>
+<body>
+    <header>
+        <marquee class="en-only" scrollamount="2">SITE BY: AKKO • 首を長くする • SITE BY: AKKO • an idiom is more than its words • SITE BY: AKKO • 一石二鳥 • SITE BY: AKKO • i might be narcisist</marquee>
+        <marquee class="ja-only" scrollamount="2">SITE BY: AKKO ・ 慣用句は言葉の足し算じゃない ・ SITE BY: AKKO ・ 一石二鳥 ・ SITE BY: AKKO ・ 少しずつ ・ SITE BY: AKKO ・ i might be narcisist</marquee>
+    </header>
+    <nav class="topbar" aria-label="pages">
+        <button type="button" class="menu-btn" aria-expanded="false" aria-controls="sidebar" aria-label="this page's menu">&#9776;</button>
+        <a class="brand" href="/" translate="no">akko</a>
+        <div class="topbar-tabs">
+            <a class="tab" href="/course.html"><span class="ja-only">道 </span><small class="tab-word">course</small></a>
+            <a class="tab" href="/"><span class="ja-only">観る </span><small class="tab-word">watch</small></a>
+            <a class="tab" href="/reading.html"><span class="ja-only">読む </span><small class="tab-word">read</small></a>
+            <a class="tab" href="/podcasts.html"><span class="ja-only">聴く </span><small class="tab-word">listen</small></a>
+            <a class="tab ja-only" href="/listening.html"><span class="ja-only">聴解 </span><small class="tab-word">drills</small></a>
+            <a class="tab" href="/grammar.html"><span class="ja-only">文法 </span><small class="tab-word">grammar</small></a>
+            <a class="tab" href="/expressions.html" aria-current="page"><span class="ja-only">表現 </span><small class="tab-word">expressions</small></a>
+            <a class="tab" href="/review.html"><span class="ja-only">復習 </span><small class="tab-word">review</small></a>
+            <a class="tab" href="/settings.html"><span class="ja-only">設定 </span><small class="tab-word">settings</small></a>
+            <a class="tab" href="/about.html"><span class="ja-only">私 </span><small class="tab-word">about</small></a>
+        </div>
+    </nav>
+    <div id="container">
+        <div class="flex">
+        <aside id="sidebar">
+            <div id="bio" class="note">I`m akko. idioms, proverbs and set phrases in one place: the ones you've met, and every set the dictionary knows.</div>
+            <div class="side-sticky">
+            <nav id="navi">
+            <details open=""><summary>Expressions</summary>
+            <ul>
+                <li><a href="#expressions-today">expression of the day</a></li>
+                <li><a href="#expressions-browse">browse</a></li>
+                <li><a href="#expressions-met">the ones you've met</a></li>
+            </ul>
+            </details>
+            <details><summary>Keys</summary>
+            <ul class="keys">
+                <li><kbd>?</kbd> all the keys of this page</li>
+                <li><kbd>/</kbd> search</li>
+            </ul>
+            </details>
+            </nav>
+            <p class="credits ja-only">expressions: <a href="https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project" target="_blank" rel="noopener">JMdict</a> (EDRDG, CC BY-SA 4.0)</p>
+            <p class="credits en-only">expressions: <a href="https://wordnet.princeton.edu" target="_blank" rel="noopener">WordNet</a> (Princeton)</p>
+            </div>
+        </aside>
+        <main>
+        <div id="content">
+
+            <h1><span class="ja-only">表現 </span>Expressions</h1>
+
+            <p class="note settings-note" data-i18n="expressions-howto">An idiom is more than its words: <b lang="ja">首を長くする</b> is "to wait eagerly", not a long neck. akko underlines the ones it finds while you watch and read, and keeps them apart from your words. Here they all are: the ones you've met (with the sentence you met them in), and every idiom, proverb, <b lang="ja">四字熟語</b> and everyday phrase in the dictionary.</p>
+
+            <section id="expressions-today" class="note expression-today" hidden></section>
+
+            <section id="expressions-browse">
+                <div class="toolbar expressions-tools">
+                    <input id="expressions-search" type="search" placeholder="search expressions…" autocomplete="off" aria-label="search expressions">
+                    <span id="expressions-hint" class="expressions-hint">sets are for Japanese: what you've met is below</span>
+                </div>
+                <div id="expressions-sets" class="expressions-sets" role="tablist" aria-label="sets"></div>
+                <div id="expressions-parts" class="expressions-sets expressions-parts" role="tablist" aria-label="body parts"></div>
+                <p id="expressions-count" class="expressions-count"></p>
+                <ul id="expressions-list" class="expressions-list note"></ul>
+                <button id="expressions-more" class="expressions-more" type="button" hidden>show more</button>
+            </section>
+
+            <section id="expressions-met">
+                <h2 class="dashed-heading">The ones you've met</h2>
+                <p class="hint">Everything akko underlined while you were watching or reading, and every expression you gave a status, newest first.</p>
+                <ul id="expressions-met-list" class="expressions-list note"></ul>
+            </section>
+        </div>
+        </main>
+        </div>
+    </div>
+</body>
+</html>
