@@ -3,7 +3,10 @@
 
 import { $ } from "../core/dom.js";
 import { getJson, postJson } from "../core/utils.js";
-import { target, setTarget, nativeLang, setNative, NATIVE_LANGUAGES, welcomeOn, setWelcome } from "../core/target.js";
+import {
+    target, setTarget, nativeLang, setNative, NATIVE_LANGUAGES, welcomeOn, setWelcome,
+    LANGUAGES, LANGUAGE_CHOICES, profile,
+} from "../core/target.js";
 import { theme, setTheme } from "../core/theme.js";
 import { lang, setLang, t } from "../i18n.js";
 import { bindWordDisplay } from "../words/display.js";
@@ -12,6 +15,42 @@ import * as phone from "./phone.js";
 import * as help from "./help.js";
 import * as account from "./account.js";
 import "./stats.js";
+
+// the language picker: one button per language in the table (scripts/core/target.js)
+const SCRIPT_LANG = {
+    japanese: "ja", han: "zh", hangul: "ko", cyrillic: "ru", arabic: "ar", hebrew: "he",
+    greek: "el", devanagari: "hi", thai: "th", latin: "",
+};
+const learningChoices = $("#learning-choices");
+if (learningChoices) {
+    // Japanese and English come with akko: a button each, the way it has always been
+    learningChoices.innerHTML = ["ja", "en"].map((tag) => {
+        const p = LANGUAGES[tag];
+        return `<button class="choice" data-target="${tag}" role="radio" translate="no">
+            <b lang="${tag}">${p.name}</b><span>${p.english}</span></button>`;
+    }).join("");
+}
+// every other language in the table, in one select (the picker used to have two options only)
+const learningOther = $("#learning-other");
+if (learningOther) {
+    learningOther.innerHTML = LANGUAGE_CHOICES.filter((tag) => tag !== "ja" && tag !== "en")
+        .map((tag) => `<option value="${tag}">${LANGUAGES[tag].name} — ${LANGUAGES[tag].english}</option>`)
+        .join("");
+    learningOther.value = target() === "ja" || target() === "en" ? "" : target();
+    learningOther.addEventListener("change", () => {
+        if (!learningOther.value) return;
+        setTarget(learningOther.value);
+        location.reload();
+    });
+}
+// what this language can do, said where the choice is made (no lessons for a dictionary-first one)
+const learningNote = $("#learning-note");
+if (learningNote) {
+    const p = profile();
+    learningNote.textContent = p.lessons
+        ? "Grammar lessons, listening drills, furigana and the 表現 page all apply to this language."
+        : `${LANGUAGES[target()].english}: your Yomitan dictionary gives the popup, and mining, 復習, listening from your own lines and backups work as usual. Grammar lessons and drill sets are only in Japanese for now.`;
+}
 
 // learning: switching reloads, since every page keeps that language's data
 for (const b of document.querySelectorAll("[data-target]")) {

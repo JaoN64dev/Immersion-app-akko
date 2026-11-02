@@ -871,6 +871,7 @@ export default {
         '{n} recordings': '録音 {n} 件',
         'you\'ve met this one': '出会った表現',
 
+        "or another language": "ほかの言語",
     },
 
 

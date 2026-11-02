@@ -87,3 +87,5 @@ Honest limit: without grammar lessons for a language, "any language" means popup
 - [ ] the pickers (welcome, Settings) read the table
 - [ ] Korean and Chinese end to end
 - [ ] … the rest of the phases
+- [x] step 2a: the pickers read the table — welcome screen (`scripts/site.js`) and Settings (`settings.html`, `scripts/pages/settings.js`) offer every language, with a line saying what the chosen one can do; `body.target-<tag>` drives `.ja-only` / `.en-only` so neither shows for a third language.
+- [ ] step 2b: Korean and Chinese end to end (tokenizer, dictionary pack, readings), then per-language dictionary packs for German, Polish, Russian, Spanish, Italian.
