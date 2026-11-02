@@ -35,7 +35,17 @@ It's a [Cloudflare Worker](https://developers.cloudflare.com/workers/) (`src/wor
    - `CLOUDFLARE_D1_ID`: the database's id from step 2
 4. Push a change to `cloud/` (or run the **cloud** workflow by hand): `.github/workflows/cloud.yml` applies `schema.sql` and deploys. The service's address is printed at the end, like `https://akko-cloud.<you>.workers.dev`.
 5. **Only now**, the token that lets problem reports open issues — a fine-grained GitHub token
-   with *Issues: read and write* on the repository, stored on the Worker (not in GitHub):
+   with *Issues: read and write* on the repository, stored on the Worker (not in GitHub).
+   It's a *GitHub* token, but its home is *Cloudflare*: the Worker reads it as `GITHUB_TOKEN` at
+   the moment a report arrives (`cloud/src/worker.js`), so GitHub Actions never sees it.
+   | where | what lives there |
+   |---|---|
+   | GitHub → *Actions secrets* | `CLOUDFLARE_*`, used **when deploying** — never `GITHUB_TOKEN` |
+   | GitHub → *Developer settings → Fine-grained tokens* | where you **create** this token |
+   | Cloudflare Worker `akko-cloud` → its secrets | `GITHUB_TOKEN`, used **when a report arrives** |
+   | `cloud/wrangler.toml` → `[vars]` | only the public `GITHUB_REPO` name; never a token |
+
+   Make a **fresh** token and paste it at the prompt:
    ```
    cd cloud
    npx wrangler@4 secret put GITHUB_TOKEN
