@@ -20,6 +20,8 @@ It's a [Cloudflare Worker](https://developers.cloudflare.com/workers/) (`src/wor
    npx wrangler@4 r2 bucket create akko-recordings
    ```
    `d1 create` prints the database's id (that's `CLOUDFLARE_D1_ID`, step 3).
+   **If it says `The bucket you tried to create already exists, and you own it. [code: 10004]`**, the
+   bucket is there — that's the one you wanted, nothing to do.
    **If the bucket step fails with `Please enable R2 through the Cloudflare Dashboard. [code: 10042]`**,
    enable R2 first: dashboard → **R2 Object Storage** → *Enable R2* (it asks for a billing card;
    akko's recordings stay inside the free tier — 10 GB stored, 1 M writes and 10 M reads a month),
@@ -67,6 +69,11 @@ R2 bucket — so a run that dies at *Deploy* usually means one of these:
   quickest way to get it set.
 - ***Tables* fails**: the token has no *D1: Edit* (create a new token, step 3), or
   `CLOUDFLARE_D1_ID` isn't the id `d1 create` printed.
+- ***The database's id* fails**: `CLOUDFLARE_D1_ID` isn't a UUID — `npx wrangler@4 d1 list` prints the
+  real one (the account id, for instance, is the wrong 32-character thing to paste).
+- ***Deploy* fails with `Authentication error`**: the token is missing *Account → Workers Scripts →
+  Edit*, which the *Edit Cloudflare Workers* template gives — recreate the token rather than editing
+  a secret that is write-only.
 
 Running the same commands locally (`cd cloud`, then `npx wrangler@4 deploy`) shows the same error
 with the whole message in front of you, which is faster than reading it out of a CI log.

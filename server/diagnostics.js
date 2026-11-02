@@ -19,7 +19,12 @@ const pkg = require('../package.json');
 
 const router = express.Router();
 const REPO = 'https://github.com/JaoN64dev/Immersion-app-akko';
-const cloudUrl = () => (process.env.AKKO_CLOUD || (pkg.akko && pkg.akko.cloud) || '').replace(/\/+$/, '');
+// AKKO_CLOUD wins over package.json's "akko": {"cloud": …} — an empty AKKO_CLOUD means "none",
+// which is how a built akko is pointed elsewhere and how the tests turn the service off
+const cloudUrl = () => {
+    const set = 'AKKO_CLOUD' in process.env ? process.env.AKKO_CLOUD : (pkg.akko && pkg.akko.cloud) || '';
+    return String(set || '').replace(/\/+$/, '');
+};
 
 // ---------- the last warnings and errors ----------
 const KEEP = 100;

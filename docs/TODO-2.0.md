@@ -47,8 +47,10 @@ Windows' Japanese voice and VOICEVOX's Windows installer).
       R2 bucket, the GitHub token secret, and the three GitHub Actions secrets
       (`cloud/README.md` → *Setting it up*). The **cloud** workflow then deploys the service; until
       then it prints a warning and stops.
-- [ ] Put the service's address in `package.json`: `"akko": { "cloud": "https://akko-cloud.<you>.workers.dev" }`.
-      Until then Settings hides *akko account* and reports open a pre-filled GitHub issue instead.
+- [x] Put the service's address in `package.json`:
+      `"akko": { "cloud": "https://akko-cloud.joaesperleite.workers.dev" }`. From the next build
+      Settings shows *akko account* and reports go to the service. (`AKKO_CLOUD` still overrides it,
+      empty included, which is how the tests turn the service off.)
 - [ ] **Chrome Web Store**: a developer account ($5 once), then publish `dist/akko-companion-1.0.0.zip`
       and add the store's id to `server/guard.js` (or `AKKO_EXTENSIONS`).
 - [ ] Optional: sign the Mac build (Apple Developer, $99 a year) so it can update itself; the steps

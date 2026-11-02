@@ -47,7 +47,7 @@ test('reports: to the service when there is one, else the GitHub issue; diagnost
   const ps = await listen(phone);
   const base = `http://127.0.0.1:${s.address().port}/api`;
   try {
-    delete process.env.AKKO_CLOUD;
+    process.env.AKKO_CLOUD = '';          // no service, even if package.json names one
     const d = await json(`${base}/diagnostics`);
     assert.equal(d.version, require('../package.json').version);
     assert.ok(Array.isArray(d.recent));
@@ -69,7 +69,7 @@ test('reports: to the service when there is one, else the GitHub issue; diagnost
     assert.equal(got[0].extra, undefined);
     assert.equal(got[0].app, 'akko');
   } finally {
-    delete process.env.AKKO_CLOUD;
+    process.env.AKKO_CLOUD = '';
     s.close(); cs.close(); ps.close();
   }
 });

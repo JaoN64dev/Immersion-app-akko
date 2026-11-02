@@ -136,5 +136,8 @@
     "appImage": {
       "artifactName": "akko-${version}-linux-${arch}.${ext}"
     }
+  },
+  "akko": {
+    "cloud": "https://akko-cloud.joaesperleite.workers.dev"
   }
 }

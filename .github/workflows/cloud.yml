@@ -33,7 +33,14 @@ jobs:
           fi
       - name: The database's id
         if: env.skip != '1'
-        run: sed -i 's/D1_DATABASE_ID/${{ secrets.CLOUDFLARE_D1_ID }}/' wrangler.toml
+        run: |
+          id='${{ secrets.CLOUDFLARE_D1_ID }}'
+          if ! grep -Eqi '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' <<<"$id"; then
+            echo "::error::CLOUDFLARE_D1_ID isn't a database id (a UUID like aef1de6a-930b-401b-81a3-5821ba02523a). 'npx wrangler d1 list' prints it; fix the secret and run again."
+            exit 1
+          fi
+          sed -i "s/D1_DATABASE_ID/$id/" wrangler.toml
+          echo "deploying against the database:"; grep -n '^database_id' wrangler.toml
       - name: Tables
         if: env.skip != '1'
         run: npx --yes wrangler@4 d1 execute akko --remote --file schema.sql
