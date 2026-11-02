@@ -40,8 +40,11 @@ It's a [Cloudflare Worker](https://developers.cloudflare.com/workers/) (`src/wor
    ```
    Run it **from `cloud/`** (or add `--config cloud/wrangler.toml`): from the repository's root
    wrangler finds no `wrangler.toml` and says *Required Worker name missing*. It also needs the
-   Worker to exist, so it goes after the first deploy — set before that, wrangler answers that the
-   script doesn't exist. Accounts work without this token; only reports need it.
+   Worker to exist, so it goes after the first deploy — set before that, wrangler asks *"There
+   doesn't seem to be a Worker called "akko-cloud". Do you want to create a new Worker with that
+   name?"*: say **no**, deploy (step 4) and run it again. (Saying yes only makes an empty
+   placeholder Worker; the next deploy replaces its code and keeps the secret, so it isn't fatal.)
+   Accounts work without this token; only reports need it.
 6. Put the address from step 4 in akko's `package.json`:
    ```json
    "akko": { "cloud": "https://akko-cloud.<you>.workers.dev" }
