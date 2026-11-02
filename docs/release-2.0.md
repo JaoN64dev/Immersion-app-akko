@@ -55,6 +55,14 @@ now has a privacy notice that says exactly this.
 - New on the website: expressions, review card types, accounts, and the privacy notice — in English,
   Português, Español and 日本語.
 
+## Fixes
+
+- 聴解's *YouTube JLPT sample test* card no longer opens an N3 playlist whatever your level is: N5,
+  N4 and N3 each have their own, and the card follows the level you picked. N2 and N1 don't show it,
+  because there's no playlist for them we've checked — the jlpt.jp card above it has all five.
+- A backup `.zip` checks each file's checksum as it's restored: a damaged download is refused with
+  "… in this zip is damaged" instead of putting half a word list back.
+
 ## Updating
 
 Install over your old akko: words, progress, books and mined words are kept (back up first if you

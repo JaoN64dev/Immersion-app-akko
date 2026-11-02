@@ -1,6 +1,6 @@
 # akko 2.0: what's left
 
-Checked against the code on 2026-11-02 (`npm test`: 99 tests, 97 pass, 2 skipped — the two that need
+Checked against the code on 2026-11-02 (`npm test`: 101 tests, 99 pass, 2 skipped — the two that need
 Windows' Japanese voice and VOICEVOX's Windows installer).
 
 ## Done in this pass
@@ -38,6 +38,8 @@ Windows' Japanese voice and VOICEVOX's Windows installer).
       23 test files, the multi-system CI, the updater), the website (three new cards, the privacy
       notice, and the changed text in pt / es / ja).
 - [x] Versions: `package.json` → 2.0.0, `extension/manifest.json` → 1.0.0.
+- [x] 聴解's YouTube sample test card now belongs to the level it says (it was one fixed N3 playlist
+      under an N5 label, for every level); kept in line by a test in `tests/listening.test.js`.
 
 ## Needs the maintainer (once, with accounts akko can't make by itself)
 
