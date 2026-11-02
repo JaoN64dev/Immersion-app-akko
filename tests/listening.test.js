@@ -210,3 +210,18 @@ test('VOICEVOX is used when it is running, and credited', async () => {
     for (const m of ['../server/paths', '../server/speech']) delete require.cache[require.resolve(m)];
   }
 });
+
+test("the YouTube sample test belongs to the level it says it does", () => {
+  const root = path.join(__dirname, "..");
+  const js = fs.readFileSync(path.join(root, "scripts", "pages", "listening.js"), "utf8");
+  const page = fs.readFileSync(path.join(root, "listening.html"), "utf8");
+  const playlists = {};
+  for (const m of js.matchAll(/\b(N[1-5]):\s*"(https:\/\/www\.youtube\.com\/playlist\?list=[\w-]+)"/g)) playlists[m[1]] = m[2];
+  assert.deepEqual(Object.keys(playlists).sort(), ["N3", "N4", "N5"], "one playlist per level akko knows");
+  assert.equal(new Set(Object.values(playlists)).size, 3, "no level shows another level's playlist");
+  // the card as written in the page (before the script runs) is the N5 one its label promises
+  const initial = page.match(/id="listen-youtube"[^>]*href="([^"]+)"/)[1].replace(/&amp;/g, "&");
+  assert.equal(initial, playlists.N5);
+  assert.match(js, /ui\.youtube\.href = video/, "and it follows the level");
+  assert.match(js, /ui\.youtube\.hidden = !video/, "and is left out where there is none");
+});
