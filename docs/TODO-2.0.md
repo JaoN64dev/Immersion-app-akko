@@ -1,7 +1,7 @@
 # akko 2.0: what's left
 
-Checked against the code on 2026-11-02 (`npm test`: 93 pass, 2 skipped — the two that need Windows'
-Japanese voice and VOICEVOX's Windows installer).
+Checked against the code on 2026-11-02 (`npm test`: 99 tests, 97 pass, 2 skipped — the two that need
+Windows' Japanese voice and VOICEVOX's Windows installer).
 
 ## Done in this pass
 
@@ -28,11 +28,14 @@ Japanese voice and VOICEVOX's Windows installer).
   - [x] `docs/maintaining.md`: the routine (tests, versions, tag, the workflows and their secrets,
         what a build must contain, the extension's store id, the cloud service).
 - [x] Settings that arrive by sync now apply in the same tab (`scripts/i18n.js`, `akko-saved`).
+- [x] The interface tables can't drift again: `tests/i18n.test.mjs` now fails if a language file
+      has anything besides `text` and `html` (a translation added outside them is never used) and
+      if the four tables' keys differ.
 - [x] The welcome screen's last line names all four interface languages.
 - [x] The extension's options page counts both word lists.
 - [x] Docs: README (expressions, four interface languages, card types, the `.zip` backup, sync),
       the in-app About page, `how-it-works.md` (the expressions page, the card types, the zip, all
-      21 test files, the multi-system CI, the updater), the website (three new cards, the privacy
+      23 test files, the multi-system CI, the updater), the website (three new cards, the privacy
       notice, and the changed text in pt / es / ja).
 - [x] Versions: `package.json` → 2.0.0, `extension/manifest.json` → 1.0.0.
 
