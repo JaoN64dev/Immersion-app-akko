@@ -51,6 +51,26 @@ It's a [Cloudflare Worker](https://developers.cloudflare.com/workers/) (`src/wor
    ```
    From the next build, Settings shows **akko account**, and reports go straight to GitHub issues. (`AKKO_CLOUD=<address>` does the same without a build.)
 
+## When the deploy fails
+
+The workflow checks the three secrets, applies `schema.sql` and then, before deploying, looks for the
+R2 bucket — so a run that dies at *Deploy* usually means one of these:
+
+- **`The bucket` step fails**: there's no `akko-recordings` bucket. Enable R2 in the dashboard
+  (*R2 Object Storage → Enable R2*), then `npx wrangler@4 r2 bucket create akko-recordings` from
+  `cloud/` (step 2). The Worker binds it as `MEDIA`; `wrangler deploy` won't go without it.
+- **`The bucket` step only warns**: the API token can't list buckets. Add *Account → Workers R2
+  Storage → Read* to the token (or ignore it, if the bucket is really there).
+- ***Deploy* fails after that** (or says *You need a workers.dev subdomain*): a new Cloudflare
+  account has no `workers.dev` name yet. Workers & Pages → *Your subdomain* → pick one, then run the
+  workflow again. `wrangler deploy` from your own computer asks for it interactively, which is the
+  quickest way to get it set.
+- ***Tables* fails**: the token has no *D1: Edit* (create a new token, step 3), or
+  `CLOUDFLARE_D1_ID` isn't the id `d1 create` printed.
+
+Running the same commands locally (`cd cloud`, then `npx wrangler@4 deploy`) shows the same error
+with the whole message in front of you, which is faster than reading it out of a CI log.
+
 ## Working on it
 
 - `node tools/cloud-local.mjs` runs this service on this computer (D1 is a SQLite file, R2 a folder, in `cloud-local/`), then `AKKO_CLOUD=http://127.0.0.1:8787 npm start`.
