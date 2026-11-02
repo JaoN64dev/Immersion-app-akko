@@ -10,7 +10,7 @@ Everything a version needs, from the code to the release. How akko works inside 
    `node:sqlite`). Locally:
    ```
    npm ci
-   npm test             # 22 files, about 30 s on Linux
+   npm test             # 23 files, about 25 s on Linux
    npm run check-lessons
    ```
    Two tests skip themselves when the system can't do them: Windows' Japanese voice, and
