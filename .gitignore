@@ -2,6 +2,14 @@ node_modules/
 .env
 *.log
 
+# secrets that must never be tracked: wrangler's local ones (cloud/.dev.vars is where
+# `wrangler dev` keeps GITHUB_TOKEN), and the ones the deploy step would otherwise pick up
+.dev.vars
+.dev.vars.*
+.vars
+*.pem
+*.p12
+
 
 
 dist/
