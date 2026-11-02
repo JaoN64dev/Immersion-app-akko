@@ -76,7 +76,11 @@ R2 bucket — so a run that dies at *Deploy* usually means one of these:
   a secret that is write-only.
 
 Running the same commands locally (`cd cloud`, then `npx wrangler@4 deploy`) shows the same error
-with the whole message in front of you, which is faster than reading it out of a CI log.
+with the whole message in front of you, which is faster than reading it out of a CI log — and it's
+also the quickest way to get the service up: put your database id in `cloud/wrangler.toml`
+(`database_id = "<the id>"`, in an editor, not with PowerShell's `-replace`, which can turn the file
+into UTF-16) and deploy. Afterwards put the placeholder back, from inside `cloud/`:
+`git checkout wrangler.toml` (not `git checkout cloud/wrangler.toml` — there's no `cloud/cloud`).
 
 ## Working on it
 

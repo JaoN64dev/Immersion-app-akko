@@ -48,7 +48,7 @@ Windows' Japanese voice and VOICEVOX's Windows installer).
       (`cloud/README.md` → *Setting it up*). The **cloud** workflow then deploys the service; until
       then it prints a warning and stops.
 - [x] Put the service's address in `package.json`:
-      `"akko": { "cloud": "https://akko-cloud.joaesperleite.workers.dev" }`. From the next build
+      `"akko": { "cloud": "https://akko-cloud.joaoesperleite.workers.dev" }`. From the next build
       Settings shows *akko account* and reports go to the service. (`AKKO_CLOUD` still overrides it,
       empty included, which is how the tests turn the service off.)
 - [ ] **Chrome Web Store**: a developer account ($5 once), then publish `dist/akko-companion-1.0.0.zip`
