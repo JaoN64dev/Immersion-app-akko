@@ -27,10 +27,18 @@ const ROUND = 10;                    // sentences and dictation: this many a rou
 const VOICEVOX_SITE = "https://voicevox.hiroshiba.jp/";
 // the JLPT's own sample tests, with real exam audio (free to try; not ours to copy into akko)
 const OFFICIAL = (level) => `https://www.jlpt.jp/e/samples/${level.toLowerCase()}/index.html`;
+// the same channel's sample-test playlists (real exam audio), one per level. N2 and N1 have none
+// we've checked, so the card is left out there — the jlpt.jp one above has every level.
+const PLAYLISTS = {
+    N5: "https://www.youtube.com/playlist?list=PLkGU7DnOLgRMl-h4NxxrGbK-UdZHIXzKQ",
+    N4: "https://www.youtube.com/playlist?list=PLkGU7DnOLgRPxTNFRc7utpuwhWSQC35wC",
+    N3: "https://www.youtube.com/playlist?list=PLkGU7DnOLgRMgkoHHnsS01-jqt0yYBnjq",
+};
 
 const ui = {
     voice: $("#listen-voice"), levels: $("#listen-levels"), progress: $("#listen-progress"),
-    list: $("#listen-list"), official: $("#listen-official"), myFolder: $("#listen-my-folder"),
+    list: $("#listen-list"), official: $("#listen-official"), youtube: $("#listen-youtube"),
+    myFolder: $("#listen-my-folder"),
     player: $("#listen-player"), rate: $("#listen-rate"), showText: $("#listen-show-text"),
     exam: $("#listen-exam"), voicePick: $("#listen-voice-pick"), credit: $("#listen-credit"), vv: $("#listen-vv"),
 };
@@ -104,6 +112,13 @@ function renderList() {
     }).join("")}</ul>`;
     ui.official.href = OFFICIAL(view.level);
     ui.official.querySelector("b").textContent = view.level;
+    // the YouTube samples belong to a level too: never another level's playlist under this label
+    const video = PLAYLISTS[view.level];
+    ui.youtube.hidden = !video;
+    if (video) {
+        ui.youtube.href = video;
+        ui.youtube.querySelector("b").textContent = view.level;
+    }
 }
 
 // ---------- starting a round ----------

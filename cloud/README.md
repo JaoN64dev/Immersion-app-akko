@@ -19,19 +19,78 @@ It's a [Cloudflare Worker](https://developers.cloudflare.com/workers/) (`src/wor
    npx wrangler@4 d1 create akko
    npx wrangler@4 r2 bucket create akko-recordings
    ```
-   `d1 create` prints the database's id.
-3. A GitHub token that can open issues on the repository (fine-grained: *Issues: read and write*), for reports:
-   `npx wrangler@4 secret put GITHUB_TOKEN`
-4. In the GitHub repository, **Settings → Secrets and variables → Actions**, add:
+   `d1 create` prints the database's id (that's `CLOUDFLARE_D1_ID`, step 3).
+   **If it says `The bucket you tried to create already exists, and you own it. [code: 10004]`**, the
+   bucket is there — that's the one you wanted, nothing to do.
+   **If the bucket step fails with `Please enable R2 through the Cloudflare Dashboard. [code: 10042]`**,
+   enable R2 first: dashboard → **R2 Object Storage** → *Enable R2* (it asks for a billing card;
+   akko's recordings stay inside the free tier — 10 GB stored, 1 M writes and 10 M reads a month),
+   then run the bucket command again. `wrangler deploy` fails without the bucket, because
+   `wrangler.toml` binds it as `MEDIA`.
+   Leave the `binding` snippet `d1 create` prints alone: `wrangler.toml` here already binds the
+   database as `DB`, and the deploy workflow fills the id in from the secret.
+3. In the GitHub repository, **Settings → Secrets and variables → Actions**, add:
    - `CLOUDFLARE_API_TOKEN`: a Cloudflare API token from the *Edit Cloudflare Workers* template, with *D1: Edit* added
    - `CLOUDFLARE_ACCOUNT_ID`: on the Cloudflare dashboard's right side
    - `CLOUDFLARE_D1_ID`: the database's id from step 2
-5. Push a change to `cloud/` (or run the **cloud** workflow by hand): `.github/workflows/cloud.yml` applies `schema.sql` and deploys. The service's address is printed at the end, like `https://akko-cloud.<you>.workers.dev`.
-6. Put that address in akko's `package.json`:
+4. Push a change to `cloud/` (or run the **cloud** workflow by hand): `.github/workflows/cloud.yml` applies `schema.sql` and deploys. The service's address is printed at the end, like `https://akko-cloud.<you>.workers.dev`.
+5. **Only now**, the token that lets problem reports open issues — a fine-grained GitHub token
+   with *Issues: read and write* on the repository, stored on the Worker (not in GitHub).
+   It's a *GitHub* token, but its home is *Cloudflare*: the Worker reads it as `GITHUB_TOKEN` at
+   the moment a report arrives (`cloud/src/worker.js`), so GitHub Actions never sees it.
+   | where | what lives there |
+   |---|---|
+   | GitHub → *Actions secrets* | `CLOUDFLARE_*`, used **when deploying** — never `GITHUB_TOKEN` |
+   | GitHub → *Developer settings → Fine-grained tokens* | where you **create** this token |
+   | Cloudflare Worker `akko-cloud` → its secrets | `GITHUB_TOKEN`, used **when a report arrives** |
+   | `cloud/wrangler.toml` → `[vars]` | only the public `GITHUB_REPO` name; never a token |
+
+   Make a **fresh** token and paste it at the prompt:
+   ```
+   cd cloud
+   npx wrangler@4 secret put GITHUB_TOKEN
+   ```
+   Run it **from `cloud/`** (or add `--config cloud/wrangler.toml`): from the repository's root
+   wrangler finds no `wrangler.toml` and says *Required Worker name missing*. It also needs the
+   Worker to exist, so it goes after the first deploy — set before that, wrangler asks *"There
+   doesn't seem to be a Worker called "akko-cloud". Do you want to create a new Worker with that
+   name?"*: say **no**, deploy (step 4) and run it again. (Saying yes only makes an empty
+   placeholder Worker; the next deploy replaces its code and keeps the secret, so it isn't fatal.)
+   Accounts work without this token; only reports need it.
+6. Put the address from step 4 in akko's `package.json`:
    ```json
    "akko": { "cloud": "https://akko-cloud.<you>.workers.dev" }
    ```
    From the next build, Settings shows **akko account**, and reports go straight to GitHub issues. (`AKKO_CLOUD=<address>` does the same without a build.)
+
+## When the deploy fails
+
+The workflow checks the three secrets, applies `schema.sql` and then, before deploying, looks for the
+R2 bucket — so a run that dies at *Deploy* usually means one of these:
+
+- **`The bucket` step fails**: there's no `akko-recordings` bucket. Enable R2 in the dashboard
+  (*R2 Object Storage → Enable R2*), then `npx wrangler@4 r2 bucket create akko-recordings` from
+  `cloud/` (step 2). The Worker binds it as `MEDIA`; `wrangler deploy` won't go without it.
+- **`The bucket` step only warns**: the API token can't list buckets. Add *Account → Workers R2
+  Storage → Read* to the token (or ignore it, if the bucket is really there).
+- ***Deploy* fails after that** (or says *You need a workers.dev subdomain*): a new Cloudflare
+  account has no `workers.dev` name yet. Workers & Pages → *Your subdomain* → pick one, then run the
+  workflow again. `wrangler deploy` from your own computer asks for it interactively, which is the
+  quickest way to get it set.
+- ***Tables* fails**: the token has no *D1: Edit* (create a new token, step 3), or
+  `CLOUDFLARE_D1_ID` isn't the id `d1 create` printed.
+- ***The database's id* fails**: `CLOUDFLARE_D1_ID` isn't a UUID — `npx wrangler@4 d1 list` prints the
+  real one (the account id, for instance, is the wrong 32-character thing to paste).
+- ***Deploy* fails with `Authentication error`**: the token is missing *Account → Workers Scripts →
+  Edit*, which the *Edit Cloudflare Workers* template gives — recreate the token rather than editing
+  a secret that is write-only.
+
+Running the same commands locally (`cd cloud`, then `npx wrangler@4 deploy`) shows the same error
+with the whole message in front of you, which is faster than reading it out of a CI log — and it's
+also the quickest way to get the service up: put your database id in `cloud/wrangler.toml`
+(`database_id = "<the id>"`, in an editor, not with PowerShell's `-replace`, which can turn the file
+into UTF-16) and deploy. Afterwards put the placeholder back, from inside `cloud/`:
+`git checkout wrangler.toml` (not `git checkout cloud/wrangler.toml` — there's no `cloud/cloud`).
 
 ## Working on it
 

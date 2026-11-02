@@ -33,10 +33,33 @@ jobs:
           fi
       - name: The database's id
         if: env.skip != '1'
-        run: sed -i 's/D1_DATABASE_ID/${{ secrets.CLOUDFLARE_D1_ID }}/' wrangler.toml
+        run: |
+          id='${{ secrets.CLOUDFLARE_D1_ID }}'
+          if ! grep -Eqi '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' <<<"$id"; then
+            echo "::error::CLOUDFLARE_D1_ID isn't a database id (a UUID like aef1de6a-930b-401b-81a3-5821ba02523a). 'npx wrangler d1 list' prints it; fix the secret and run again."
+            exit 1
+          fi
+          sed -i "s/D1_DATABASE_ID/$id/" wrangler.toml
+          echo "deploying against the database:"; grep -n '^database_id' wrangler.toml
       - name: Tables
         if: env.skip != '1'
         run: npx --yes wrangler@4 d1 execute akko --remote --file schema.sql
+      # what a failed deploy most often is missing, said before wrangler's own error
+      - name: The bucket
+        if: env.skip != '1'
+        run: |
+          npx --yes wrangler@4 whoami
+          if out=$(npx --yes wrangler@4 r2 bucket list 2>&1); then
+            echo "$out"
+            if ! grep -qw akko-recordings <<<"$out"; then
+              echo "::error::There's no R2 bucket called akko-recordings. Enable R2 in the Cloudflare dashboard (R2 Object Storage → Enable R2), then run 'npx wrangler r2 bucket create akko-recordings' from cloud/ (cloud/README.md, step 2): the Worker binds it as MEDIA."
+              exit 1
+            fi
+          else
+            # no R2 permission on the token, or R2 not enabled: don't block the deploy over a guess
+            echo "$out"
+            echo "::warning::Couldn't list the R2 buckets: R2 may not be enabled yet, or the API token has no Account → Workers R2 Storage permission. If the bucket exists, add R2 Read to the token (cloud/README.md, step 3)."
+          fi
       - name: Deploy
         if: env.skip != '1'
         run: npx --yes wrangler@4 deploy
