@@ -1225,8 +1225,12 @@ main .step-done.on {background: var(--extra4); border-color: #2e7d32; color: #1b
    ========================================================= */
 
 /* things that only work for one language */
-/* .ja-only is Japanese, .en-only is English: anything else shows neither (scripts/site.js sets body.target-<tag>) */
-body:not(.target-ja) .ja-only, body:not(.target-en) .en-only {display: none !important;}
+/* .ja-only is the Japanese course's own content, .en-only is everything else: Japanese learners get
+   the Japanese wording, everyone else (English, Korean, German…) the English one and none of the
+   Japanese — scripts/site.js sets body.target-<tag>, and the pages only Japanese has are taken out
+   of the menu there (pagesFor in scripts/core/target.js). */
+body:not(.target-ja) .ja-only {display: none !important;}
+body.target-ja .en-only {display: none !important;}
 
 /* the welcome screen: any language past the two big cards */
 .welcome-other {display: block; margin: 14px auto 0; text-align: center; font-size: 0.9em; color: #555;}

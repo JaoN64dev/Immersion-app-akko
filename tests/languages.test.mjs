@@ -15,7 +15,7 @@ globalThis.Event = class { constructor(type) { this.type = type; } };
 
 const {
     LANGUAGES, LANGUAGE_CHOICES, LEARNABLE, isKnown, profile, has,
-    chosen, target, learningEnglish, understood, keyFor, ofTarget, setTarget, usesFullStop,
+    chosen, target, learningEnglish, understood, keyFor, ofTarget, setTarget, usesFullStop, pagesFor,
 } = await import("../scripts/core/target.js");
 
 const reset = () => data.clear();
@@ -118,4 +118,14 @@ test("sentences end with 。 in Japanese and Chinese, with a full stop everywher
     assert.equal(usesFullStop("ja"), false);
     assert.equal(usesFullStop("cmn"), false);
     for (const tag of ["ko", "de", "ru", "ar"]) assert.equal(usesFullStop(tag), true, tag);
+});
+
+test("the pages a language has: the Japanese lessons are only Japanese", () => {
+    const ja = pagesFor("ja");
+    assert.equal(ja.course && ja.grammar && ja.drills && ja.expressions, true);
+    for (const tag of ["en", "ko", "cmn", "de", "sw"]) {
+        const pages = pagesFor(tag);
+        assert.equal(pages.course || pages.grammar || pages.drills || pages.expressions, false, tag);
+        assert.equal(pages.watch && pages.read && pages.review, true, `${tag} can read and review`);
+    }
 });

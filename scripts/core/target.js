@@ -101,6 +101,13 @@ export const profile = (tag = target()) => LANGUAGES[tag] || {
 // a single capability of the language being learnt: has("lessons"), has("handwriting")…
 export const has = (what) => !!profile()[what];
 
+// The pages a language has. Everything that needs a dictionary is fine; the course, grammar,
+// drills and 表現 are written for Japanese, and nothing else has them yet.
+export const pagesFor = (tag = target()) => {
+    const p = profile(tag);
+    return { watch: true, read: true, listen: true, review: true, settings: true, course: !!p.lessons, grammar: !!p.lessons, drills: !!p.lessons, expressions: !!p.lessons };
+};
+
 // label of the "% of words you know" badges
 export const understood = () => (learningEnglish() ? "understood" : "理解");
 

@@ -7,7 +7,7 @@
 //     English either way; 日本語 menus are an option in Settings)
 
 import "./i18n.js";
-import { chosen, target, setTarget, welcomeOn, setWelcome, LANGUAGES, LANGUAGE_CHOICES, storageKey } from "./core/target.js";
+import { chosen, target, setTarget, welcomeOn, setWelcome, LANGUAGES, LANGUAGE_CHOICES, storageKey, pagesFor } from "./core/target.js";
 import { store, escapeHtml, getJson } from "./core/utils.js";
 import * as today from "./core/today.js";
 import * as autoBackup from "./core/auto-backup.js";
@@ -80,6 +80,24 @@ sync.start();           // the rest in step too: positions, 復習, mined words,
 
 const t = target();
 document.body.classList.add(`target-${t}`);
+
+// The pages this language doesn't have (scripts/core/target.js, pagesFor): the course, grammar,
+// drills and 表現 are Japanese lessons, so a third language gets its tabs taken out rather than a
+// page full of Japanese it can't use. Opened directly, the page says so instead.
+const PAGE_OF = { "course.html": "course", "grammar.html": "grammar", "listening.html": "drills", "expressions.html": "expressions" };
+{
+    const pages = pagesFor();
+    for (const [file, what] of Object.entries(PAGE_OF)) {
+        if (pages[what]) continue;
+        document.querySelectorAll(`a[href="${file}"], a[href="/${file}"]`).forEach((a) => a.remove());
+        if (location.pathname.endsWith(file)) {
+            const note = document.createElement("p");
+            note.className = "note";
+            note.textContent = "This page is for Japanese. Everything else akko does works in your language: read, watch, review, mining.";
+            document.querySelector("main")?.prepend(note);
+        }
+    }
+}
 if (t === "en") {
     document.querySelectorAll("main [lang=ja]").forEach((el) => { el.lang = "en"; });
     document.title = "akko";       // the page titles are "読む akko" and such
