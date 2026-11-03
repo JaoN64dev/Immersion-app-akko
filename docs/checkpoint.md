@@ -87,6 +87,16 @@ Do one page, run `npm test`, move on. Never leave a `data-i18n` key without its 
 - **How far to take the six tables**: reaching 824 in each is ~4,000 strings of real translation; the
   honest plan is page by page, starting with settings and the first screen.
 
+## After this checkpoint: the English course was hidden
+
+`pagesFor()` in `scripts/core/target.js` gave the course and the grammar to Japanese only
+(`course: !!p.lessons`), so choosing **English** as the language you learn made `scripts/site.js`
+delete the 道 and 文法 tabs and put "This page is for Japanese" on `course.html` — while `course-en/`
+(8 steps), `grammar-en/` (38 lessons) and `server/{course,grammar}.js`'s `DIRS = { ja, en }` were all
+there, translated into pt/es/ja. English now has `course: true, grammar: true` in the language table,
+`pagesFor` uses them, and 聴解/表現 stay Japanese by design. `tests/languages.test.mjs` checks both the
+flags and that the folders behind them exist.
+
 ## Traps, so they are not rediscovered
 
 - No literal colours in new CSS — `tests/theme.test.js` guards the 3.0 selectors; use the theme vars.
