@@ -1,7 +1,7 @@
 // 観る Watch page (index.html): anime + Japanese subtitles.
 // Modules only define things when imported; their init() wires the page, run here in order.
 
-import { el } from "../core/dom.js";
+import { $, el } from "../core/dom.js";
 import { state } from "../core/state.js";
 import { store, timeFormatter } from "../core/utils.js";
 import { target } from "../core/target.js";
