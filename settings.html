@@ -278,6 +278,13 @@
                         <code>PATH</code>, and runs it: no model is bundled, nothing is uploaded, and no service is called. 読む → <b>subtitles from audio</b> turns the result into a text you can read, mine and plan.</p>
                     <p id="asr-status" class="status dark">checking…</p>
 
+                    <!-- one click: akko downloads and checks the base model itself (tool present,
+                         no model yet). Shown by the page once the server says so. -->
+                    <div id="asr-model" hidden>
+                        <button id="asr-download-model" data-i18n="asr-download-model">Download the base model (~150 MB)</button>
+                        <p id="asr-download-progress" class="hint" data-i18n="asr-downloading">downloading the base model… (about 150 MB, this can take a while)</p>
+                    </div>
+
                     <!-- how to install one: the whole thing is one data-i18n block, because it is a
                          list with <code> in it — a key per fragment could never match (scripts/i18n.js) -->
                     <details id="asr-help" class="asr-help">

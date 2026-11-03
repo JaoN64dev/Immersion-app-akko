@@ -114,8 +114,12 @@ verifiable free pack yet, so they work through *Settings → Dictionaries → ad
      `AKKO_WHISPER` points at), checks there is a model, and runs it to produce an SRT — the same shape
      the players already read. With nothing installed it says exactly what to install and that nothing
      is uploaded. `GET /api/asr` (status), `POST /api/asr/transcribe?lang=` (audio in, SRT out); 4
-     tests, including a tool that writes nothing being an error and not an empty subtitle. No
-     auto-download of a model yet: that is the next decision (a URL that stays put, and a hash).
+     tests, including a tool that writes nothing being an error and not an empty subtitle. The model
+     comes with a one-click download: `POST /api/asr/model` fetches the pinned `ggml-base.bin`
+     (~148 MB) from `https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin`
+     (pinned sha256 `60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe`) into
+     `~/.cache/akko/whisper`; `AKKO_WHISPER_MODEL` remains the escape hatch and akko still ships no
+     model.
    - [x] the ASR page half, for the reader: 読む → **🎙 subtitles from audio** sends the file, parses the
      SRT with the same parser the subtitle pages use, and lands the transcript in the library as a text
      (so it gets coverage, priming, mining and a place in the plan). Settings → **speech recognition**

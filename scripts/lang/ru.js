@@ -157,5 +157,8 @@ export default {
 
     // data-i18n blocks (whole paragraphs with links). Empty until those paragraphs are keyed: a missing
     // key leaves the English in place, which is what the app does for any string it has no entry for.
-    html: {},
+    html: {
+        "Download the base model (~150 MB)": 'Скачать базовую модель (~150 МБ)',
+        "downloading the base model… (about 150 MB, this can take a while)": 'скачивание базовой модели… (примерно 150 МБ, это может занять время)',
+    },
 };

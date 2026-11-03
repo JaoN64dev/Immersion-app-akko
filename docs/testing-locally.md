@@ -58,10 +58,12 @@ npm run check-lessons
 **5. Speech recognition (phase 4, machine half)**
 - Settings → **speech recognition**: without a tool installed it says so and names what to install.
   That is the honest path, not a bug.
-- To try it for real: install whisper.cpp (`whisper-cli`) and put a `ggml-base.bin` in
-  `~/.cache/akko/whisper` (or set `AKKO_WHISPER` and `AKKO_WHISPER_MODEL`), restart akko, and
-  読む → **🎙 subtitles from audio** with an `.mp3`/`.m4a`. The transcript lands in the library as a
-  text, so it gets a %, priming and a place in the plan.
+- To try it for real: install whisper.cpp (`whisper-cli`), restart akko, and
+  読む → **🎙 subtitles from audio** with an `.mp3`/`.m4a`. The first time, Settings → speech
+  recognition offers to download `ggml-base.bin` (~148 MB) itself — one click, checked against its
+  pinned sha256, saved to `~/.cache/akko/whisper` — or place the model by hand and set
+  `AKKO_WHISPER_MODEL`. The transcript lands in the library as a text, so it gets a %, priming and a
+  place in the plan.
 - A video file is not accepted on purpose: Whisper wants audio, and pulling audio out of a video
   needs ffmpeg. That is the next decision, not something to discover in a crash.
 

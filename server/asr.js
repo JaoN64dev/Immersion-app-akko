@@ -8,6 +8,7 @@
 // transcription goes through the ordinary subtitle path.
 
 const fs = require('fs');
+const crypto = require('crypto');
 const os = require('os');
 const path = require('path');
 const express = require('express');
@@ -26,6 +27,18 @@ const MODEL_HINTS = [
     path.join(os.homedir(), '.cache', 'whisper'),
     path.join(os.homedir(), '.local', 'share', 'whisper'),
 ];
+
+// The base model akko can download for whisper.cpp: the multilingual base, about 148 MB.
+// akko never ships a model: this pinned URL and its sha256 are the one click from "a tool is
+// installed" to "working". The model is published with the whisper.cpp models
+// (huggingface.co/ggerganov/whisper.cpp); akko has no place to re-host it, so AKKO_WHISPER_MODEL
+// stays the escape hatch for any other model or build.
+const PINNED_MODEL = {
+    url: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin',
+    file: 'ggml-base.bin',
+    sha256: '60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe',
+    size: 147951465,
+};
 
 // Is this a program we can run? (PATH, plus the .exe on Windows)
 function which(name) {
@@ -49,7 +62,11 @@ function models() {
     for (const dir of MODEL_HINTS) {
         let names = [];
         try { names = fs.readdirSync(dir).filter((n) => /\.(bin|pt|ct2)$/i.test(n)); } catch { continue; }
-        for (const n of names) out.push({ file: path.join(dir, n), size: fs.statSync(path.join(dir, n)).size });
+        for (const n of names) {
+            let size;
+            try { size = fs.statSync(path.join(dir, n)).size; } catch { continue; }
+            out.push({ file: path.join(dir, n), size });
+        }
     }
     return out;
 }
@@ -99,7 +116,59 @@ function command(tool, audio, base, lang) {
     return { args: [audio, '--model', 'base', '--output_format', 'srt', '--output_dir', path.dirname(base), '--language', l], srt: path.join(path.dirname(base), path.basename(base) + '.srt') };
 }
 
-// Transcribe one audio file. Resolves with the SRT text; rejects with a sentence meant for the page.
+// Download the pinned base model into the first model folder (~/.cache/akko/whisper),
+// checking its sha256 as it comes in. A second call while one is in flight waits on the same
+// download. `dir`, `url`, `hash` and `file` are test overrides; production uses the pinned
+// model and only touches the network for this one file.
+    let downloading = null;
+    async function downloadModel({ url = PINNED_MODEL.url, hash = PINNED_MODEL.sha256,
+        file = PINNED_MODEL.file, dir = MODEL_HINTS[0] } = {}) {
+        if (downloading) return downloading;
+        const done = (async () => {
+            fs.mkdirSync(dir, { recursive: true });
+            const target = path.join(dir, file);
+            const tmp = `${target}.part`;
+            const have = fs.existsSync(target) ? await sha256Of(target).catch(() => null) : null;
+            if (have === hash) return target;
+            const res = await fetch(url, { redirect: 'follow', signal: AbortSignal.timeout(30 * 60e3) });
+            if (!res.ok) throw new Error(`the model server answered ${res.status}`);
+            const body = res.body;
+            if (!body) throw new Error('the model download came back empty');
+            const limit = Number(res.headers.get('content-length')) || PINNED_MODEL.size;
+            if (limit > 700e6) throw new Error('that model is too big');
+            const out = fs.createWriteStream(tmp);
+            const digest = crypto.createHash('sha256');
+            let got = 0;
+            for await (const chunk of body) {
+                digest.update(chunk);
+                got += chunk.length;
+                if (got > 700e6) throw new Error('that model is too big');
+                out.write(chunk);
+            }
+            await new Promise((resolve, reject) => { out.end(); out.on('finish', resolve); out.on('error', reject); });
+            const actual = digest.digest('hex');
+            if (actual !== hash) {
+                try { fs.rmSync(tmp, { force: true }); } catch { /* gone already */ }
+                throw new Error(`the model's checksum didn't match (expected ${hash.slice(0, 12)}…, got ${actual.slice(0, 12)}…): download ggml-base.bin yourself and set AKKO_WHISPER_MODEL`);
+            }
+            fs.renameSync(tmp, target);
+            return target;
+        })();
+        downloading = done.finally(() => { downloading = null; });
+        return downloading;
+    }
+
+    function sha256Of(file) {
+        return new Promise((resolve, reject) => {
+            const digest = crypto.createHash('sha256');
+            const stream = fs.createReadStream(file);
+            stream.on('data', (b) => digest.update(b));
+            stream.on('end', () => resolve(digest.digest('hex')));
+            stream.on('error', reject);
+        });
+    }
+
+    // Transcribe one audio file. Resolves with the SRT text; rejects with a sentence meant for the page.
 function transcribe(audio, { lang = 'ja', timeout = 30 * 60e3 } = {}) {
     return new Promise((resolve, reject) => {
         const found = status();
@@ -149,6 +218,21 @@ router.get('/', (req, res) => {
     });
 });
 
+// the one-click model download: whisper.cpp's base model, checked against its pinned sha256.
+// OpenAI whisper and faster-whisper bring their own models, so this is whisper.cpp only.
+router.post('/model', async (req, res) => {
+    const s = status();
+    if (!s.tools.length) return res.status(403).json({ error: 'no speech recognition tool is installed yet' });
+    if (s.tools[0].family !== 'cpp') return res.status(403).json({ error: 'model download is for whisper.cpp; OpenAI whisper and faster-whisper bring their own models' });
+    try {
+        const model = await downloadModel();
+        res.json({ ok: true, model: path.basename(model) });
+    } catch (err) {
+        console.error('asr model:', err.message);
+        res.status(503).json({ error: err.message });
+    }
+});
+
 // audio in (the file itself), SRT out. The same SRT the players already read (server/subtitles.js).
 router.post('/transcribe', express.raw({ type: () => true, limit: '2gb' }), async (req, res) => {
     if (!Buffer.isBuffer(req.body) || !req.body.length) return res.status(400).json({ error: 'the audio file is empty' });
@@ -167,4 +251,4 @@ router.post('/transcribe', express.raw({ type: () => true, limit: '2gb' }), asyn
     }
 });
 
-module.exports = { status, transcribe, which, models, router, TOOLS };
+module.exports = { status, transcribe, which, models, router, TOOLS, downloadModel };
