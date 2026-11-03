@@ -908,10 +908,11 @@ export default {
 
         // ---------- misc chrome from the original French file ----------
         "language you're learning": "la langue que tu apprends",
-        "create an account ": "créer un compte",
-        "⬇ download backup ": "⬇ télécharger la sauvegarde",
-        "on words I don't know ": "sur les mots que je ne connais pas",
-        "hide translations ": "masquer les traductions",
+
+        "subtitles from the video's audio": "sous-titres à partir de l'audio de la vidéo",
+        "extracting the audio…": "extraction de l'audio…",
+        "transcribing the audio…": "transcription de l'audio…",
+        "made subtitles: {n} lines": '{n} lignes de sous-titres créées',
     },
 
     // data-i18n blocks (whole paragraphs with links).
@@ -937,5 +938,7 @@ export default {
         "companion-hint": 'Le dossier est fourni avec akko (et mis à jour avec lui : après une mise à jour, clique sur la flèche de rechargement de l\'extension dans chrome://extensions). Il se trouve aussi dans chaque <a href="https://github.com/JaoN64dev/Immersion-app-akko/releases/latest" target="_blank" rel="noopener">version</a> sous le nom <b>akko-companion.zip</b>.',
         "account-privacy": "<p><b>Ce qui est conservé</b> : ton e-mail ; ton mot de passe sous forme de hash (jamais le mot de passe lui-même) ; ta liste de mots ; tes mots minés (le mot, la lecture et le sens, la phrase et la traduction, d'où et de quand ils viennent) et leurs enregistrements (l'audio de la ligne et une image) ; les noms des ordinateurs sur lesquels tu t'es connecté et la date de leur dernière utilisation.</p><p><b>Où</b> : chez Cloudflare (une base de données et un espace de stockage de fichiers), tenu pour akko. Utilisé uniquement pour garder tes ordinateurs synchronisés : pas de publicité, pas de suivi, jamais vendu ni partagé.</p><p><b>C'est à toi</b> : <i>télécharger mes données</i> te remet tout ; <i>supprimer le compte</i> efface tout, enregistrements compris. Sans compte, rien ne quitte ton ordinateur.</p>",
         "asr-intro": "Des sous-titres pour des audios que tu as déjà — un podcast, un enregistrement, un épisode — faits sur cet ordinateur. akko utilise un <b>outil Whisper que tu installes toi-même</b> (le <code>whisper-cli</code> de whisper.cpp, le <code>whisper</code> d'OpenAI ou <code>faster-whisper</code>), le trouve dans ton <code>PATH</code> et le lance : aucun modèle n'est fourni, rien n'est envoyé et aucun service n'est appelé. Dans 読む → <b>sous-titres depuis l'audio</b>, le résultat devient un texte à lire, à miner et à planifier.",
+        "Download the base model (~150 MB)": 'Télécharger le modèle de base (~150 Mo)',
+        "downloading the base model… (about 150 MB, this can take a while)": 'téléchargement du modèle de base… (environ 150 Mo, cela peut prendre un moment)',
     },
 };

@@ -68,8 +68,10 @@ Do one page, run `npm test`, move on. Never leave a `data-i18n` key without its 
 
 - subtitles from audio **on the watch page** — needs audio out of a video: decide ffmpeg in the browser
   (`@ffmpeg/core` is already a dependency) or on the server.
-- **model download with a pinned URL and a hash** — the one thing between "nothing installed" and
-  "working". Needs a host that stays put (GitHub release, like the dictionary packs).
+- **model download with a pinned URL and a hash** — done: `POST /api/asr/model` downloads
+  `ggml-base.bin` (~148 MB) from the pinned whisper.cpp model URL above, checks its sha256, and saves
+  it to `~/.cache/akko/whisper` — the folder Settings already points people at. The download button
+  shows in Settings → speech recognition once a tool is installed but no model exists yet.
 - mining from anything (URL / PDF page) → the reader; Reader 2.0 (read-aloud, per-book word lists);
   card templates v2.
 - Phase 5 (`.apkg`, shadowing, handwriting, PWA, cloud v2, the local assistant) is untouched.
@@ -82,10 +84,32 @@ Do one page, run `npm test`, move on. Never leave a `data-i18n` key without its 
 
 ## Decisions waiting on you
 
-- **Whisper model**: which URL to pin (and its hash) — akko must not ship a model.
-- **ffmpeg**: browser-side (no install, slower) or server-side (needs ffmpeg on the machine)?
 - **How far to take the six tables**: reaching 824 in each is ~4,000 strings of real translation; the
   honest plan is page by page, starting with settings and the first screen.
+
+### Decided since this checkpoint
+
+- **Whisper model**: pinned to `ggml-base.bin` — the multilingual base (~148 MB) from
+  `https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin`, sha256
+  `60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe`, saved to
+  `~/.cache/akko/whisper` and checked against the hash before use. `POST /api/asr/model` downloads
+  it — one click in Settings → speech recognition once whisper-cli is on PATH.
+  `AKKO_WHISPER_MODEL` remains the escape hatch, and akko still ships no model.
+- **ffmpeg**: browser-side `@ffmpeg/ffmpeg` (already a dependency, used by dual-audio.js to switch
+  audio tracks). It runs in the browser, keeping with the "runs for free, nothing to install" rule,
+  and extracts a locally opened video's audio to WAV for Whisper. Remote URLs can't be read by
+  ffmpeg.wasm, so watch-page subtitles-from-audio works for local files; server-side ffmpeg stays an
+  option for URLs later.
+
+### What phase 4's ASR item now covers
+
+- local ASR machine half (`server/asr.js`: finds whisper-cli/whisper/faster-whisper, runs it, SRT out)
+- one-click model download (`POST /api/asr/model`, pinned sha256, `~/.cache/akko/whisper`)
+- reader page half (`読む` → subtitles from audio)
+- watch page half (index.html → ffmpeg.wasm extracts audio → `/api/asr/transcribe` → subtitles)
+- in-app install instructions (Settings → speech recognition, all nine tables)
+
+Nothing is uploaded either way.
 
 ## After this checkpoint: the English course was hidden
 
@@ -109,11 +133,24 @@ flags and that the folders behind them exist.
 - Never add an agent `Co-authored-by`; `rm -f .git/hooks/commit-msg` if a hook reappears.
 - `git fetch origin --prune` before trusting a stale local branch.
 
+### Whisper, in short
+
+The recognition half works: `server/asr.js` finds whisper-cli / whisper / faster-whisper on PATH
+(or `AKKO_WHISPER`), runs it, and returns an SRT — 4 tests cover it, including a tool that writes
+nothing being an error rather than an empty subtitle.
+
+What made it "not work even when it was installed": there was no model, and no way to get one
+through akko. whisper.cpp transcribes nothing without a `.bin` model, so akko reported
+`code: 'model'` and refused to transcribe. Fixed by `POST /api/asr/model`: one click in
+Settings → speech recognition downloads the pinned `ggml-base.bin` (~148 MB) into
+`~/.cache/akko/whisper` and checks its sha256. Point `AKKO_WHISPER_MODEL` at your own model if you
+prefer placing it by hand; nothing is uploaded either way.
+
 ## Commands
 
 ```
 git fetch origin --prune && git checkout main1 && git pull --ff-only origin main1 && npm ci
-npm test                     # 168 tests today
+npm test                     # 173 tests, 171 pass, 0 fail, 2 skipped
 npm run check-lessons
 npm run i18n-audit           # coverage of every table + the English left on the pages
 npm run i18n-audit -- --lang ko

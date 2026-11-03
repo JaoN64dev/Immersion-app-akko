@@ -903,6 +903,11 @@ export default {
     "add from a link": "リンクから追加",
     "a Yomitan .zip for this language. The community list is at": "この言語の Yomitan 辞書（.zip）。一覧は",
     "downloading the dictionary… (this can take a minute)": "辞書をダウンロードしています…（1分ほどかかることがあります）",
+
+        "subtitles from the video's audio": '🎙 動画の音声から字幕を作る',
+        "extracting the audio…": '音声を抽出中…',
+        "transcribing the audio…": '音声を文字にしています…',
+        "made subtitles: {n} lines": '{n} 行の字幕を作りました',
     },
 
 
@@ -930,5 +935,7 @@ export default {
         "companion-hint": 'このフォルダは akko に入っていて、akko と一緒に更新されます（更新後は chrome://extensions で拡張機能の再読み込みの矢印を押してください）。各 <a href="https://github.com/JaoN64dev/Immersion-app-akko/releases/latest" target="_blank" rel="noopener">リリース</a> にも <b>akko-companion.zip</b> として置いてあります。',
         "account-privacy": "<p><b>保存されるもの</b>: メールアドレス、パスワードのハッシュ（パスワードそのものは保存しません）、単語リスト、マイニングした単語（単語、読み、意味、文とその翻訳、出典と時間）とその録音（セリフの音声と画像）、サインインしたパソコンの名前と最後に使った日時。</p><p><b>場所</b>: akko のために動いている Cloudflare（データベースとファイル保存）。パソコン同士を同期するためだけに使われます。広告なし、追跡なし、売ったり共有したりはしません。</p><p><b>あなたのもの</b>: <i>データをダウンロード</i> ですべて受け取れます。<i>アカウントを削除</i> ですべて（録音も）消えます。アカウントがなければ、何もパソコンの外に出ません。</p>",
         "asr-intro": "持っている音声（ポッドキャスト、録音、エピソード）の字幕を、このパソコンで作ります。akko は<b>自分で入れた Whisper 系のツール</b>（whisper.cpp の <code>whisper-cli</code>、OpenAI の <code>whisper</code>、<code>faster-whisper</code>）を使い、<code>PATH</code> から見つけて実行します。モデルは同梱せず、何も送信せず、サービスも呼びません。読む → <b>音声から字幕を作る</b> で、結果は読める・掘れる・計画に入るテキストになります。",
+        "Download the base model (~150 MB)": 'ベースモデルをダウンロード（約 150 MB）',
+        "downloading the base model… (about 150 MB, this can take a while)": 'ベースモデルをダウンロード中…（約 150 MB、時間がかかります）',
     },
 };

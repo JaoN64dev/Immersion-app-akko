@@ -153,9 +153,17 @@ export default {
         "play / stop": "播放 / 停止",
         "slow (0.75×)": "慢 (0.75×)",
         "the best one here": "这里最好的",
+
+        "subtitles from the video's audio": '从视频音频生成字幕',
+        "extracting the audio…": '正在提取音频…',
+        "transcribing the audio…": '正在转录音频…',
+        "made subtitles: {n} lines": '已生成 {n} 行字幕',
     },
 
     // data-i18n blocks (whole paragraphs with links). Empty until those paragraphs are keyed: a missing
     // key leaves the English in place, which is what the app does for any string it has no entry for.
-    html: {},
+    html: {
+        "Download the base model (~150 MB)": '下载基础模型（~150 MB）',
+        "downloading the base model… (about 150 MB, this can take a while)": '正在下载基础模型…（约 150 MB，可能需要一些时间）',
+    },
 };

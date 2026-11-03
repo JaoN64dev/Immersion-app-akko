@@ -307,8 +307,11 @@ refreshList();
 // speech recognition: what is on this machine, and what to install if nothing is (server/asr.js)
 const asrStatus = $("#asr-status");
 const asrHelp = $("#asr-help");           // the how-to: opened by itself when there is nothing to use
+const asrModel = $("#asr-model");         // the one-click model download: tool present, no model yet
+const asrDownload = $("#asr-download-model");
+const asrProgress = $("#asr-download-progress");
 if (asrStatus) {
-    getJson("/api/asr").then((s) => {
+    const show = (s) => {
         if (asrHelp) asrHelp.open = s.code !== "ready";
         // the server says which of three things is true (server/asr.js); the wording is the page's
         asrStatus.textContent = s.code === "ready"
@@ -318,7 +321,29 @@ if (asrStatus) {
                 : s.code === "missing"
                     ? "no speech recognition found. Install whisper.cpp (whisper-cli), OpenAI whisper, or faster-whisper: akko runs it here, and nothing is uploaded."
                     : s.help;
-    }).catch(() => { asrStatus.textContent = "couldn't ask the server about it."; });
+        if (asrModel) asrModel.hidden = s.code !== "model";
+    };
+    getJson("/api/asr").then(show).catch(() => { asrStatus.textContent = "couldn't ask the server about it."; });
+    if (asrDownload) {
+        asrDownload.addEventListener("click", async () => {
+            asrDownload.disabled = true;
+            asrProgress.hidden = false;
+            try {
+                await postJson("/api/asr/model", {});
+                const s = await getJson("/api/asr");
+                show(s);
+                if (s.code === "ready") {
+                    asrStatus.textContent = `${s.tools[0].id} is installed and runs on this computer.`;
+                    asrModel.hidden = true;
+                }
+            } catch (err) {
+                asrDownload.disabled = false;
+                asrStatus.textContent = err.message || "the model download failed";
+            } finally {
+                asrProgress.hidden = true;
+            }
+        });
+    }
 }
 
 // the welcome screen each time akko opens (scripts/site.js)

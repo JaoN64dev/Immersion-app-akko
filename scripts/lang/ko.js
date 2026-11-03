@@ -153,9 +153,17 @@ export default {
         "play / stop": "재생 / 정지",
         "slow (0.75×)": "느리게 (0.75×)",
         "the best one here": "여기서 가장 좋은 것",
+
+        "subtitles from the video's audio": '비디오 오디오에서 자막 만들기',
+        "extracting the audio…": '오디오 추출 중…',
+        "transcribing the audio…": '오디오 전사 중…',
+        "made subtitles: {n} lines": '{n} 줄 자막을 만들었습니다',
     },
 
     // data-i18n blocks (whole paragraphs with links). Empty until those paragraphs are keyed: a missing
     // key leaves the English in place, which is what the app does for any string it has no entry for.
-    html: {},
+    html: {
+        "Download the base model (~150 MB)": '기본 모델 다운로드 (~150 MB)',
+        "downloading the base model… (about 150 MB, this can take a while)": '기본 모델 다운로드 중… (약 150 MB, 시간이 걸릴 수 있습니다)',
+    },
 };

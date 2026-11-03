@@ -114,15 +114,22 @@ verifiable free pack yet, so they work through *Settings → Dictionaries → ad
      `AKKO_WHISPER` points at), checks there is a model, and runs it to produce an SRT — the same shape
      the players already read. With nothing installed it says exactly what to install and that nothing
      is uploaded. `GET /api/asr` (status), `POST /api/asr/transcribe?lang=` (audio in, SRT out); 4
-     tests, including a tool that writes nothing being an error and not an empty subtitle. No
-     auto-download of a model yet: that is the next decision (a URL that stays put, and a hash).
+     tests, including a tool that writes nothing being an error and not an empty subtitle. The model
+     comes with a one-click download: `POST /api/asr/model` fetches the pinned `ggml-base.bin`
+     (~148 MB) from `https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin`
+     (pinned sha256 `60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe`) into
+     `~/.cache/akko/whisper`; `AKKO_WHISPER_MODEL` remains the escape hatch and akko still ships no
+     model.
    - [x] the ASR page half, for the reader: 読む → **🎙 subtitles from audio** sends the file, parses the
      SRT with the same parser the subtitle pages use, and lands the transcript in the library as a text
      (so it gets coverage, priming, mining and a place in the plan). Settings → **speech recognition**
-     says what is installed here, or what to install. A video file is refused on purpose: Whisper wants
-     audio, and pulling audio out of a video needs ffmpeg — that is the next decision.
-   - [ ] subtitles from audio where subtitles are loaded (the watch page), which needs that ffmpeg step
-     or an audio track the user already has.
+     says what is installed here, or what to install.
+   - [x] subtitles from audio where subtitles are loaded (the watch page): ffmpeg.wasm — already a
+     dependency, used by dual-audio.js to switch audio tracks — extracts the video's audio to WAV and
+     `POST /api/asr/transcribe` turns it into an SRT, loaded as subtitles the same way any .srt is
+     (coverage, priming, mining, plan all apply). Remote URLs can't be read by ffmpeg.wasm, so this
+     works for locally opened video files; ffmpeg.wasm runs in the browser, keeping with the "runs for
+     free, nothing to install" rule.
    - [x] **the instructions are in the app**: Settings → speech recognition has *how to install it* —
      `brew install whisper-cpp`, the Windows zip and `PATH`, the Linux two lines, where the model goes
      (`~/.cache/akko/whisper`, the folder `server/asr.js` really reads), the two `pip` alternatives and

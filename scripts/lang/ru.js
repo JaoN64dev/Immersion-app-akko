@@ -153,9 +153,17 @@ export default {
         "play / stop": "играть / стоп",
         "slow (0.75×)": "медленно (0,75×)",
         "the best one here": "лучший здесь",
+
+        "subtitles from the video's audio": 'субтитры из аудио видео',
+        "extracting the audio…": 'извлечение аудио…',
+        "transcribing the audio…": 'транскрибация аудио…',
+        "made subtitles: {n} lines": '{n} строк субтитров создано',
     },
 
     // data-i18n blocks (whole paragraphs with links). Empty until those paragraphs are keyed: a missing
     // key leaves the English in place, which is what the app does for any string it has no entry for.
-    html: {},
+    html: {
+        "Download the base model (~150 MB)": 'Скачать базовую модель (~150 МБ)',
+        "downloading the base model… (about 150 MB, this can take a while)": 'скачивание базовой модели… (примерно 150 МБ, это может занять время)',
+    },
 };
