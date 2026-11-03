@@ -123,6 +123,11 @@ verifiable free pack yet, so they work through *Settings → Dictionaries → ad
      audio, and pulling audio out of a video needs ffmpeg — that is the next decision.
    - [ ] subtitles from audio where subtitles are loaded (the watch page), which needs that ffmpeg step
      or an audio track the user already has.
+   - [x] **the instructions are in the app**: Settings → speech recognition has *how to install it* —
+     `brew install whisper-cpp`, the Windows zip and `PATH`, the Linux two lines, where the model goes
+     (`~/.cache/akko/whisper`, the folder `server/asr.js` really reads), the two `pip` alternatives and
+     `AKKO_WHISPER`/`AKKO_WHISPER_MODEL`. It opens by itself when there is nothing to use, 読む's failure
+     now points at it, and the whole block is one `data-i18n` entry (ja, pt, es).
    - [ ] model download with a pinned URL and a hash, so "nothing installed" is one click away from
      "working" without akko shipping a model.
    - [ ] mining from anything (URL, PDF page) into the reader, then the same text pipeline.

@@ -306,8 +306,10 @@ refreshList();
 
 // speech recognition: what is on this machine, and what to install if nothing is (server/asr.js)
 const asrStatus = $("#asr-status");
+const asrHelp = $("#asr-help");           // the how-to: opened by itself when there is nothing to use
 if (asrStatus) {
     getJson("/api/asr").then((s) => {
+        if (asrHelp) asrHelp.open = s.code !== "ready";
         // the server says which of three things is true (server/asr.js); the wording is the page's
         asrStatus.textContent = s.code === "ready"
             ? `${s.tools[0].id} is installed and runs on this computer.`

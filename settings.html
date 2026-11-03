@@ -277,6 +277,25 @@
                     <p class="hint" data-i18n="asr-intro">Subtitles for audio you already have — a podcast, a recording, an episode — made on this computer. akko uses a <b>Whisper-class tool you install yourself</b> (whisper.cpp's <code>whisper-cli</code>, OpenAI's <code>whisper</code>, or <code>faster-whisper</code>), finds it on your
                         <code>PATH</code>, and runs it: no model is bundled, nothing is uploaded, and no service is called. 読む → <b>subtitles from audio</b> turns the result into a text you can read, mine and plan.</p>
                     <p id="asr-status" class="status dark">checking…</p>
+
+                    <!-- how to install one: the whole thing is one data-i18n block, because it is a
+                         list with <code> in it — a key per fragment could never match (scripts/i18n.js) -->
+                    <details id="asr-help" class="asr-help">
+                        <summary>how to install it</summary>
+                        <div class="asr-howto" data-i18n="asr-howto">
+                            <p>akko doesn't install anything for you and needs no account: do this on the computer that runs akko, then reload this page.</p>
+                            <p><b>whisper.cpp</b> — small, runs on the CPU, and the one akko looks for first:</p>
+                            <ul>
+                                <li><b>macOS</b>: <code>brew install whisper-cpp</code></li>
+                                <li><b>Windows</b>: download <code>whisper-bin-x64.zip</code> from the <a href="https://github.com/ggml-org/whisper.cpp/releases" target="_blank" rel="noopener">releases page</a>, unzip it anywhere (e.g. <code>C:\Tools\whisper</code>) and add that folder to your <code>PATH</code></li>
+                                <li><b>Linux</b>: <code>git clone https://github.com/ggml-org/whisper.cpp &amp;&amp; cd whisper.cpp &amp;&amp; cmake -B build &amp;&amp; cmake --build build -j</code>, then add <code>build/bin</code> to your <code>PATH</code></li>
+                            </ul>
+                            <p><b>a model</b> — whisper.cpp needs one, about 150 MB: download <code>ggml-base.bin</code> from <a href="https://huggingface.co/ggerganov/whisper.cpp" target="_blank" rel="noopener">the model page</a> and save it in <code>~/.cache/akko/whisper</code> (Windows: <code>C:\Users\you\.cache\akko\whisper</code>). <code>ggml-small.bin</code> hears more and is slower; <code>ggml-tiny.bin</code> is faster and hears less.</p>
+                            <p><b>or a Python one</b>, if you already use Python: <code>pip install openai-whisper</code>, or <code>pip install faster-whisper</code> — these bring their own models.</p>
+                            <p><b>anywhere else</b>: start akko with <code>AKKO_WHISPER</code> set to the command and <code>AKKO_WHISPER_MODEL</code> to the model file, and it uses those.</p>
+                            <p>Nothing is uploaded and no service is called: the audio, the model and the tool stay on this machine.</p>
+                        </div>
+                    </details>
                 </div>
             </section>
 

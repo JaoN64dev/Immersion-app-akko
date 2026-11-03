@@ -893,6 +893,7 @@ export default {
         "Grammar lessons, listening drills, furigana and the 表現 page all apply to this language.": "文法レッスン・聴解ドリル・ふりがな・表現ページは、すべてこの言語のためのものです。",
         "{lang}: your Yomitan dictionary gives the popup, and mining, 復習, listening from your own lines and backups work as usual. Grammar lessons and drill sets are only in Japanese for now.": "{lang}: Yomitan の辞書がポップアップを作り、採掘・復習・自分の台詞からのリスニング・バックアップは今までどおり使えます。文法レッスンとドリルは今のところ日本語だけです。",
         "{lang}: no dictionary for this language yet. Add one below, or install a pack.": "{lang}: この言語の辞書はまだありません。下から追加するか、パックを入れてください。",
+        "how to install it": "インストールのしかた",
         "Speech recognition": "音声認識",
         "speech recognition": "音声認識",
         "{tool} is installed and runs on this computer.": "{tool} が入っています。このパソコンで動きます。",
@@ -907,6 +908,7 @@ export default {
 
 
     html: {
+        "asr-howto": '<p>akko は何も自動で入れません。アカウントもいりません。akko が動いているパソコンで下のどれかをしてから、このページを再読み込みしてください。</p><p><b>whisper.cpp</b> — 小さくて CPU で動き、akko が最初に探すものです:</p><ul><li><b>macOS</b>: <code>brew install whisper-cpp</code></li><li><b>Windows</b>: <a href="https://github.com/ggml-org/whisper.cpp/releases" target="_blank" rel="noopener">リリースページ</a> から <code>whisper-bin-x64.zip</code> をダウンロードし、どこに解凍してもよいので（例: <code>C:\\Tools\\whisper</code>）そのフォルダを <code>PATH</code> に追加します</li><li><b>Linux</b>: <code>git clone https://github.com/ggml-org/whisper.cpp &amp;&amp; cd whisper.cpp &amp;&amp; cmake -B build &amp;&amp; cmake --build build -j</code> を実行し、<code>build/bin</code> を <code>PATH</code> に追加します</li></ul><p><b>モデル</b> — whisper.cpp には必要です（約 150 MB）: <a href="https://huggingface.co/ggerganov/whisper.cpp" target="_blank" rel="noopener">モデルのページ</a> から <code>ggml-base.bin</code> をダウンロードして <code>~/.cache/akko/whisper</code>（Windows は <code>C:\\Users\\you\\.cache\\akko\\whisper</code>）に置きます。<code>ggml-small.bin</code> はよく聞こえて遅く、<code>ggml-tiny.bin</code> は速いかわりに聞き落としが増えます。</p><p><b>Python のもの</b>でも構いません: <code>pip install openai-whisper</code> か <code>pip install faster-whisper</code>。モデルは自分で用意します。</p><p><b>別の場所にあるとき</b>: akko を <code>AKKO_WHISPER</code>（コマンド）と <code>AKKO_WHISPER_MODEL</code>（モデルのファイル）を設定して起動すれば、それを使います。</p><p>何も送信せず、サービスも呼びません。音声もモデルもツールも、このパソコンの中だけにあります。</p>',
         "about-who": 'こんにちは、akkoです！アニメを見たり、本を読んだり、日本語で聴いたりしながら、いまやっていることを離れずに単語を調べて、Anki に送れるようにこのサイトを作りました。自分のパソコンの中で動きます。',
         "about-whats-new": 'これは <b>バージョン2.0</b> です。新しいもの: 慣用句や言い回しに専用の <a href="/expressions.html">表現ページ</a>（出会ったものと、辞書にある 慣用句・ことわざ・四字熟語 のすべて）; インターフェースは <b>English・日本語・Português・Español</b>; 復習は単語・<b>穴埋め</b>・<b>先に台詞</b> で出題できます; バックアップは <b>録音入りの .zip</b> にもできます; そして言葉・位置・復習・採掘した単語とその音声や画像まで、<b>akko アカウント</b> でパソコン・スマホ・ブラウザの間でそろえられます（設定 → akko account。任意で、使わない限り何も外に出ません）。',
         "watch-bio": 'ようこそ！動画ファイルは <a href="https://nyaa.si" target="akko-window">nyaa.si</a> でどうぞ…',
