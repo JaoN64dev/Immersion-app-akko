@@ -95,3 +95,26 @@ test('a tool that writes nothing is an error with the tool in it, not a silent e
     fs.writeFileSync(audio, 'pretend audio');
     await assert.rejects(() => asr.transcribe(audio), /finished but wrote no subtitles/);
 });
+
+// The instructions, in the app: Settings → speech recognition has the how-to open by itself when
+// there is nothing to use. The text names real commands and the folder the server really reads.
+test('Settings says how to install it, and names the folder the server looks in', () => {
+    const read = (f) => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
+    const html = read('settings.html');
+    assert.match(html, /data-i18n="asr-howto"/, 'the block is translatable as a whole');
+    assert.match(html, /<summary>how to install it<\/summary>/);
+    assert.match(html, /brew install whisper-cpp/, 'macOS');
+    assert.match(html, /whisper-bin-x64\.zip/, 'Windows');
+    assert.match(html, /ggml-base\.bin/, 'the model it needs');
+    assert.match(html, /AKKO_WHISPER_MODEL/, 'the escape hatch');
+    // the folder in the text is the one server/asr.js reads
+    assert.match(read('server/asr.js'), /'\.cache', 'akko', 'whisper'/);
+    assert.match(html, /\.cache\/akko\/whisper/);
+    // and the three complete tables carry it
+    for (const tag of ['ja', 'pt', 'es']) {
+        const table = read(`scripts/lang/${tag}.js`);
+        assert.ok(table.includes('"asr-howto"'), `${tag}: the block`);
+        assert.ok(table.includes('"how to install it"'), `${tag}: the label`);
+        assert.ok(table.includes('AKKO_WHISPER_MODEL'), `${tag}: the escape hatch`);
+    }
+});

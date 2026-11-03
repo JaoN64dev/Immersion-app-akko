@@ -81,7 +81,14 @@ ui.audioFile.addEventListener("change", async () => {
         ui.status.textContent = `made subtitles: ${paragraphs.length} lines from ${file.name}`;
         open(text);
     } catch (err) {
-        ui.status.textContent = "couldn't transcribe it: " + err.message;
+        // nothing installed is not an error message, it is a missing step: say it, and point at the
+        // how-to in Settings (the same sentence Settings uses, so it reads in your language)
+        if (/^no speech recognition found/.test(err.message)) {
+            ui.status.innerHTML = escapeHtml(t("no speech recognition found. Install whisper.cpp (whisper-cli), OpenAI whisper, or faster-whisper: akko runs it here, and nothing is uploaded."))
+                + ` — <a href="/settings.html#asr-section">how to install it</a>`;
+        } else {
+            ui.status.textContent = "couldn't transcribe it: " + err.message;
+        }
     } finally {
         ui.audioFile.value = "";
     }

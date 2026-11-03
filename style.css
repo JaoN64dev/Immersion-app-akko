@@ -1259,6 +1259,15 @@ body.target-ja .en-only {display: none !important;}
 .dict-pack {display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 6px 0;}
 .dict-pack .hint {font-size: .85em;}
 
+/* settings: how to install whisper, as a list that opens in place */
+.asr-help {margin: 10px 0 0;}
+.asr-help summary {cursor: pointer; color: var(--ink-soft); width: fit-content;}
+.asr-help summary:hover {color: var(--main-color);}
+.asr-howto {margin: 8px 0 0; font-size: .92em;}
+.asr-howto ul {margin: 6px 0 10px; padding-left: 1.2em;}
+.asr-howto li {margin: 4px 0;}
+.asr-howto p:last-child {color: var(--ink-soft);}
+
 /* settings: a dictionary from a link */
 .dict-url {display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0 0;}
 .dict-url input {flex: 1 1 260px; min-width: 200px;}
