@@ -141,6 +141,8 @@ router.get('/', (req, res) => {
     const s = status();
     res.json({
         ready: s.ready,
+        // which of the three true things is the case, for the page to word in its own language
+        code: !s.tools.length ? 'missing' : !s.ready ? 'model' : 'ready',
         tools: s.tools.map((t) => ({ id: t.id, family: t.family })),
         model: s.model ? path.basename(s.model) : null,
         help: s.help,

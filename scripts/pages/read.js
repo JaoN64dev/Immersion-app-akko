@@ -14,6 +14,7 @@ import { addText, getText, removeText, renderLibrary, readingOf, saveReading } f
 import { tokenize } from "../words/render.js";
 import { planWeek, planPriming } from "../core/planner.js";
 import { KEY as PROGRESS_KEY } from "../progress.js";
+import { langOf } from "../core/script.js";
 import * as reader from "../reader/text.js";
 import * as manga from "../reader/manga.js";
 
@@ -95,7 +96,10 @@ ui.audioFile.addEventListener("change", async () => {
 const plan = { button: $("#plan-week"), box: $("#library-plan") };
 
 async function makePlan() {
-    const texts = (await idbAll("texts")).filter(ofTarget).slice(0, 20);      // a week doesn't need all of them
+    const texts = (await idbAll("texts"))
+        .filter(ofTarget)
+        .filter((t) => (t.chars || 0) >= 40)                                  // not a stray "AAA OI OI"
+        .slice(0, 20);                                                        // a week doesn't need all of them
     if (!texts.length) {
         ui.status.textContent = "nothing to plan yet: paste a text or open a book first.";
         return;
@@ -106,7 +110,8 @@ async function makePlan() {
         const items = [];
         for (const t of texts) {
             const { position, pct } = readingOf(t);
-            items.push({ id: t.id, kind: "text", title: t.title, lines: await tokenize(t.paragraphs), position, pct });
+            const lang = langOf(t.paragraphs.join("\n"), t.lang || target());
+            items.push({ id: t.id, kind: "text", title: t.title, lines: await tokenize(t.paragraphs, lang), position, pct });
         }
         // what you watch and listen to counts too, and needs no tokenizing: those pages recorded the %
         // (scripts/player/render.js, scripts/podcasts/player.js)
@@ -145,19 +150,21 @@ function showPlan(week) {
     const words = planPriming(week, { limit: 12 });
     const minutes = week.days.reduce((n, d) => n + d.minutes, 0);
     plan.box.hidden = false;
+    // every sentence here is one text node, in the English the language tables key on (scripts/i18n.js)
     plan.box.innerHTML = `
-        <p class="hint"><b>your week</b> — about ${minutes} minutes over ${week.days.length} day${week.days.length === 1 ? "" : "s"},
-            easiest first${week.left.length ? `, ${week.left.length} kept for later` : ""}</p>
+        <p class="hint"><b>your week</b></p>
+        <p class="hint">about ${minutes} minutes, easiest first</p>
+        ${week.left.length ? `<p class="hint">kept for later: ${week.left.length}</p>` : ""}
         <ol class="plan-days">
             ${week.days.map((d) => `<li>
                 <b>day ${d.day}</b>
                 ${d.items.map((i) => (i.kind && i.kind !== "text"
-                    ? `<a class="plan-item" href="${i.kind === "video" ? "/" : i.kind === "manga" ? "/reading.html#manga" : "/podcasts.html"}" title="open it where it lives">${escapeHtml(i.title)} <small>${i.pct}%${i.band === "stretch" ? " · stretch" : ""}</small></a>`
-                    : `<button class="plan-item" data-id="${escapeHtml(i.id)}" title="${escapeHtml(i.band === "stretch" ? "the stretch: one unknown word every line or two" : i.band === "comfortable" ? "comfortable: read it for the story" : "too hard for now")}">${escapeHtml(i.title)} <small>${i.pct}%${i.band === "stretch" ? " · stretch" : ""}</small></button>`)).join(" ")}
+                    ? `<a class="plan-item" href="${i.kind === "video" ? "/" : i.kind === "manga" ? "/reading.html#manga" : "/podcasts.html"}">${escapeHtml(i.title)} <small>${i.pct}%</small></a>`
+                    : `<button class="plan-item" data-id="${escapeHtml(i.id)}" title="${escapeHtml(i.band === "stretch" ? "the stretch: one unknown word every line or two" : i.band === "comfortable" ? "comfortable: read it for the story" : "too hard for now")}">${escapeHtml(i.title)} <small>${i.pct}%</small></button>`)).join(" ")}
                 <small class="plan-time">${d.minutes} min</small>
             </li>`).join("")}
         </ol>
-        ${words.length ? `<p class="hint">learn these first: ${words.map((w) => `<span class="prime-word" title="${w.count} time${w.count > 1 ? "s" : ""} across the week">${escapeHtml(w.sample)}</span>`).join(" ")}</p>` : ""}`;
+        ${words.length ? `<p class="hint"><b>learn these first</b> ${words.map((w) => `<span class="prime-word" title="${w.count} time${w.count > 1 ? "s" : ""} across the week">${escapeHtml(w.sample)}</span>`).join(" ")}</p>` : ""}`;
     plan.box.querySelectorAll("button.plan-item").forEach((b) => b.addEventListener("click", async () => {
         const text = await getText(b.dataset.id);
         if (text) open(text);

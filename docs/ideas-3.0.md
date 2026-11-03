@@ -130,6 +130,34 @@ verifiable free pack yet, so they work through *Settings → Dictionaries → ad
    - [ ] card templates v2.
 5. **Everything else** — 12, 10, 11, 18, 19, 20 (biggest, most opinionated, last).
 
+## Fixes after the first local test (3.0.1)
+
+Reported from a real session, all fixed on the branch that follows the merge:
+
+- **The plan box was unreadable in the dark theme.** The new CSS carried five literal colours
+  (`#fbf7ec`, `#f4e9c8`, `#7a6a3d`…) while the text inside inherits the theme's light `--on-panel`:
+  cream on cream, invisible. Every 3.0 panel now takes its colours from the theme variables
+  (`--post-bg`, `--ink`, `--ink-soft`, `--table-highlight`), and `tests/theme.test.js` fails if a
+  literal colour comes back to those selectors.
+- **The new interface text was English only.** Every 3.0 string — the plan, the priming chips, the
+  bands in Stats, the language note, the speech recognition section — is now a key in
+  `scripts/lang/{ja,pt,es}.js`, written as whole sentences with `{n}`/`{lang}`/`{tool}` placeholders so
+  the interface's own language applies. The ASR status comes back from the server as a *code*
+  (`missing` / `model` / `ready`) and the page words it, instead of the server writing English.
+- **"learn these first" offered whole sentences as words.** A Japanese book pasted during a German
+  session was filed as German and split by the space splitter, so each line came back as one word.
+  `scripts/core/script.js` reads the writing system, files a text under the language it is *written
+  in*, migrates texts that were filed wrongly, and every text is tokenized with its own language
+  (`tokenize(lines, lang)`), never the target's. Near-empty texts (a stray "AAA OI OI") are kept out
+  of the plan.
+- **A language with no dictionary now says so** in Settings → Learning, next to the picker, instead of
+  opening a popup with nothing in it.
+
+Still open from that session: **more interface languages** (en/ja/pt/es today; a new one is a file +
+an entry in the picker, but it needs a real translation, so pt-BR gets reviewed first), and the
+**generated packs** for German, Polish, Russian, Spanish and Italian (build them from Wiktionary dumps
+in a workflow, host as release assets — no third-party release to point at).
+
 ## Constraints to respect
 
 - **Licences**: CC-CEDICT and CC-Canto (CC BY-SA), KRDICT (CC BY-SA 2.0 KR), Wiktionary-derived

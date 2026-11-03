@@ -1232,32 +1232,36 @@ main .step-done.on {background: var(--extra4); border-color: #2e7d32; color: #1b
 body:not(.target-ja) .ja-only {display: none !important;}
 body.target-ja .en-only {display: none !important;}
 
-/* the welcome screen: any language past the two big cards */
-.welcome-other {display: block; margin: 14px auto 0; text-align: center; font-size: 0.9em; color: #555;}
+/* the welcome screen: any language past the two big cards.
+   Every colour here is a theme variable: the dark theme swaps them at the end of this file, and a
+   literal colour (the first version of this block had five) is unreadable in one of the two. */
+.welcome-other {display: block; margin: 14px auto 0; text-align: center; font-size: 0.9em; color: var(--ink-soft);}
 .welcome-other span {display: block; margin-bottom: 4px;}
 .welcome-other select {min-width: 240px; max-width: 100%; padding: 6px 8px;}
 
 /* the week's plan (scripts/core/planner.js, scripts/pages/read.js) */
-.library-plan {margin: 10px 0 16px; padding: 12px 14px; border-radius: 10px; background: #fbf7ec;}
+.library-plan {margin: 10px 0 16px; padding: 12px 14px; border-radius: 10px; background: var(--post-bg); color: var(--ink);}
+.library-plan .hint {color: var(--ink-soft);}
 .plan-days {margin: 6px 0; padding-left: 1.2em;}
 .plan-days li {margin: 6px 0;}
 .plan-item {margin: 0 4px 2px 0;}
-.plan-item small {color: #7a6a3d;}
-.plan-time {color: #777;}
+.plan-item small {font-size: .9em; opacity: .75;}
+.plan-time {color: var(--ink-soft);}
 
 /* the words worth learning before a text (scripts/reader/text.js, scripts/core/coverage.js) */
-.reader-prime {margin: 8px 0; font-size: .92em; color: #444;}
-.reader-prime b {color: #111;}
-.prime-word {display: inline-block; padding: 1px 7px; margin: 2px; border-radius: 999px; background: #f4e9c8; cursor: help;}
-.prime-gain {margin-left: 8px; color: #6b5b2a;}
+.reader-prime {margin: 8px 0; font-size: .92em; color: var(--ink-soft);}
+.reader-prime b {color: var(--ink);}
+.prime-word {display: inline-block; padding: 1px 7px; margin: 2px; border-radius: 999px; background: var(--table-highlight); color: var(--ink); cursor: help;}
+.prime-gain {margin-left: 8px; color: var(--ink-soft);}
 
 /* settings: a dictionary pack for the language you learn */
 .dict-packs {margin: 10px 0;}
 .dict-pack {display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 6px 0;}
 .dict-pack .hint {font-size: .85em;}
 
-/* settings: what the language you picked can do */
-#learning-note {color: #555; font-size: .9em; margin: 8px 0 0;}
+/* settings: what the language you picked can do, and what it is missing */
+#learning-note {color: var(--ink-soft); font-size: .9em; margin: 8px 0 0;}
+#learning-note.missing {color: var(--main-color);}
 
 /* welcome screen (each time akko opens): welcome + what do you want to learn? */
 .target-chooser {position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 16px; background: #00000099;}

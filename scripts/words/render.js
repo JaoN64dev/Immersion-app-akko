@@ -143,13 +143,16 @@ export function sentenceAround(text, at) {
 }
 
 // Split lines into words on the server; retries while its tokenizer is still starting up
-export async function tokenize(lines, attempt = 0) {
+// `lang` is the language the text is written in (scripts/core/script.js): a Japanese book opened
+// while studying German must be split by the Japanese tokenizer, or every line comes back as one
+// "word" and nothing is clickable.
+export async function tokenize(lines, lang = target(), attempt = 0) {
     try {
-        return (await postJson("/api/tokenize", { lines, lang: target() })).tokens;
+        return (await postJson("/api/tokenize", { lines, lang })).tokens;
     } catch (err) {
         if (attempt >= 20) throw err;
         await new Promise((r) => setTimeout(r, 3000));
-        return tokenize(lines, attempt + 1);
+        return tokenize(lines, lang, attempt + 1);
     }
 }
 

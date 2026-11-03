@@ -4,7 +4,7 @@
 
 import { escapeHtml, store } from "../core/utils.js";
 import * as today from "../core/today.js";
-import { target, learningEnglish, understood } from "../core/target.js";
+import { target, learningEnglish } from "../core/target.js";
 import { wordStats, watchStats, mangaStats, podcastStats, textStats, minedStats, grammarStats, companionStats } from "../totals.js";
 
 // ---------- small formatters ----------
@@ -140,14 +140,14 @@ function renderCoverage() {
         .filter((r) => r && typeof r.pct === "number" && Number.isFinite(r.pct) && (!r.lang || r.lang === target()));
     const pcts = records.map((r) => r.pct);
     if (!pcts.length) {
-        el.innerHTML = `<p class="stats-empty">no finished text yet — read anything to the end and its "${understood()}" % lands here.</p>`;
+        el.innerHTML = `<p class="stats-empty">no finished text yet: read anything to the end</p>`;
         return;
     }
     const band = (p) => READ_BANDS.find((b) => p >= b.from);
     const counts = READ_BANDS.map((b) => ({ ...b, n: pcts.filter((p) => band(p).key === b.key).length }));
     const mean = Math.round(pcts.reduce((a, p) => a + p, 0) / pcts.length);
     el.innerHTML = `
-        <p class="hint">the ${pcts.length} text${pcts.length === 1 ? "" : "s"} you've read, by how much of them you knew — a moving picture of what is getting easier:</p>
+        <p class="hint">the {n} texts you've read, by how much of them you knew</p>`.replace("{n}", String(pcts.length)) + `
         <div class="stats-bar" role="img" aria-label="${escapeHtml(counts.map((b) => `${b.n} ${b.label}`).join(", "))}">
             ${counts.filter((b) => b.n).map((b) =>
                 `<i style="width:${((b.n / pcts.length) * 100).toFixed(2)}%;background:${b.key === "easy" ? "#0ca30c" : b.key === "stretch" ? "#fab219" : "#8E8D98"}" title="${escapeHtml(b.label)}: ${b.n}"></i>`).join("")}
@@ -155,7 +155,7 @@ function renderCoverage() {
         <ul class="stats-legend">
             ${counts.map((b) => `<li title="${escapeHtml(b.hint)}"><i style="background:${b.key === "easy" ? "#0ca30c" : b.key === "stretch" ? "#fab219" : "#8E8D98"}"></i>${escapeHtml(b.label)} <b>${b.n}</b></li>`).join("")}
         </ul>
-        <p class="hint">on average <b>${mean}%</b> known. The stretch band is the one to pick from.</p>
+        <p class="hint">on average ${mean}% known. The stretch band is the one to pick from.</p>
         ${oneAway(records)}`;
 }
 
@@ -165,7 +165,7 @@ function oneAway(records) {
     const lines = records.reduce((n, r) => n + (Number.isFinite(r.iPlus1) ? r.iPlus1 : 0), 0);
     const paragraphs = records.reduce((n, r) => n + (Number.isFinite(r.paragraphs) ? r.paragraphs : 0), 0);
     if (!lines || !paragraphs) return "";
-    return `<p class="hint"><b>${lines}</b> of the ${paragraphs} lines you've read are one word away: those are the ones to mine.</p>`;
+    return `<p class="hint">${lines} of the ${paragraphs} lines you've read are one word away: those are the ones to mine.</p>`;
 }
 
 function renderTimeChart() {

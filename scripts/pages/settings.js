@@ -48,6 +48,20 @@ if (learningNote) {
         : `${p.english}: your Yomitan dictionary gives the popup, and mining, 復習, listening from your own lines and backups work as usual. Grammar lessons and drill sets are only in Japanese for now.`;
 }
 
+// A language can be picked before it has a dictionary: say so here rather than let a click open
+// nothing. Japanese and English are built in; everything else is a dictionary you add.
+async function checkDictionary() {
+    if (!learningNote || target() === "ja" || target() === "en") return;
+    let mine = [];
+    try {
+        mine = (await getJson("/api/dictionaries")).dictionaries.filter((d) => d.lang === target() && d.enabled && d.kind !== "freq");
+    } catch { return; }
+    if (mine.length) return;
+    learningNote.classList.add("missing");
+    learningNote.textContent = `${profile().english}: no dictionary for this language yet. Add one below, or install a pack.`;
+}
+checkDictionary();
+
 // learning: switching reloads, since every page keeps that language's data
 for (const b of document.querySelectorAll("[data-target]")) {
     b.setAttribute("aria-checked", String(b.dataset.target === target()));
@@ -268,9 +282,14 @@ refreshList();
 const asrStatus = $("#asr-status");
 if (asrStatus) {
     getJson("/api/asr").then((s) => {
-        asrStatus.textContent = s.ready
-            ? `ready: ${s.tools[0].id}${s.model ? ` with ${s.model}` : ""} — running on this computer.`
-            : s.help;
+        // the server says which of three things is true (server/asr.js); the wording is the page's
+        asrStatus.textContent = s.code === "ready"
+            ? `${s.tools[0].id} is installed and runs on this computer.`
+            : s.code === "model"
+                ? `${s.tools[0].id} is installed, but there is no model for it yet: download one into ~/.cache/akko/whisper, or set AKKO_WHISPER_MODEL.`
+                : s.code === "missing"
+                    ? "no speech recognition found. Install whisper.cpp (whisper-cli), OpenAI whisper, or faster-whisper: akko runs it here, and nothing is uploaded."
+                    : s.help;
     }).catch(() => { asrStatus.textContent = "couldn't ask the server about it."; });
 }
 
