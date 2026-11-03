@@ -294,7 +294,7 @@
                             <p><b>whisper.cpp</b> — small, runs on the CPU, and the one akko looks for first:</p>
                             <ul>
                                 <li><b>macOS</b>: <code>brew install whisper-cpp</code></li>
-                                <li><b>Windows</b>: download <code>whisper-bin-x64.zip</code> from the <a href="https://github.com/ggml-org/whisper.cpp/releases" target="_blank" rel="noopener">releases page</a>, unzip it anywhere (e.g. <code>C:\Tools\whisper</code>) and add that folder to your <code>PATH</code></li>
+                                <li><b>Windows</b>: build from source — <code>git clone https://github.com/ggml-org/whisper.cpp &amp;&amp; cd whisper.cpp &amp;&amp; cmake -B build &amp;&amp; cmake --build build --config Release</code>, then add <code>build/bin</code> to your <code>PATH</code> (or install via <code>winget</code>, <code>choco</code> or <code>scoop</code> if you have one)</li>
                                 <li><b>Linux</b>: <code>git clone https://github.com/ggml-org/whisper.cpp &amp;&amp; cd whisper.cpp &amp;&amp; cmake -B build &amp;&amp; cmake --build build -j</code>, then add <code>build/bin</code> to your <code>PATH</code></li>
                             </ul>
                             <p><b>a model</b> — whisper.cpp needs one, about 150 MB: download <code>ggml-base.bin</code> from <a href="https://huggingface.co/ggerganov/whisper.cpp" target="_blank" rel="noopener">the model page</a> and save it in <code>~/.cache/akko/whisper</code> (Windows: <code>C:\Users\you\.cache\akko\whisper</code>). <code>ggml-small.bin</code> hears more and is slower; <code>ggml-tiny.bin</code> is faster and hears less.</p>
