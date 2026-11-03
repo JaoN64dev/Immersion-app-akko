@@ -153,10 +153,16 @@ Reported from a real session, all fixed on the branch that follows the merge:
 - **A language with no dictionary now says so** in Settings → Learning, next to the picker, instead of
   opening a popup with nothing in it.
 
+**"Muitos idiomas não têm dicionário" now has a way through that is not a pack.**
+Settings → Dictionary → *add from a link*: paste the address of any Yomitan `.zip` for the language you
+are learning, and the server — on your machine — downloads it, checks it really is a Yomitan
+dictionary, and installs it (`POST /api/dictionary/from-url`). Only http(s), a size ceiling, and the
+community list linked right there. That covers every language today; nothing is hosted by us and
+nothing is uploaded anywhere. Packs stay worth making for the ones people pick most (German first),
+but no language needs one to work.
+
 Still open from that session: **more interface languages** (en/ja/pt/es today; a new one is a file +
-an entry in the picker, but it needs a real translation, so pt-BR gets reviewed first), and the
-**generated packs** for German, Polish, Russian, Spanish and Italian (build them from Wiktionary dumps
-in a workflow, host as release assets — no third-party release to point at).
+an entry in the picker, but it needs a real translation, so pt-BR gets reviewed first).
 
 ## Constraints to respect
 

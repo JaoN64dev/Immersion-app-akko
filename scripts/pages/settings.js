@@ -270,6 +270,22 @@ dict.upload.addEventListener("change", () => {
     installDictionary(() => fetch(`/api/dictionary/upload?lang=${target()}`, { method: "POST", body: file }),
         `installing ${file.name}… (this can take a minute)`);
 });
+// a dictionary from a link: the way in for the languages no pack covers
+const dictUrl = $("#dict-url-input");
+const dictUrlAdd = $("#dict-url-add");
+if (dictUrlAdd) {
+    dictUrlAdd.addEventListener("click", () => {
+        const url = dictUrl.value.trim();
+        if (!url) return;
+        installDictionary(() => fetch("/api/dictionary/from-url", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ url, lang: target() }),
+        }), "downloading the dictionary… (this can take a minute)")
+            .then(() => { dictUrl.value = ""; });
+    });
+}
+
 dict.update.addEventListener("click", () => {
     installDictionary(() => fetch("/api/dictionary/update", { method: "POST" }),
         "downloading the newest dictionary… (about 13 MB, this can take a minute)");

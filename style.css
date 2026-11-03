@@ -1259,6 +1259,11 @@ body.target-ja .en-only {display: none !important;}
 .dict-pack {display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 6px 0;}
 .dict-pack .hint {font-size: .85em;}
 
+/* settings: a dictionary from a link */
+.dict-url {display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0 0;}
+.dict-url input {flex: 1 1 260px; min-width: 200px;}
+.dict-url .hint {flex-basis: 100%; font-size: .85em;}
+
 /* settings: what the language you picked can do, and what it is missing */
 #learning-note {color: var(--ink-soft); font-size: .9em; margin: 8px 0 0;}
 #learning-note.missing {color: var(--main-color);}

@@ -844,6 +844,39 @@ router.get('/dictionary/packs', (req, res) => {
   res.json({ packs: packs.list(lang) });
 });
 
+// ---------- a dictionary from a link ----------
+//
+// Most languages have no pack (server/packs.js): there is no release we can point at and promise it
+// stays. The dictionaries exist anyway, in the Yomitan community's list, and asking someone to
+// download a .zip and then find it again is where an immersion app loses them. So: paste the link,
+// and akko fetches it here, on your machine, checks it is a Yomitan dictionary, and installs it.
+// Only http(s), only a Yomitan .zip, nothing sent anywhere except the request for the file.
+
+const MAX_DICTIONARY = 600e6;         // a Yomitan dictionary bigger than this is a mistake
+
+router.post('/dictionary/from-url', express.json(), installRoute(async (req, res) => {
+  const raw = String((req.body && req.body.url) || '').trim();
+  if (!raw) throw new Error('paste the address of a Yomitan dictionary (.zip)');
+  let url;
+  try { url = new URL(raw); } catch { throw new Error("that doesn't look like an address"); }
+  if (!/^https?:$/.test(url.protocol)) throw new Error('only http and https addresses');
+  const asked = String((req.body && req.body.lang) || '').toLowerCase();
+  const lang = /^[a-z]{2,3}(-[a-z0-9]{2,8})?$/.test(asked) ? asked : 'ja';
+  let res0;
+  try {
+    res0 = await fetch(url, { redirect: 'follow', signal: AbortSignal.timeout(10 * 60e3) });
+  } catch (err) {
+    throw new Error(`couldn't reach ${url.host} (${err.message})`);
+  }
+  if (!res0.ok) throw new Error(`${url.host} answered ${res0.status}`);
+  const size = Number(res0.headers.get('content-length')) || 0;
+  if (size > MAX_DICTIONARY) throw new Error(`that file is too big (${Math.round(size / 1e6)} MB)`);
+  const buf = Buffer.from(await res0.arrayBuffer());
+  if (!dictionaries.isYomitan(buf)) throw new Error("that file isn't a Yomitan dictionary (.zip)");
+  const done = await oneAtATime(() => dictionaries.importZip(buf, lang), { replacesJmdict: false });
+  res.json({ installed: [done], ...dictionaryInfo() });
+}));
+
 router.post('/dictionary/packs/install', express.json(), installRoute(async (req, res) => {
   const pack = packs.find(String(req.body && req.body.id || ''));
   if (!pack) throw new Error('that pack does not exist');

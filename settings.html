@@ -263,6 +263,13 @@
                         </label>
                         <button id="dict-update" class="ja-only">⟳ download the newest</button>
                     </div>
+                    <!-- a dictionary from a link, for a language no pack covers (server/dictionary.js) -->
+                    <div class="dict-url">
+                        <input id="dict-url-input" type="url" placeholder="https://…/some-dictionary.zip" aria-label="address of a Yomitan dictionary">
+                        <button id="dict-url-add">add from a link</button>
+                        <span class="hint">a Yomitan .zip for this language. The community list is at
+                            <a href="https://github.com/MarvNC/yomitan-dictionaries" target="_blank" rel="noopener">github.com/MarvNC/yomitan-dictionaries</a></span>
+                    </div>
                     <p id="dict-msg" class="status dark"></p>
                 </div>
             </section>
