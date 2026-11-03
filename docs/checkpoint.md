@@ -4,8 +4,8 @@ Written at the end of a long session, to pick up cold tomorrow with the fewest s
 
 ## Where the repository is
 
-- `main1` is at **`06f6424`** ("Merge pull request #6"): everything from PR #5 (the 3.0.1 fixes) and
-  PR #6 (ten interface languages).
+- The last **code** commit is **`06f6424`** ("Merge pull request #6"): everything from PR #5 (the 3.0.1
+  fixes) and PR #6 (ten interface languages). This checkpoint is the docs commit right after it.
 - Measured on this commit, today: `npm ci && npm test` → **168 tests, 166 pass, 0 fail**;
   `npm run check-lessons` → *all good*.
 - Nothing is half-applied: the working tree is clean. (PR #5 merged at `ca24b2a`, six minutes before
