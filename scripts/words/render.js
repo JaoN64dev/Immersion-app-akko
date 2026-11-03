@@ -2,7 +2,7 @@
 
 import { escapeHtml, postJson, store } from "../core/utils.js";
 import { wordStatus, counts, isUnknown } from "./status.js";
-import { target, keyFor } from "../core/target.js";
+import { target, keyFor, usesFullStop } from "../core/target.js";
 
 // The expressions met so far (idioms seen in a text, any expression given a status in the popup):
 // key -> when it was met, for the stats page's "idioms known / met" and the Expressions page
@@ -131,7 +131,7 @@ function endsSentence(text, i, en) {
 
 // The sentence around position `at` in `text`
 export function sentenceAround(text, at) {
-    const en = target() === "en";
+    const en = usesFullStop();          // Korean and German end sentences with a full stop too
     let start = at;
     while (start > 0 && !endsSentence(text, start - 1, en)) start--;
     // a closing quote right after the full stop belongs to the sentence before ("Stop." She ran.)
@@ -153,20 +153,6 @@ export async function tokenize(lines, attempt = 0) {
     }
 }
 
-// content words in a line you don't know yet
-export const unknownIn = (tokens) => new Set(tokens.filter((t) => t.c && isUnknown(t.b)).map((t) => t.b));
-
-// How much of these lines you know (counting repeats); i+1 = lines with exactly one unknown word
-export function comprehension(lines) {
-    let total = 0, known = 0, iPlus1 = 0;
-    const unknown = new Set();
-    for (const tokens of lines) {
-        for (const t of tokens) {
-            if (!t.c || !counts(t.b)) continue;
-            total++;
-            if (wordStatus(t.b) === "known") known++; else unknown.add(t.b);
-        }
-        if (unknownIn(tokens).size === 1) iPlus1++;
-    }
-    return { pct: total ? Math.round((known / total) * 100) : 0, total, known, unknown: unknown.size, iPlus1 };
-}
+// How much of these lines you know, and the words you don't (scripts/core/coverage.js — the one
+// engine behind every % in akko). Re-exported here, where the pages have always found them.
+export { unknownIn, comprehension } from "../core/coverage.js";

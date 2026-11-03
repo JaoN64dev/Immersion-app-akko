@@ -43,6 +43,7 @@
                 <li><a href="#display-section">display</a></li>
                 <li><a href="#stats-section">your stats</a></li>
                 <li><a href="#dictionary-section">dictionaries</a></li>
+                <li><a href="#asr-section">speech recognition</a></li>
                 <li><a href="#backup-section">backup / restore</a></li>
                 <li><a href="#phone-section">use on your phone</a></li>
                 <li id="account-nav" hidden><a href="#account-section">akko account</a></li>
@@ -62,10 +63,13 @@
                 <h2 class="dashed-heading">Learning</h2>
                 <div class="note settings-note">
                     <p>The language you're studying. Each one keeps its own known words, lessons, course and progress, so you can switch back and forth.</p>
-                    <div class="choice-row" role="radiogroup" aria-label="language you're learning">
-                        <button class="choice" data-target="ja" role="radio" translate="no"><b lang="ja">日本語</b><span>Japanese</span></button>
-                        <button class="choice" data-target="en" role="radio" translate="no"><b lang="en">English</b><span>American English</span></button>
-                    </div>
+                    <!-- one button per language: scripts/core/target.js, filled in by pages/settings.js -->
+                    <div id="learning-choices" class="choice-row" role="radiogroup" aria-label="language you're learning"></div>
+                    <!-- the rest of the table (scripts/core/target.js): dictionary-first languages -->
+                    <label class="native-row"><span>or another language</span>
+                        <select id="learning-other"></select>
+                    </label>
+                    <p id="learning-note" class="hint"></p>
                     <label class="native-row"><span class="en-only">Your language, for translations of English words</span><span class="ja-only">Your language, for the course and N5 grammar (Portuguese and Spanish so far)</span>
                         <select id="native-lang"></select>
                     </label>
@@ -133,6 +137,9 @@
 
                 <h3 class="stats-heading">Words you know</h3>
                 <div id="stats-words" class="note stats-note"></div>
+
+                <h3 class="stats-heading">What you can read now</h3>
+                <div id="stats-coverage" class="note stats-note"></div>
 
                 <h3 class="stats-heading">Time with the language <small style="font-weight:normal">(last 30 days)</small></h3>
                 <div id="stats-time" class="note stats-note stats-chart"></div>
@@ -247,6 +254,8 @@
                     <p class="ja-only"><b>Built in:</b> <span id="dict-info" class="dict-info">…</span></p>
                     <p class="hint ja-only" data-i18n="dict-help">You can add more dictionaries in <b>Yomitan format</b> (.zip), like <a href="https://jitendex.org" target="_blank" rel="noopener">Jitendex</a> or monolingual Japanese ones: they show in the word popup under JMdict, in the order below. A <code>jmdict-eng-….json.zip</code> or <code>kanjidic2-en-….json.zip</code> from <a href="https://github.com/scriptin/jmdict-simplified/releases" target="_blank" rel="noopener">jmdict-simplified</a> replaces the built-in one instead, and <b>download the newest</b> updates it (about 13 MB). Your words and progress are not touched.</p>
                     <p class="hint en-only" data-i18n="dict-help-en">You can add dictionaries in <b>Yomitan format</b> (.zip), for example an English dictionary or one into your own language: they show in the word popup under the definitions, in the order below. Your words and progress are not touched.</p>
+                    <!-- one button per free pack for the language you learn (server/packs.js) -->
+                    <div id="dict-packs" class="dict-packs" hidden></div>
                     <ul id="dict-list" class="dict-list"></ul>
                     <div class="backup-actions">
                         <label class="btn">⬆ add a dictionary (.zip)
@@ -255,6 +264,16 @@
                         <button id="dict-update" class="ja-only">⟳ download the newest</button>
                     </div>
                     <p id="dict-msg" class="status dark"></p>
+                </div>
+            </section>
+
+            <!-- SPEECH RECOGNITION: a Whisper-class tool on this machine (server/asr.js) -->
+            <section id="asr-section">
+                <h2 class="dashed-heading">Speech recognition</h2>
+                <div class="note settings-note">
+                    <p class="hint">Subtitles for audio you already have — a podcast, a recording, an episode — made on this computer. akko uses a <b>Whisper-class tool you install yourself</b> (whisper.cpp's <code>whisper-cli</code>, OpenAI's <code>whisper</code>, or <code>faster-whisper</code>), finds it on your
+                        <code>PATH</code>, and runs it: no model is bundled, nothing is uploaded, and no service is called. 読む → <b>subtitles from audio</b> turns the result into a text you can read, mine and plan.</p>
+                    <p id="asr-status" class="status dark">checking…</p>
                 </div>
             </section>
 

@@ -42,7 +42,11 @@ function saveProgress() {
     if (!episode || !isFinite(ui.audio.duration)) return;
     const all = store.get(PROGRESS, {});
     const time = ui.audio.currentTime, duration = ui.audio.duration;
-    all[episode.guid] = { time, duration, done: time / duration > 0.95, updated: Date.now() };
+    all[episode.guid] = {
+        ...all[episode.guid],
+        time, duration, done: time / duration > 0.95, updated: Date.now(),
+        title: episode.title, show: podcast ? podcast.title : "",      // for the planner (scripts/core/planner.js)
+    };
     store.set(PROGRESS, all);
     onProgress();
 }
@@ -131,6 +135,12 @@ function renderStats() {
     ui.badge.className = "comp-badge inline " + pctLevel(c.pct);
     ui.badge.innerHTML = `<b>${c.pct}%</b> ${understood()}`;
     ui.badge.title = `you know ${c.known} of the ${c.total} words in this episode (ignored words don't count)`;
+    // the coverage at the moment it was drawn: the plan and the stats read it instead of re-tokenizing
+    if (episode) {
+        const all = store.get(PROGRESS, {});
+        const rec = all[episode.guid];
+        if (rec && rec.pct !== c.pct) { all[episode.guid] = { ...rec, pct: c.pct }; store.set(PROGRESS, all); }
+    }
 }
 
 // index of the last cue that has started

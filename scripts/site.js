@@ -7,7 +7,7 @@
 //     English either way; 日本語 menus are an option in Settings)
 
 import "./i18n.js";
-import { chosen, target, setTarget, welcomeOn, setWelcome } from "./core/target.js";
+import { chosen, target, setTarget, welcomeOn, setWelcome, LANGUAGES, LANGUAGE_CHOICES, storageKey, pagesFor } from "./core/target.js";
 import { store, escapeHtml, getJson } from "./core/utils.js";
 import * as today from "./core/today.js";
 import * as autoBackup from "./core/auto-backup.js";
@@ -80,6 +80,24 @@ sync.start();           // the rest in step too: positions, 復習, mined words,
 
 const t = target();
 document.body.classList.add(`target-${t}`);
+
+// The pages this language doesn't have (scripts/core/target.js, pagesFor): the course, grammar,
+// drills and 表現 are Japanese lessons, so a third language gets its tabs taken out rather than a
+// page full of Japanese it can't use. Opened directly, the page says so instead.
+const PAGE_OF = { "course.html": "course", "grammar.html": "grammar", "listening.html": "drills", "expressions.html": "expressions" };
+{
+    const pages = pagesFor();
+    for (const [file, what] of Object.entries(PAGE_OF)) {
+        if (pages[what]) continue;
+        document.querySelectorAll(`a[href="${file}"], a[href="/${file}"]`).forEach((a) => a.remove());
+        if (location.pathname.endsWith(file)) {
+            const note = document.createElement("p");
+            note.className = "note";
+            note.textContent = "This page is for Japanese. Everything else akko does works in your language: read, watch, review, mining.";
+            document.querySelector("main")?.prepend(note);
+        }
+    }
+}
 if (t === "en") {
     document.querySelectorAll("main [lang=ja]").forEach((el) => { el.lang = "en"; });
     document.title = "akko";       // the page titles are "読む akko" and such
@@ -148,7 +166,9 @@ function keepFocusIn(box, e) {
 function welcome() {
     const first = !chosen();
     const current = first ? null : target();
-    const known = { ja: knownWords("akko-words"), en: knownWords("akko-words-en") };
+    // known words per language, so a language you've studied before shows what you have in it
+    const known = (tag) => knownWords(storageKey("akko-words", tag));
+    const others = LANGUAGE_CHOICES.filter((tag) => tag !== "ja" && tag !== "en");
     const box = document.createElement("div");
     box.className = "target-chooser";
     box.setAttribute("role", "dialog");
@@ -159,7 +179,7 @@ function welcome() {
                     <b${lang === "ja" ? ' lang="ja"' : ""}>${word}</b>
                     <span>${name}</span>
                     <small>${what}</small>
-                    ${known[lang] ? `<em>${known[lang].toLocaleString("en-US")} words known</em>` : ""}
+                    ${known(lang) ? `<em>${known(lang).toLocaleString("en-US")} words known</em>` : ""}
                 </button>`;
     box.innerHTML = `
         <div class="target-card">
@@ -173,6 +193,12 @@ function welcome() {
                 ${option("ja", "日本語", "Japanese", "anime, dramas, manga, books and podcasts in Japanese")}
                 ${option("en", "English", "American English", "shows, films, books and podcasts in English")}
             </div>
+            <!-- any other language in the table (scripts/core/target.js): dictionary-first -->
+            <label class="welcome-other"><span>or another language</span>
+                <select id="welcome-other-lang">
+                    ${others.map((tag) => `<option value="${tag}"${tag === current ? " selected" : ""}>${LANGUAGES[tag].name} — ${LANGUAGES[tag].english}</option>`).join("")}
+                </select>
+            </label>
             <p id="welcome-expression" class="welcome-expression" hidden></p>
             <p class="target-later">You can switch any time in 設定 Settings, and each language keeps its own progress. The menus can be shown in English, Português, Español or 日本語 there too.</p>
             ${first ? "" : `<label class="welcome-again"><input type="checkbox" checked> show this when akko opens</label>`}
@@ -195,6 +221,16 @@ function welcome() {
         setTarget(b.dataset.target);
         location.reload();
     });
+    const other = box.querySelector("#welcome-other-lang");
+    if (other) {
+        other.addEventListener("change", () => {
+            const tag = other.value;
+            if (tag === current) return close();
+            if (first) tour.begin(tag);
+            setTarget(tag);
+            location.reload();
+        });
+    }
     const again = box.querySelector(".welcome-again input");
     if (again) again.addEventListener("change", () => setWelcome(again.checked));
     document.body.appendChild(box);

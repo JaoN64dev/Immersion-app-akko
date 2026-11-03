@@ -865,6 +865,7 @@ export default {
         '{n} recordings': '{n} gravações',
         'you\'ve met this one': 'você já encontrou esta',
 
+        "or another language": "outro idioma",
     },
 
 

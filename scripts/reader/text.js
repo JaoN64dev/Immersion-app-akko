@@ -15,6 +15,7 @@ import { watchHover } from "../words/hover.js";
 import { enableWordClicks } from "../popup.js";
 import { readingOf, saveReading } from "./library.js";
 import { understood } from "../core/target.js";
+import { prime, coverageIfKnown } from "../core/coverage.js";
 
 const BATCH = 150;             // paragraphs per /api/tokenize request
 const SETTINGS = "akko-reader";
@@ -22,7 +23,7 @@ const NEAR = "1500px";         // how far beyond the visible part paragraphs get
 
 const ui = {
     section: $("#reader-section"), text: $("#reader-text"), title: $("#reader-title"),
-    stats: $("#reader-stats"), badge: $("#reader-badge"), back: $("#reader-back"),
+    stats: $("#reader-stats"), badge: $("#reader-badge"), back: $("#reader-back"), prime: $("#reader-prime"),
     size: $("#reader-size"), vertical: $("#reader-vertical"),
 };
 
@@ -40,6 +41,7 @@ export function openText(text) {
     job++;
     rec = { ...text, position: readingOf(text).position };
     tokens = new Array(text.paragraphs.length);
+    if (ui.prime) ui.prime.hidden = true;          // last text's "learn these first" is not this one's
     near.clear();
     drawn.clear();
     ui.title.textContent = text.title;
@@ -132,8 +134,31 @@ function renderStats() {
     ui.badge.className = "comp-badge inline " + pctLevel(c.pct);
     ui.badge.innerHTML = `<b>${c.pct}%</b> ${understood()}`;
     ui.badge.title = `you know ${c.known} of the ${c.total} words in this text (ignored words don't count)`;
-    // once the whole text is analysed, the library shows its %
-    if (done.length === tokens.length && c.pct !== readingOf(rec).pct) saveReading(rec.id, { pct: c.pct });
+    // once the whole text is analysed, the library shows its % and the words worth learning come out
+    if (done.length === tokens.length) {
+        const was = readingOf(rec);
+        const patch = {};
+        if (c.pct !== was.pct) patch.pct = c.pct;
+        // lines one word away, kept for Settings → Stats (and only when it moved: one write)
+        if (c.iPlus1 !== was.iPlus1 || c.total !== was.words) Object.assign(patch, { iPlus1: c.iPlus1, words: c.total, paragraphs: done.length });
+        if (Object.keys(patch).length) saveReading(rec.id, patch);
+        renderPrime(done, c);
+    } else if (ui.prime) ui.prime.hidden = true;
+}
+
+// What to learn before starting: a handful of words that finish the most lines (scripts/core/coverage.js),
+// with what they'd add up to. Nothing is marked here — the words are coloured, so you can click one.
+function renderPrime(done, c) {
+    if (!ui.prime) return;
+    const picks = c.unknown.size ? prime(done, { limit: 6 }) : [];
+    if (!picks.length) {
+        ui.prime.hidden = true;
+        return;
+    }
+    const after = coverageIfKnown(done, picks.map((p) => p.word));
+    ui.prime.hidden = false;
+    ui.prime.innerHTML = `<b>learn these first</b> ${picks.map((p) => `<span class="prime-word" title="${p.count} time${p.count > 1 ? "s" : ""} in this text${p.unlocks ? `, and ${p.unlocks} line${p.unlocks > 1 ? "s" : ""} would be fully understood` : ""}">${escapeHtml(p.sample)}</span>`).join(" ")}
+        ${after.pct > c.pct ? `<span class="prime-gain">${c.pct}% → <b>${after.pct}%</b></span>` : ""}`;
 }
 
 // counting a whole book takes a moment, so it runs at most every half second

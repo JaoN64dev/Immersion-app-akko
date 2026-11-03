@@ -22,6 +22,8 @@ const { UA, cached, fetchText, asyncRoute } = require('./http');
 const grammar = require('./grammar');
 const english = require('./english');
 const dictionaries = require('./dictionaries');
+const multilingual = require('./multilingual');
+const packs = require('./packs');
 const { ExpressionIndex, meaningfulJa, hasKanji: anyKanji } = require('./expressions');
 
 const { DATA } = require('./paths');
@@ -737,6 +739,12 @@ const router = express.Router();
 
 router.post('/tokenize', express.json({ limit: '5mb' }), (req, res) => {
   const lines = Array.isArray(req.body.lines) ? req.body.lines : [];
+  // Korean, Chinese and every other dictionary-first language (server/multilingual.js). No waiting:
+  // with no dictionary installed a line still splits, and the dictionary only improves it.
+  const lang = String(req.body.lang || 'ja');
+  if (lang !== 'ja' && lang !== 'en') {
+    return res.json({ tokens: multilingual.forLanguage(lang, dictionaries).tokenize(lines) });
+  }
   // English (server/english.js) needs the dictionary, for its list of words
   if (req.body.lang === 'en') {
     if (!ready.dict) return res.status(503).json({ error: ready.error || 'dictionary still loading' });
@@ -761,6 +769,13 @@ router.get('/dict', asyncRoute(async (req, res) => {
   if (req.query.lang === 'en') {
     if (!ready.dict) return res.status(503).json({ error: ready.error || 'dictionary still loading' });
     return res.json(withMore(await english.lookup(qs, form, dict, String(req.query.native || '')), 'en'));
+  }
+  // Korean, Chinese, German…: the dictionaries you installed (Settings → Dictionaries) are the
+  // whole dictionary for that language, and the popup already draws them from `more`
+  const lang = String(req.query.lang || 'ja');
+  if (lang !== 'ja') {
+    const candidates = [...new Set([...qs, form].filter(Boolean))];
+    return res.json({ query: candidates[0] || '', entries: [], more: dictionaries.lookup(candidates, lang) });
   }
   res.json(withMore(ready.dict ? lookup(qs, form) : await jishoLookup(qs[0]), 'ja'));
 }));
@@ -809,11 +824,31 @@ router.get('/dictionary', (req, res) => res.json(dictionaryInfo()));
 router.post('/dictionary/upload', express.raw({ type: () => true, limit: '1gb' }), installRoute(async (req, res) => {
   if (!Buffer.isBuffer(req.body) || !req.body.length) throw new Error('the file is empty');
   if (dictionaries.isYomitan(req.body)) {
-    const lang = req.query.lang === 'en' ? 'en' : 'ja';
+    // any language from the table: a Yomitan dictionary is for one of them (Settings → Dictionaries)
+    const asked = String(req.query.lang || '').toLowerCase();
+    const lang = /^[a-z]{2,3}(-[a-z0-9]{2,8})?$/.test(asked) ? asked : 'ja';
     const done = await oneAtATime(() => dictionaries.importZip(req.body, lang), { replacesJmdict: false });
     return res.json({ installed: [done], ...dictionaryInfo() });
   }
   const done = await oneAtATime(async () => install(readDictionaryFile(req.body)));
+  res.json({ installed: [done], ...dictionaryInfo() });
+}));
+
+// ---------- dictionary packs (server/packs.js) ----------
+//
+// A language with a pack needs no file hunting: Settings shows one button per pack for the language
+// you learn, this downloads it and installs it exactly as an uploaded .zip is installed.
+
+router.get('/dictionary/packs', (req, res) => {
+  const lang = String(req.query.lang || 'ja').toLowerCase();
+  res.json({ packs: packs.list(lang) });
+});
+
+router.post('/dictionary/packs/install', express.json(), installRoute(async (req, res) => {
+  const pack = packs.find(String(req.body && req.body.id || ''));
+  if (!pack) throw new Error('that pack does not exist');
+  const buf = await packs.download(pack);
+  const done = await oneAtATime(() => dictionaries.importZip(buf, pack.lang), { replacesJmdict: false });
   res.json({ installed: [done], ...dictionaryInfo() });
 }));
 

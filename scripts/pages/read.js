@@ -5,11 +5,15 @@ import * as popup from "../popup.js";
 import { initKeys } from "../keys.js";
 import { remindBackup } from "../core/reminder.js";
 import { t } from "../i18n.js";
-import { learningEnglish, ofTarget, keyFor } from "../core/target.js";
-import { store } from "../core/utils.js";
+import { learningEnglish, ofTarget, keyFor, target } from "../core/target.js";
+import { store, escapeHtml } from "../core/utils.js";
 import { idbAll } from "../core/idb.js";
 import { readTextFile, splitParagraphs } from "../reader/import.js";
-import { addText, getText, removeText, renderLibrary } from "../reader/library.js";
+import { parseSubtitle } from "../subtitles/parse.js";
+import { addText, getText, removeText, renderLibrary, readingOf, saveReading } from "../reader/library.js";
+import { tokenize } from "../words/render.js";
+import { planWeek, planPriming } from "../core/planner.js";
+import { KEY as PROGRESS_KEY } from "../progress.js";
 import * as reader from "../reader/text.js";
 import * as manga from "../reader/manga.js";
 
@@ -18,7 +22,7 @@ const ui = {
     library: $("#library"), librarySection: $("#library-section"), status: $("#library-status"),
     pasteOpen: $("#paste-open"), pasteForm: $("#paste-form"), pasteTitle: $("#paste-title"),
     pasteText: $("#paste-text"), pasteCancel: $("#paste-cancel"), textFile: $("#text-file"),
-    mangaFiles: $("#manga-files"), mangaFolder: $("#manga-folder"),
+    mangaFiles: $("#manga-files"), mangaFolder: $("#manga-folder"), audioFile: $("#audio-file"),
 };
 
 // ---------- text / manga switch (remembered in the address: #manga) ----------
@@ -54,6 +58,113 @@ function open(text) {
     reader.openText(text);
     document.getElementById("reader-section").scrollIntoView({ behavior: "smooth" });
 }
+
+// ---------- speech recognition (server/asr.js) ----------
+//
+// An audio file becomes a text: the tool on this machine writes an SRT, the SRT goes through the same
+// parser the subtitle pages use, and the transcript lands in the library like anything else — so it
+// gets coverage, priming, mining and a place in the plan. Nothing is uploaded, and nothing is
+// downloaded: with no tool installed the server says what to install and this shows that sentence.
+
+ui.audioFile.addEventListener("change", async () => {
+    const file = ui.audioFile.files[0];
+    if (!file) return;
+    ui.status.textContent = `listening to ${file.name}… this runs on this computer and takes as long as it takes`;
+    try {
+        const res = await fetch(`/api/asr/transcribe?lang=${encodeURIComponent(target())}&name=${encodeURIComponent(file.name)}`, { method: "POST", body: file });
+        const body = await res.json().catch(() => ({ error: "the server didn't answer" }));
+        if (!res.ok) throw new Error(body.error || res.statusText);
+        const paragraphs = parseSubtitle(body.srt, "srt").map((c) => c.text.replace(/\n/g, " ").trim()).filter(Boolean);
+        if (!paragraphs.length) throw new Error("no speech in that file");
+        const text = await addText(file.name.replace(/\.[^.]+$/, ""), paragraphs);
+        ui.status.textContent = `made subtitles: ${paragraphs.length} lines from ${file.name}`;
+        open(text);
+    } catch (err) {
+        ui.status.textContent = "couldn't transcribe it: " + err.message;
+    } finally {
+        ui.audioFile.value = "";
+    }
+});
+
+// ---------- the plan (scripts/core/planner.js) ----------
+//
+// Every text is tokenized once, its coverage recorded (so the library and the stats know it without
+// asking again), and the week laid out: the 85–94% band first, the ones you started before the ones
+// you haven't, and the rest kept for another week.
+
+const plan = { button: $("#plan-week"), box: $("#library-plan") };
+
+async function makePlan() {
+    const texts = (await idbAll("texts")).filter(ofTarget).slice(0, 20);      // a week doesn't need all of them
+    if (!texts.length) {
+        ui.status.textContent = "nothing to plan yet: paste a text or open a book first.";
+        return;
+    }
+    plan.button.disabled = true;
+    ui.status.textContent = `looking at ${texts.length} text${texts.length === 1 ? "" : "s"}… (this can take a minute)`;
+    try {
+        const items = [];
+        for (const t of texts) {
+            const { position, pct } = readingOf(t);
+            items.push({ id: t.id, kind: "text", title: t.title, lines: await tokenize(t.paragraphs), position, pct });
+        }
+        // what you watch and listen to counts too, and needs no tokenizing: those pages recorded the %
+        // (scripts/player/render.js, scripts/podcasts/player.js)
+        for (const [id, r] of Object.entries(store.get(PROGRESS_KEY, {}))) {
+            if (!r || typeof r.pct !== "number") continue;
+            const title = (r.anime && r.anime.title && (r.anime.title.romaji || r.anime.title.native)) || r.videoName || "a video";
+            items.push({ id, kind: "video", title, pct: r.pct, position: r.time || 0, minutes: r.duration ? Math.max(5, Math.round(r.duration / 60)) : 15 });
+        }
+        // manga is Japanese only (its OCR and the mode switch): never in a Korean or German week
+        for (const [id, r] of Object.entries(target() === "ja" ? store.get("akko-manga", {}) : {})) {
+            if (!r || typeof r.pct !== "number") continue;
+            items.push({ id, kind: "manga", title: r.title || "a volume", pct: r.pct, position: r.page || 0, minutes: 20 });
+        }
+        for (const [id, r] of Object.entries(store.get(keyFor("akko-podcast-progress"), {}))) {
+            if (!r || typeof r.pct !== "number") continue;
+            items.push({ id, kind: "podcast", title: r.title || "an episode", pct: r.pct, position: r.time || 0, minutes: r.duration ? Math.max(5, Math.round(r.duration / 60)) : 20 });
+        }
+        const week = planWeek(items, { days: 7, minutes: 25 });
+        // what each text is worth now, saved so the library and Settings → Stats can show it
+        for (const item of week.items) if (item.kind === "text" && item.total) saveReading(item.id, { pct: item.pct, lang: target() });
+        showPlan(week);
+        ui.status.textContent = "";
+    } catch (err) {
+        ui.status.textContent = "couldn't plan it: " + err.message;
+    } finally {
+        plan.button.disabled = false;
+    }
+}
+
+function showPlan(week) {
+    if (!week.days.length) {
+        plan.box.hidden = true;
+        ui.status.textContent = "nothing to read yet: paste a text or open a book first.";
+        return;
+    }
+    const words = planPriming(week, { limit: 12 });
+    const minutes = week.days.reduce((n, d) => n + d.minutes, 0);
+    plan.box.hidden = false;
+    plan.box.innerHTML = `
+        <p class="hint"><b>your week</b> — about ${minutes} minutes over ${week.days.length} day${week.days.length === 1 ? "" : "s"},
+            easiest first${week.left.length ? `, ${week.left.length} kept for later` : ""}</p>
+        <ol class="plan-days">
+            ${week.days.map((d) => `<li>
+                <b>day ${d.day}</b>
+                ${d.items.map((i) => (i.kind && i.kind !== "text"
+                    ? `<a class="plan-item" href="${i.kind === "video" ? "/" : i.kind === "manga" ? "/reading.html#manga" : "/podcasts.html"}" title="open it where it lives">${escapeHtml(i.title)} <small>${i.pct}%${i.band === "stretch" ? " · stretch" : ""}</small></a>`
+                    : `<button class="plan-item" data-id="${escapeHtml(i.id)}" title="${escapeHtml(i.band === "stretch" ? "the stretch: one unknown word every line or two" : i.band === "comfortable" ? "comfortable: read it for the story" : "too hard for now")}">${escapeHtml(i.title)} <small>${i.pct}%${i.band === "stretch" ? " · stretch" : ""}</small></button>`)).join(" ")}
+                <small class="plan-time">${d.minutes} min</small>
+            </li>`).join("")}
+        </ol>
+        ${words.length ? `<p class="hint">learn these first: ${words.map((w) => `<span class="prime-word" title="${w.count} time${w.count > 1 ? "s" : ""} across the week">${escapeHtml(w.sample)}</span>`).join(" ")}</p>` : ""}`;
+    plan.box.querySelectorAll("button.plan-item").forEach((b) => b.addEventListener("click", async () => {
+        const text = await getText(b.dataset.id);
+        if (text) open(text);
+    }));
+}
+
+if (plan.button) plan.button.addEventListener("click", makePlan);
 
 ui.pasteOpen.addEventListener("click", () => {
     ui.pasteForm.hidden = !ui.pasteForm.hidden;

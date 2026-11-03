@@ -55,6 +55,7 @@ app.use(guard);
 
 // ---------- API ----------
 app.use('/api/subs', subtitles.router);
+app.use('/api/asr', require('./server/asr').router);
 app.use('/api/dictionaries', dictionaries.router);
 app.use('/api', dictionary.router);
 app.use('/api/anki', anki.router);
