@@ -30,6 +30,10 @@ const ui = {
 
 let rec = null;                // the open text
 let tokens = [];               // tokens per paragraph (undefined until analysed)
+
+// the open text and where we are in it, for the read-aloud button in read.js
+export const currentRec = () => rec;
+export const currentPosition = () => (rec ? rec.position : 0);
 let job = 0;                   // bumps when another text opens, so old batches are dropped
 let onClose = () => {};
 const near = new Set();        // paragraphs on or near the screen
@@ -265,7 +269,6 @@ export async function readAloudFrom(start) {
         const tk = tokens[i];
         if (!tk || !tk.length) continue;   // not tokenized yet
         draw(i);
-        goTo(i);
         const paraEl = ui.text.children[i];
         const map = offsetMap(tk, paraEl);
         if (!map.length) continue;          // no highlightable words
@@ -276,7 +279,7 @@ export async function readAloudFrom(start) {
             if (typeof speechSynthesis === "undefined") { resolve(); return; }
 
             const u = new SpeechSynthesisUtterance(text);
-            u.lang = "ja-JP";
+            u.lang = (rec.txtLang || target()).slice(0, 2).toLowerCase() === "ja" ? "ja-JP" : (rec.txtLang || "en");
             u.rate = 1;
 
             let current = -1;

@@ -268,7 +268,7 @@ if (ui.readAloud) {
         ui.readAloudControls.hidden = false;
         ui.readAloudStatus.textContent = "";
         try {
-            await readAloudFrom(rec.position);
+            await readAloudFrom(reader.currentPosition());
         } catch (err) {
             ui.readAloudStatus.textContent = err.message || "couldn't read aloud";
         } finally {
