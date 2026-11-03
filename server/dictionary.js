@@ -23,6 +23,7 @@ const grammar = require('./grammar');
 const english = require('./english');
 const dictionaries = require('./dictionaries');
 const multilingual = require('./multilingual');
+const packs = require('./packs');
 const { ExpressionIndex, meaningfulJa, hasKanji: anyKanji } = require('./expressions');
 
 const { DATA } = require('./paths');
@@ -830,6 +831,24 @@ router.post('/dictionary/upload', express.raw({ type: () => true, limit: '1gb' }
     return res.json({ installed: [done], ...dictionaryInfo() });
   }
   const done = await oneAtATime(async () => install(readDictionaryFile(req.body)));
+  res.json({ installed: [done], ...dictionaryInfo() });
+}));
+
+// ---------- dictionary packs (server/packs.js) ----------
+//
+// A language with a pack needs no file hunting: Settings shows one button per pack for the language
+// you learn, this downloads it and installs it exactly as an uploaded .zip is installed.
+
+router.get('/dictionary/packs', (req, res) => {
+  const lang = String(req.query.lang || 'ja').toLowerCase();
+  res.json({ packs: packs.list(lang) });
+});
+
+router.post('/dictionary/packs/install', express.json(), installRoute(async (req, res) => {
+  const pack = packs.find(String(req.body && req.body.id || ''));
+  if (!pack) throw new Error('that pack does not exist');
+  const buf = await packs.download(pack);
+  const done = await oneAtATime(() => dictionaries.importZip(buf, pack.lang), { replacesJmdict: false });
   res.json({ installed: [done], ...dictionaryInfo() });
 }));
 

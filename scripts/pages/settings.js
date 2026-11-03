@@ -2,7 +2,7 @@
 // display options, the Japanese dictionary, stats (scripts/pages/stats.js draws them) and backup / restore.
 
 import { $ } from "../core/dom.js";
-import { getJson, postJson } from "../core/utils.js";
+import { getJson, postJson, escapeHtml } from "../core/utils.js";
 import {
     target, setTarget, nativeLang, setNative, NATIVE_LANGUAGES, welcomeOn, setWelcome,
     LANGUAGES, LANGUAGE_CHOICES, profile,
@@ -225,6 +225,33 @@ async function installDictionary(send, busyText) {
         refreshList();
     }
 }
+
+// a pack for this language: one click, downloaded by the server and installed like an upload
+const packsBox = $("#dict-packs");
+async function showPacks() {
+    if (!packsBox) return;
+    let packs = [];
+    try {
+        packs = (await getJson(`/api/dictionary/packs?lang=${target()}`)).packs || [];
+    } catch { return; }                       // no packs is not an error
+    if (!packs.length) return;
+    packsBox.hidden = false;
+    packsBox.innerHTML = packs.map((p) => `
+        <p class="dict-pack">
+            <button class="btn" data-pack="${escapeHtml(p.id)}">⬇ ${escapeHtml(p.title)}</button>
+            <span class="hint">${Math.round(p.size / 1e6)} MB · ${escapeHtml(p.licence)} · ${escapeHtml(p.thanks)}</span>
+        </p>`).join("");
+    packsBox.querySelectorAll("[data-pack]").forEach((btn) => btn.addEventListener("click", () => {
+        const pack = packs.find((p) => p.id === btn.dataset.pack);
+        installDictionary(() => fetch("/api/dictionary/packs/install", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ id: btn.dataset.pack }),
+        }),
+            `downloading ${pack.title}… (about ${Math.round(pack.size / 1e6)} MB, this can take a minute)`);
+    }));
+}
+showPacks();
 
 dict.upload.addEventListener("change", () => {
     const file = dict.upload.files[0];

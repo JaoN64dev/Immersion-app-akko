@@ -1233,6 +1233,11 @@ body:not(.target-ja) .ja-only, body:not(.target-en) .en-only {display: none !imp
 .welcome-other span {display: block; margin-bottom: 4px;}
 .welcome-other select {min-width: 240px; max-width: 100%; padding: 6px 8px;}
 
+/* settings: a dictionary pack for the language you learn */
+.dict-packs {margin: 10px 0;}
+.dict-pack {display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 6px 0;}
+.dict-pack .hint {font-size: .85em;}
+
 /* settings: what the language you picked can do */
 #learning-note {color: #555; font-size: .9em; margin: 8px 0 0;}
 
