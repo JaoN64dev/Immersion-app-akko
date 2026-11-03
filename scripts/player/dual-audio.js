@@ -141,6 +141,7 @@ export async function extractAudioWav() {
     );
     if (code !== 0) throw new Error("ffmpeg couldn't extract the audio");
     const data = await ffmpeg.readFile(out);
+    console.log(`dual-audio: extracted ${data.byteLength} bytes of WAV audio for Whisper`);
     await ffmpeg.deleteFile(out).catch(() => {});
     return data;
 }

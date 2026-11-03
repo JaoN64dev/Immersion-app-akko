@@ -158,6 +158,7 @@ if (makeSubs) {
             const wav = await dualAudio.extractAudioWav();
             subsFromAudioStatus.textContent = t("transcribing the audio…");
             const lang = target();
+            console.log(`watch: sending ${wav.byteLength} bytes of WAV to /api/asr/transcribe`);
             const res = await fetch(`/api/asr/transcribe?lang=${encodeURIComponent(lang)}&name=${encodeURIComponent(state.videoName || "video")}`, {
                 method: "POST",
                 body: wav,
