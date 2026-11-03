@@ -2,7 +2,7 @@
 
 import { escapeHtml, postJson, store } from "../core/utils.js";
 import { wordStatus, counts, isUnknown } from "./status.js";
-import { target, keyFor } from "../core/target.js";
+import { target, keyFor, usesFullStop } from "../core/target.js";
 
 // The expressions met so far (idioms seen in a text, any expression given a status in the popup):
 // key -> when it was met, for the stats page's "idioms known / met" and the Expressions page
@@ -131,7 +131,7 @@ function endsSentence(text, i, en) {
 
 // The sentence around position `at` in `text`
 export function sentenceAround(text, at) {
-    const en = target() === "en";
+    const en = usesFullStop();          // Korean and German end sentences with a full stop too
     let start = at;
     while (start > 0 && !endsSentence(text, start - 1, en)) start--;
     // a closing quote right after the full stop belongs to the sentence before ("Stop." She ran.)

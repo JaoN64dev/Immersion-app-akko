@@ -15,7 +15,7 @@ globalThis.Event = class { constructor(type) { this.type = type; } };
 
 const {
     LANGUAGES, LANGUAGE_CHOICES, LEARNABLE, isKnown, profile, has,
-    chosen, target, learningEnglish, understood, keyFor, ofTarget, setTarget,
+    chosen, target, learningEnglish, understood, keyFor, ofTarget, setTarget, usesFullStop,
 } = await import("../scripts/core/target.js");
 
 const reset = () => data.clear();
@@ -112,4 +112,10 @@ test("every language in the table is complete, and the picker has them all", () 
     assert.equal(LEARNABLE.de, "German");
     // the seven the picker was asked for are in it
     for (const tag of ["de", "pl", "ru", "cmn", "ko", "es", "it"]) assert.ok(LANGUAGES[tag], tag);
+});
+
+test("sentences end with 。 in Japanese and Chinese, with a full stop everywhere else", async () => {
+    assert.equal(usesFullStop("ja"), false);
+    assert.equal(usesFullStop("cmn"), false);
+    for (const tag of ["ko", "de", "ru", "ar"]) assert.equal(usesFullStop(tag), true, tag);
 });

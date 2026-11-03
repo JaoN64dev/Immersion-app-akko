@@ -104,6 +104,9 @@ export const has = (what) => !!profile()[what];
 // label of the "% of words you know" badges
 export const understood = () => (learningEnglish() ? "understood" : "理解");
 
+// Japanese and Chinese end a sentence with 。; Hangul, Cyrillic, Latin and the rest with a full stop
+export const usesFullStop = (tag = target()) => !["japanese", "han"].includes(profile(tag).script);
+
 // storage key for a language: Japanese keeps the names it always had, the rest add "-<tag>"
 export const storageKey = (name, tag = target()) => (tag === "ja" ? name : `${name}-${tag}`);
 

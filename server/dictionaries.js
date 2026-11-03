@@ -206,7 +206,10 @@ async function importZip(buf, lang = 'ja') {
     throw new Error(kind === 'terms' ? 'no entries with definitions were found in this dictionary'
       : 'no frequencies were found in this dictionary (pitch accent dictionaries aren\'t supported yet)');
   }
-  const dictLang = /^en/i.test(info.sourceLanguage || '') ? 'en' : /^ja/i.test(info.sourceLanguage || '') ? 'ja' : lang;
+  // the language the dictionary is for: what its index.json says, else what Settings asked for
+  // ('ja' and 'en' by default, and anymore the tag of any other language)
+  const said = String(info.sourceLanguage || '').toLowerCase();
+  const dictLang = /^[a-z]{2,3}(-[a-z0-9]{2,8})?$/.test(said) ? said : lang;
   const meta = { id, title, revision: String(info.revision || ''), lang: dictLang, kind, count, enabled: true, source };
   writeIndex(tmp, index);
   fs.writeFileSync(path.join(tmp, 'info.json'), JSON.stringify({ ...meta, author: info.author || '', url: info.url || '', attribution: info.attribution || '' }));
@@ -310,6 +313,25 @@ function lookup(candidates, lang) {
   return found;
 }
 
+// For a dictionary-first language (server/multilingual.js): the dictionaries that are on, as the two
+// questions a word splitter has — is this a headword? and what is it called?
+function words(lang) {
+  const dicts = readList().filter((d) => d.enabled && d.lang === lang && d.kind !== 'freq');
+  const openAll = () => dicts.map((d) => { try { return open(d.id); } catch { return null; } }).filter(Boolean);
+  const all = openAll();
+  return {
+    has(q) { return all.some((o) => !!find(o, q)); },
+    reading(q) {
+      for (const o of all) {
+        const at = find(o, q);
+        if (!at || !at.length) continue;
+        try { const e = read(o, at[0], at[1]); if (e.r) return e.r; } catch { /* a broken entry is no reading */ }
+      }
+      return '';
+    },
+  };
+}
+
 // ---------- routes ----------
 
 // The frequency lists that are on, for each word: words = [{word, reading}] -> for each word
@@ -364,4 +386,4 @@ router.delete('/:id', (req, res) => {
   res.json({ dictionaries: shown() });
 });
 
-module.exports = { router, lookup, frequencies, importZip, isYomitan, contentHtml };
+module.exports = { router, lookup, frequencies, words, importZip, isYomitan, contentHtml };
