@@ -51,6 +51,7 @@ export default {
         "load": "laden",
         "open a file": "eine Datei öffnen",
         "paste text": "Text einfügen",
+        "from a URL": 'von einer URL',
         "show": "zeigen",
         "hide": "ausblenden",
         "level": "Stufe",

@@ -51,6 +51,7 @@ export default {
         "load": "불러오기",
         "open a file": "파일 열기",
         "paste text": "텍스트 붙여넣기",
+        "from a URL": 'URL에서',
         "show": "보기",
         "hide": "숨기기",
         "level": "단계",

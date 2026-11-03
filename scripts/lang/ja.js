@@ -301,6 +301,7 @@ export default {
         "読む Reading": "読む",
         "text": "テキスト",
         "paste text": "テキストを貼り付け",
+        "from a URL": 'URL から読む',
         "open a file": "ファイルを開く",
         ".txt · .epub · .html · subtitles": ".txt · .epub · .html · 字幕",
         "title": "タイトル",

@@ -295,6 +295,7 @@ export default {
         "読む Reading": "読む Lectura",
         "text": "texto",
         "paste text": "pegar texto",
+        "from a URL": 'desde una URL',
         "open a file": "abrir un archivo",
         ".txt · .epub · .html · subtitles": ".txt · .epub · .html · subtítulos",
         "title": "título",

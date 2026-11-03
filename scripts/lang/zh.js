@@ -51,6 +51,7 @@ export default {
         "load": "载入",
         "open a file": "打开文件",
         "paste text": "粘贴文本",
+        "from a URL": '从 URL',
         "show": "显示",
         "hide": "隐藏",
         "level": "等级",

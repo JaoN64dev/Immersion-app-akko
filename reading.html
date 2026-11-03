@@ -77,6 +77,7 @@
                 <section id="library-section">
                     <div class="bubble library-actions">
                         <button id="paste-open">paste text</button>
+                        <button id="url-open">from a URL</button>
                         <label class="btn">open a file
                             <input id="text-file" type="file" accept=".txt,.html,.htm,.xhtml,.epub,.srt,.ass,.ssa,.vtt" hidden>
                         </label>
@@ -93,6 +94,13 @@
                         <div class="row-buttons">
                             <button type="submit">read it</button>
                             <button type="button" id="paste-cancel">cancel</button>
+                        </div>
+                    </form>
+                    <form id="url-form" class="note paste-form" hidden>
+                        <label class="row">URL <input id="url-input" type="url" placeholder="https://example.com/article"></label>
+                        <div class="row-buttons">
+                            <button type="submit">read it</button>
+                            <button type="button" id="url-cancel">cancel</button>
                         </div>
                     </form>
                     <p id="library-status" class="status"></p>

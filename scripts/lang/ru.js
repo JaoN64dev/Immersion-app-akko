@@ -51,6 +51,7 @@ export default {
         "load": "загрузить",
         "open a file": "открыть файл",
         "paste text": "вставить текст",
+        "from a URL": 'из URL',
         "show": "показать",
         "hide": "скрыть",
         "level": "уровень",

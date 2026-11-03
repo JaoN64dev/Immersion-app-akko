@@ -135,9 +135,15 @@ verifiable free pack yet, so they work through *Settings → Dictionaries → ad
      (`~/.cache/akko/whisper`, the folder `server/asr.js` really reads), the two `pip` alternatives and
      `AKKO_WHISPER`/`AKKO_WHISPER_MODEL`. It opens by itself when there is nothing to use, 読む's failure
      now points at it, and the whole block is one `data-i18n` entry (ja, pt, es).
-   - [ ] model download with a pinned URL and a hash, so "nothing installed" is one click away from
-     "working" without akko shipping a model.
-   - [ ] mining from anything (URL, PDF page) into the reader, then the same text pipeline.
+   - [x] model download with a pinned URL and a hash: `POST /api/asr/model` fetches the pinned
+     `ggml-base.bin` (~148 MB) from `https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin`
+     (sha256 `60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe`) into `~/.cache/akko/whisper`,
+     checked against the hash before use; `AKKO_WHISPER_MODEL` remains the escape hatch, akko still ships no model.
+   - [x] mining from anything: 読む → **from a URL** fetches a webpage and extracts its readable
+     text (scripts strip scripts, styles, nav, ads, and take the article/main content) into the same
+     addText pipeline as pasted text — coverage, priming, mining, plan all apply. A PDF page still
+     needs pdf.js (a new dependency) and is left for the next pass; anything that saves as .txt/.html
+     works today.
    - [ ] Reader 2.0: read-aloud with the word highlighted, per-book word lists.
    - [ ] card templates v2.
 5. **Everything else** — 12, 10, 11, 18, 19, 20 (biggest, most opinionated, last).
