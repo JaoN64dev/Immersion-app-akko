@@ -174,8 +174,18 @@ long paragraphs in `settings.html` (30), `listening.html` (14), `index.html` (11
 Do it page by page, starting with `settings.html` (the page you open to fix things) and `index.html`
 (the first screen), and keep `npm run i18n-audit` going down: it exits 0 always, it is a map, not a test.
 
-Still open from that session: **more interface languages** (en/ja/pt/es today; a new one is a file +
-an entry in the picker, but it needs a real translation, so pt-BR gets reviewed first).
+**Ten interface languages.** English, 日本語, Português and Español are complete; **Deutsch, Français,
+Italiano, Русский, 中文 and 한국어** joined them with the chrome — navigation, every button, the
+settings sections, Review's four answers, the plan — 147 entries each. A table that is smaller than the
+English is fine: whatever it lacks stays English (`lookup()` returns nothing and the page is left alone),
+so a language can be filled in over time instead of waiting for 824 strings. `npm run i18n-audit --
+--lang de` lists what that language is still missing, and `tests/i18n.test.mjs` fails if a table has a
+key English doesn't (a typo, a translation nobody would ever see), an empty translation, a lost `{n}`,
+or is missing the menu itself. The picker is built from `LANGUAGES` in `scripts/i18n.js`, so a new
+language appears there by itself once its file is imported.
+
+The next pass on each of the six: the long paragraphs in `settings.html` and `listening.html` (they need
+`data-i18n` blocks, see the paragraph above), then `index.html` and `review.html`.
 
 ## Constraints to respect
 

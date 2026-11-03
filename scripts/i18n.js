@@ -1,6 +1,10 @@
-// The language of the site's interface: English, 日本語, Português or Español (saved in
-// "akko-settings" as lang; until one is picked, "your language" from Settings or the browser's,
-// when there's a table for it).
+// The language of the site's interface: English, 日本語, Português, Español, Deutsch, Français,
+// Italiano, Русский, 中文 or 한국어 (saved in "akko-settings" as lang; until one is picked, "your
+// language" from Settings or the browser's, when there's a table for it).
+//
+// A table may be smaller than the English: any string it has no entry for stays English, so a new
+// language can start with the navigation and grow (npm run i18n-audit -- --lang de says what is
+// missing). ja/pt/es are complete and tests/i18n.test.mjs keeps them in step.
 //
 // The pages and scripts are written in English. In another language, every piece of text and every
 // title / placeholder / aria-label that has an entry in its table (scripts/lang/ja.js, pt.js, es.js)
@@ -15,17 +19,31 @@ import { nativeLang } from "./core/target.js";
 import ja from "./lang/ja.js";
 import pt from "./lang/pt.js";
 import es from "./lang/es.js";
+import de from "./lang/de.js";
+import fr from "./lang/fr.js";
+import it from "./lang/it.js";
+import ru from "./lang/ru.js";
+import zh from "./lang/zh.js";
+import ko from "./lang/ko.js";
 
 const KEY = "akko-settings";
 const ATTRS = ["title", "placeholder", "aria-label"];
-const TABLES = { ja, pt, es };
-export const LANGUAGES = { en: "English", ja: "日本語", pt: "Português", es: "Español" };
+const TABLES = { ja, pt, es, de, fr, it, ru, zh, ko };
+// the code for each language, as the picker and the native-language list spell it
+export const LANGUAGES = {
+    en: "English", ja: "日本語", pt: "Português", es: "Español", de: "Deutsch", fr: "Français",
+    it: "Italiano", ru: "Русский", zh: "中文", ko: "한국어",
+};
+// Settings → your language calls Chinese "cmn" (and Cantonese "yue"): one table for both
+const ALIAS = { cmn: "zh", yue: "zh" };
+const codeOf = (c) => ALIAS[c] || c;
+const tableOf = (c) => TABLES[codeOf(c)];
 
 export function lang() {
     const saved = store.get(KEY, {}).lang;
-    if (saved) return TABLES[saved] ? saved : "en";
+    if (saved) return tableOf(saved) ? codeOf(saved) : "en";
     const native = nativeLang();
-    return TABLES[native] ? native : "en";
+    return tableOf(native) ? codeOf(native) : "en";
 }
 
 // ---------- the dictionary (of the language shown, built when first needed) ----------
@@ -161,7 +179,7 @@ function watch() {
 }
 
 export function setLang(l) {
-    store.set(KEY, { ...store.get(KEY, {}), lang: l });
+    store.set(KEY, { ...store.get(KEY, {}), lang: codeOf(l) });
     show();
 }
 

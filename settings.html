@@ -94,12 +94,8 @@
                 <h2 class="dashed-heading">Interface language</h2>
                 <div class="note settings-note">
                     <p>The language of the menus and buttons.</p>
-                    <div class="choice-row" role="radiogroup" aria-label="interface language">
-                        <button class="choice" data-lang="en" role="radio" translate="no"><b lang="en">English</b></button>
-                        <button class="choice" data-lang="ja" role="radio" translate="no"><b lang="ja">日本語</b></button>
-                        <button class="choice" data-lang="pt" role="radio" translate="no"><b lang="pt">Português</b></button>
-                        <button class="choice" data-lang="es" role="radio" translate="no"><b lang="es">Español</b></button>
-                    </div>
+                    <!-- one button per table in scripts/i18n.js (settings.js fills this in) -->
+                    <div class="choice-row" id="lang-choices" role="radiogroup" aria-label="interface language"></div>
                 </div>
             </section>
 

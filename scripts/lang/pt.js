@@ -893,6 +893,9 @@ export default {
         "{tool} is installed, but there is no model for it yet: download one into ~/.cache/akko/whisper, or set AKKO_WHISPER_MODEL.": "{tool} está instalado, mas ainda não há modelo: baixe um em ~/.cache/akko/whisper ou defina AKKO_WHISPER_MODEL.",
         "no speech recognition found. Install whisper.cpp (whisper-cli), OpenAI whisper, or faster-whisper: akko runs it here, and nothing is uploaded.": "nenhum reconhecimento de fala encontrado. Instale whisper.cpp (whisper-cli), OpenAI whisper ou faster-whisper: o akko roda aqui, e nada é enviado.",
         "couldn't ask the server about it.": "não consegui perguntar ao servidor.",
+    "add from a link": "adicionar por um link",
+    "a Yomitan .zip for this language. The community list is at": "um .zip Yomitan para este idioma. A lista da comunidade está em",
+    "downloading the dictionary… (this can take a minute)": "baixando o dicionário… (pode levar um minuto)",
     },
 
 
@@ -919,8 +922,5 @@ export default {
         "companion-hint": 'A pasta vem com o akko (e é atualizada com ele: depois de uma atualização, clique na seta de recarregar da extensão em chrome://extensions). Ela também está em cada <a href="https://github.com/JaoN64dev/Immersion-app-akko/releases/latest" target="_blank" rel="noopener">versão</a> como <b>akko-companion.zip</b>.',
         "account-privacy": "<p><b>O que é guardado</b>: seu e-mail; sua senha como hash (nunca a senha em si); sua lista de palavras; suas palavras mineradas (a palavra, a leitura e o significado, a frase e a tradução, de onde e de quando são) e as gravações delas (o áudio da fala e uma imagem); os nomes dos computadores em que você entrou e quando cada um foi usado por último.</p><p><b>Onde</b>: na Cloudflare (um banco de dados e um armazenamento de arquivos), mantida para o akko. Só é usado para manter seus computadores sincronizados: sem anúncios, sem rastreamento, nunca vendido nem compartilhado.</p><p><b>É seu</b>: <i>baixar meus dados</i> entrega tudo; <i>excluir a conta</i> apaga tudo, as gravações também. Sem uma conta, nada sai do seu computador.</p>",
         "asr-intro": "Legendas para áudios que você já tem — um podcast, uma gravação, um episódio — feitas neste computador. O akko usa uma <b>ferramenta Whisper que você mesmo instala</b> (o <code>whisper-cli</code> do whisper.cpp, o <code>whisper</code> da OpenAI ou o <code>faster-whisper</code>), encontra no seu <code>PATH</code> e roda: nenhum modelo vem junto, nada é enviado e nenhum serviço é chamado. Em 読む → <b>legendas a partir de áudio</b>, o resultado vira um texto para ler, minerar e planejar.",
-    "add from a link": "adicionar por um link",
-    "a Yomitan .zip for this language. The community list is at": "um .zip Yomitan para este idioma. A lista da comunidade está em",
-    "downloading the dictionary… (this can take a minute)": "baixando o dicionário… (pode levar um minuto)",
     },
 };
