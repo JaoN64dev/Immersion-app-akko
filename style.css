@@ -1237,6 +1237,14 @@ body.target-ja .en-only {display: none !important;}
 .welcome-other span {display: block; margin-bottom: 4px;}
 .welcome-other select {min-width: 240px; max-width: 100%; padding: 6px 8px;}
 
+/* the week's plan (scripts/core/planner.js, scripts/pages/read.js) */
+.library-plan {margin: 10px 0 16px; padding: 12px 14px; border-radius: 10px; background: #fbf7ec;}
+.plan-days {margin: 6px 0; padding-left: 1.2em;}
+.plan-days li {margin: 6px 0;}
+.plan-item {margin: 0 4px 2px 0;}
+.plan-item small {color: #7a6a3d;}
+.plan-time {color: #777;}
+
 /* the words worth learning before a text (scripts/reader/text.js, scripts/core/coverage.js) */
 .reader-prime {margin: 8px 0; font-size: .92em; color: #444;}
 .reader-prime b {color: #111;}

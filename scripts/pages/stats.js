@@ -137,8 +137,8 @@ function renderCoverage() {
     const el = document.getElementById("stats-coverage");
     if (!el) return;
     const pcts = Object.values(store.get("akko-reading", {}))
-        .map((r) => r && r.pct)
-        .filter((p) => typeof p === "number" && Number.isFinite(p));
+        .filter((r) => r && typeof r.pct === "number" && Number.isFinite(r.pct) && (!r.lang || r.lang === target()))
+        .map((r) => r.pct);
     if (!pcts.length) {
         el.innerHTML = `<p class="stats-empty">no finished text yet — read anything to the end and its "${understood()}" % lands here.</p>`;
         return;

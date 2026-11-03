@@ -41,6 +41,7 @@ export function openText(text) {
     job++;
     rec = { ...text, position: readingOf(text).position };
     tokens = new Array(text.paragraphs.length);
+    if (ui.prime) ui.prime.hidden = true;          // last text's "learn these first" is not this one's
     near.clear();
     drawn.clear();
     ui.title.textContent = text.title;

@@ -5,11 +5,13 @@ import * as popup from "../popup.js";
 import { initKeys } from "../keys.js";
 import { remindBackup } from "../core/reminder.js";
 import { t } from "../i18n.js";
-import { learningEnglish, ofTarget, keyFor } from "../core/target.js";
-import { store } from "../core/utils.js";
+import { learningEnglish, ofTarget, keyFor, target } from "../core/target.js";
+import { store, escapeHtml } from "../core/utils.js";
 import { idbAll } from "../core/idb.js";
 import { readTextFile, splitParagraphs } from "../reader/import.js";
-import { addText, getText, removeText, renderLibrary } from "../reader/library.js";
+import { addText, getText, removeText, renderLibrary, readingOf, saveReading } from "../reader/library.js";
+import { tokenize } from "../words/render.js";
+import { planWeek, planPriming } from "../core/planner.js";
 import * as reader from "../reader/text.js";
 import * as manga from "../reader/manga.js";
 
@@ -54,6 +56,68 @@ function open(text) {
     reader.openText(text);
     document.getElementById("reader-section").scrollIntoView({ behavior: "smooth" });
 }
+
+// ---------- the plan (scripts/core/planner.js) ----------
+//
+// Every text is tokenized once, its coverage recorded (so the library and the stats know it without
+// asking again), and the week laid out: the 85–94% band first, the ones you started before the ones
+// you haven't, and the rest kept for another week.
+
+const plan = { button: $("#plan-week"), box: $("#library-plan") };
+
+async function makePlan() {
+    const texts = (await idbAll("texts")).filter(ofTarget).slice(0, 20);      // a week doesn't need all of them
+    if (!texts.length) {
+        ui.status.textContent = "nothing to plan yet: paste a text or open a book first.";
+        return;
+    }
+    plan.button.disabled = true;
+    ui.status.textContent = `looking at ${texts.length} text${texts.length === 1 ? "" : "s"}… (this can take a minute)`;
+    try {
+        const items = [];
+        for (const t of texts) {
+            const { position, pct } = readingOf(t);
+            items.push({ id: t.id, title: t.title, lines: await tokenize(t.paragraphs), position, pct });
+        }
+        const week = planWeek(items, { days: 7, minutes: 25 });
+        // what each text is worth now, saved so the library and Settings → Stats can show it
+        for (const item of week.items) if (item.total) saveReading(item.id, { pct: item.pct, lang: target() });
+        showPlan(week);
+        ui.status.textContent = "";
+    } catch (err) {
+        ui.status.textContent = "couldn't plan it: " + err.message;
+    } finally {
+        plan.button.disabled = false;
+    }
+}
+
+function showPlan(week) {
+    if (!week.days.length) {
+        plan.box.hidden = true;
+        ui.status.textContent = "nothing to read yet: paste a text or open a book first.";
+        return;
+    }
+    const words = planPriming(week, { limit: 12 });
+    const minutes = week.days.reduce((n, d) => n + d.minutes, 0);
+    plan.box.hidden = false;
+    plan.box.innerHTML = `
+        <p class="hint"><b>your week</b> — about ${minutes} minutes over ${week.days.length} day${week.days.length === 1 ? "" : "s"},
+            easiest first${week.left.length ? `, ${week.left.length} kept for later` : ""}</p>
+        <ol class="plan-days">
+            ${week.days.map((d) => `<li>
+                <b>day ${d.day}</b>
+                ${d.items.map((i) => `<button class="plan-item" data-id="${escapeHtml(i.id)}" title="${escapeHtml(i.band === "stretch" ? "the stretch: one unknown word every line or two" : i.band === "comfortable" ? "comfortable: read it for the story" : "too hard for now")}">${escapeHtml(i.title)} <small>${i.pct}%${i.band === "stretch" ? " · stretch" : ""}</small></button>`).join(" ")}
+                <small class="plan-time">${d.minutes} min</small>
+            </li>`).join("")}
+        </ol>
+        ${words.length ? `<p class="hint">learn these first: ${words.map((w) => `<span class="prime-word" title="${w.count} time${w.count > 1 ? "s" : ""} across the week">${escapeHtml(w.sample)}</span>`).join(" ")}</p>` : ""}`;
+    plan.box.querySelectorAll(".plan-item").forEach((b) => b.addEventListener("click", async () => {
+        const text = await getText(b.dataset.id);
+        if (text) open(text);
+    }));
+}
+
+if (plan.button) plan.button.addEventListener("click", makePlan);
 
 ui.pasteOpen.addEventListener("click", () => {
     ui.pasteForm.hidden = !ui.pasteForm.hidden;
