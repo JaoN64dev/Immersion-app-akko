@@ -108,8 +108,15 @@ verifiable free pack yet, so they work through *Settings → Dictionaries → ad
      EPUB/file list could carry it from the start.
    - [ ] retention by source and "time to the next level".
 4. **Content without gaps** — 9, 17, 16, 13. **Next.**
-   - [ ] local ASR: detect a Whisper-class binary the user has, transcribe on the machine, never a
-     hosted service; when there is none, say so and offer "paste a transcript" instead of pretending.
+   - [x] local ASR, the machine half: `server/asr.js` finds a Whisper-class tool that is already
+     installed (whisper.cpp's `whisper-cli`, OpenAI's `whisper`, `faster-whisper`, or whatever
+     `AKKO_WHISPER` points at), checks there is a model, and runs it to produce an SRT — the same shape
+     the players already read. With nothing installed it says exactly what to install and that nothing
+     is uploaded. `GET /api/asr` (status), `POST /api/asr/transcribe?lang=` (audio in, SRT out); 4
+     tests, including a tool that writes nothing being an error and not an empty subtitle. No
+     auto-download of a model yet: that is the next decision (a URL that stays put, and a hash).
+   - [ ] the ASR page half: a "make subtitles from this file" button where subtitles are loaded, with
+     progress, and the transcript going through the ordinary subtitle path.
    - [ ] mining from anything (URL, PDF page) into the reader, then the same text pipeline.
    - [ ] Reader 2.0: read-aloud with the word highlighted, per-book word lists.
    - [ ] card templates v2.
