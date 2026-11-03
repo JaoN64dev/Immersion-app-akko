@@ -1237,6 +1237,12 @@ body.target-ja .en-only {display: none !important;}
 .welcome-other span {display: block; margin-bottom: 4px;}
 .welcome-other select {min-width: 240px; max-width: 100%; padding: 6px 8px;}
 
+/* the words worth learning before a text (scripts/reader/text.js, scripts/core/coverage.js) */
+.reader-prime {margin: 8px 0; font-size: .92em; color: #444;}
+.reader-prime b {color: #111;}
+.prime-word {display: inline-block; padding: 1px 7px; margin: 2px; border-radius: 999px; background: #f4e9c8; cursor: help;}
+.prime-gain {margin-left: 8px; color: #6b5b2a;}
+
 /* settings: a dictionary pack for the language you learn */
 .dict-packs {margin: 10px 0;}
 .dict-pack {display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 6px 0;}

@@ -109,7 +109,7 @@ export const pagesFor = (tag = target()) => {
 };
 
 // label of the "% of words you know" badges
-export const understood = () => (learningEnglish() ? "understood" : "理解");
+export const understood = () => (target() === "ja" ? "理解" : "understood");
 
 // Japanese and Chinese end a sentence with 。; Hangul, Cyrillic, Latin and the rest with a full stop
 export const usesFullStop = (tag = target()) => !["japanese", "han"].includes(profile(tag).script);

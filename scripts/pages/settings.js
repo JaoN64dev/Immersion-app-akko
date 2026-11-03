@@ -17,10 +17,6 @@ import * as account from "./account.js";
 import "./stats.js";
 
 // the language picker: one button per language in the table (scripts/core/target.js)
-const SCRIPT_LANG = {
-    japanese: "ja", han: "zh", hangul: "ko", cyrillic: "ru", arabic: "ar", hebrew: "he",
-    greek: "el", devanagari: "hi", thai: "th", latin: "",
-};
 const learningChoices = $("#learning-choices");
 if (learningChoices) {
     // Japanese and English come with akko: a button each, the way it has always been
@@ -49,7 +45,7 @@ if (learningNote) {
     const p = profile();
     learningNote.textContent = p.lessons
         ? "Grammar lessons, listening drills, furigana and the 表現 page all apply to this language."
-        : `${LANGUAGES[target()].english}: your Yomitan dictionary gives the popup, and mining, 復習, listening from your own lines and backups work as usual. Grammar lessons and drill sets are only in Japanese for now.`;
+        : `${p.english}: your Yomitan dictionary gives the popup, and mining, 復習, listening from your own lines and backups work as usual. Grammar lessons and drill sets are only in Japanese for now.`;
 }
 
 // learning: switching reloads, since every page keeps that language's data

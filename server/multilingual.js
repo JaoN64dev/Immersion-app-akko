@@ -105,7 +105,8 @@ function kindOf(lang) {
 
 // A token: {s: the text as it appears, b: the dictionary word, f: [[text, reading]] for the ruby}
 function word(s, base, reading) {
-    const tok = { s, b: base, c: 1 };
+    const tok = { s, b: base };
+    if (/\p{L}/u.test(s)) tok.c = 1;          // a number, 2024, isn't a word you learn
     if (reading) tok.f = [{ t: s, r: reading }];
     return tok;
 }

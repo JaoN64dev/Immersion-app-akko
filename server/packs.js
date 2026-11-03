@@ -48,7 +48,7 @@ const find = (id) => Object.values(packs).flat().find((p) => p.id === id) || nul
 async function download(pack) {
     let res;
     try {
-        res = await fetch(pack.url, { redirect: 'follow' });
+        res = await fetch(pack.url, { redirect: 'follow', signal: AbortSignal.timeout(5 * 60e3) });
     } catch (err) {
         throw new Error(`couldn't reach ${new URL(pack.url).host} (${err.message})`);
     }
