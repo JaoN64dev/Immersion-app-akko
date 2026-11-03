@@ -53,7 +53,9 @@ The **desktop app** (`electron/main.js`, built with `npm run dist`) is the same 
 These are separate settings, both stored in localStorage `akko-settings`:
 
 - **`target`**: what you're learning, `ja` or `en`. Chosen on the first visit (`scripts/site.js` shows the chooser), changeable in Settings. `scripts/core/target.js` has the helpers.
-- **`lang`**: the interface language, English (default) or 日本語 (`scripts/i18n.js`).
+- **`lang`**: the interface language (`scripts/i18n.js`): English by default, or one of the ten tables
+  in `scripts/lang/` — 日本語, Português, Español, Deutsch, Français, Italiano, Русский, 中文, 한국어.
+  A table may be partial: what it has no entry for stays English.
 - **`native`**: your own language, used for translations of English words (a Wiktionary code like `pt`, `es`, `cmn`).
 
 ### How the target language changes things

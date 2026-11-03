@@ -65,7 +65,13 @@ npm run check-lessons
 - A video file is not accepted on purpose: Whisper wants audio, and pulling audio out of a video
   needs ffmpeg. That is the next decision, not something to discover in a crash.
 
-**6. The fixes after the first local test**
+**6. The interface languages**
+Settings → interface language: ten buttons. English, 日本語, Português and Español are complete; the other
+six (Deutsch, Français, Italiano, Русский, 中文, 한국어) translate the menus, buttons, settings sections,
+Review and the plan, and leave the long explanations in English for now — that is the fallback, not a
+bug. `npm run i18n-audit -- --lang de` lists exactly what is left in one of them.
+
+**7. The fixes after the first local test**
 - Switch the interface to Português or 日本語 in Settings → Display: the plan box, "learn these first",
   the Stats bands and the speech recognition section all speak that language now.
 - With the dark theme: the plan box is a dark panel with readable text (it used to be cream on cream).

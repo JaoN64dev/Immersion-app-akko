@@ -8,7 +8,8 @@ import {
     LANGUAGES, LANGUAGE_CHOICES, profile,
 } from "../core/target.js";
 import { theme, setTheme } from "../core/theme.js";
-import { lang, setLang, t } from "../i18n.js";
+// the interface languages (English, 日本語, …) — not to be confused with LANGUAGES, the ones you learn
+import { LANGUAGES as UI_LANGUAGES, lang, setLang, t } from "../i18n.js";
 import { bindWordDisplay } from "../words/display.js";
 import * as backup from "../backup.js";
 import * as phone from "./phone.js";
@@ -90,11 +91,20 @@ else {
 }
 native.addEventListener("input", () => setNative(native.value));
 
-// interface language: applied in place
-for (const b of document.querySelectorAll("[data-lang]")) {
-    b.setAttribute("aria-checked", String(b.dataset.lang === lang()));
-    b.addEventListener("click", () => setLang(b.dataset.lang));
+// interface language: one button per table in scripts/i18n.js, applied in place
+const langChoices = $("#lang-choices");
+function showLangChoices() {
+    if (!langChoices) return;
+    langChoices.innerHTML = Object.entries(UI_LANGUAGES).map(([code, name]) =>
+        `<button class="choice" data-lang="${code}" role="radio" translate="no" aria-checked="${code === lang()}"><b>${name}</b></button>`).join("");
+    for (const b of langChoices.querySelectorAll("[data-lang]")) {
+        b.addEventListener("click", () => {
+            setLang(b.dataset.lang);
+            showLangChoices();
+        });
+    }
 }
+showLangChoices();
 
 // OpenSubtitles (English subtitles search on the Watch page): saved by the server, not here
 const os = { form: $("#os-settings"), key: $("#os-key"), user: $("#os-user"), pass: $("#os-pass"), msg: $("#os-msg") };
