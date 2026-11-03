@@ -87,6 +87,11 @@ async function makePlan() {
             const title = (r.anime && r.anime.title && (r.anime.title.romaji || r.anime.title.native)) || r.videoName || "a video";
             items.push({ id, kind: "video", title, pct: r.pct, position: r.time || 0, minutes: r.duration ? Math.max(5, Math.round(r.duration / 60)) : 15 });
         }
+        // manga is Japanese only (its OCR and the mode switch): never in a Korean or German week
+        for (const [id, r] of Object.entries(target() === "ja" ? store.get("akko-manga", {}) : {})) {
+            if (!r || typeof r.pct !== "number") continue;
+            items.push({ id, kind: "manga", title: r.title || "a volume", pct: r.pct, position: r.page || 0, minutes: 20 });
+        }
         for (const [id, r] of Object.entries(store.get(keyFor("akko-podcast-progress"), {}))) {
             if (!r || typeof r.pct !== "number") continue;
             items.push({ id, kind: "podcast", title: r.title || "an episode", pct: r.pct, position: r.time || 0, minutes: r.duration ? Math.max(5, Math.round(r.duration / 60)) : 20 });
@@ -119,7 +124,7 @@ function showPlan(week) {
             ${week.days.map((d) => `<li>
                 <b>day ${d.day}</b>
                 ${d.items.map((i) => (i.kind && i.kind !== "text"
-                    ? `<a class="plan-item" href="${i.kind === "video" ? "/" : "/podcasts.html"}" title="open it where it lives">${escapeHtml(i.title)} <small>${i.pct}%${i.band === "stretch" ? " · stretch" : ""}</small></a>`
+                    ? `<a class="plan-item" href="${i.kind === "video" ? "/" : i.kind === "manga" ? "/reading.html#manga" : "/podcasts.html"}" title="open it where it lives">${escapeHtml(i.title)} <small>${i.pct}%${i.band === "stretch" ? " · stretch" : ""}</small></a>`
                     : `<button class="plan-item" data-id="${escapeHtml(i.id)}" title="${escapeHtml(i.band === "stretch" ? "the stretch: one unknown word every line or two" : i.band === "comfortable" ? "comfortable: read it for the story" : "too hard for now")}">${escapeHtml(i.title)} <small>${i.pct}%${i.band === "stretch" ? " · stretch" : ""}</small></button>`)).join(" ")}
                 <small class="plan-time">${d.minutes} min</small>
             </li>`).join("")}

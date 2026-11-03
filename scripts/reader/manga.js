@@ -211,6 +211,12 @@ function renderStats() {
     ui.badge.className = "comp-badge inline " + pctLevel(c.pct);
     ui.badge.innerHTML = `<b>${c.pct}%</b> 理解`;
     ui.badge.title = `you know ${c.known} of the ${c.total} words in this volume (ignored words don't count)`;
+    // remembered with the volume: the plan and the stats read it instead of re-reading the pages
+    if (book) {
+        const all = store.get(PROGRESS, {});
+        const rec = all[book.key];
+        if (rec && rec.pct !== c.pct) { all[book.key] = { ...rec, pct: c.pct }; store.set(PROGRESS, all); }
+    }
 }
 
 // ---------- OCR with mokuro (server/ocr.js) ----------
