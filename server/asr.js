@@ -195,7 +195,12 @@ function transcribe(audio, { lang = 'ja', timeout = 30 * 60e3 } = {}) {
                 } catch { /* nothing */ }
             }
             try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* temp */ }
-            if (!text) return reject(new Error(code === 0 ? `${tool.id} finished but wrote no subtitles` : `${tool.id} failed: ${said.trim().split('\n').slice(-3).join(' ')}`));
+            if (!text) {
+                const hint = said.trim().split('\n').slice(-3).join(' ');
+                return reject(new Error(code === 0
+                    ? `${tool.id} finished but wrote no subtitles. Whisper said: ${hint}`
+                    : `${tool.id} failed: ${hint}`));
+            }
             resolve(text);
         });
     });
@@ -236,6 +241,7 @@ router.post('/model', async (req, res) => {
 // audio in (the file itself), SRT out. The same SRT the players already read (server/subtitles.js).
 router.post('/transcribe', express.raw({ type: () => true, limit: '2gb' }), async (req, res) => {
     if (!Buffer.isBuffer(req.body) || !req.body.length) return res.status(400).json({ error: 'the audio file is empty' });
+    console.log(`asr: received ${req.body.length} bytes of audio for transcription`);
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'akko-asr-in-'));
     const name = String(req.query.name || 'audio').replace(/[^\w.-]/g, '_').slice(-80) || 'audio';
     const file = path.join(dir, name);

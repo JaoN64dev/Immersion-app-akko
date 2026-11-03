@@ -1,7 +1,7 @@
 // 観る Watch page (index.html): anime + Japanese subtitles.
 // Modules only define things when imported; their init() wires the page, run here in order.
 
-import { el } from "../core/dom.js";
+import { $, el } from "../core/dom.js";
 import { state } from "../core/state.js";
 import { store, timeFormatter } from "../core/utils.js";
 import { target } from "../core/target.js";
@@ -158,6 +158,7 @@ if (makeSubs) {
             const wav = await dualAudio.extractAudioWav();
             subsFromAudioStatus.textContent = t("transcribing the audio…");
             const lang = target();
+            console.log(`watch: sending ${wav.byteLength} bytes of WAV to /api/asr/transcribe`);
             const res = await fetch(`/api/asr/transcribe?lang=${encodeURIComponent(lang)}&name=${encodeURIComponent(state.videoName || "video")}`, {
                 method: "POST",
                 body: wav,
