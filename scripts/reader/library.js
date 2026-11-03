@@ -11,7 +11,7 @@ import { langOf } from "../core/script.js";
 
 const newId = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now() + "-" + Math.random().toString(36).slice(2));
 
-export async function addText(title, paragraphs) {
+export async function addText(title, paragraphs, extra = {}) {
     const now = Date.now();
     const rec = {
         id: newId(), title: title || "untitled", paragraphs,
@@ -21,6 +21,7 @@ export async function addText(title, paragraphs) {
         // German session belongs to the Japanese library (scripts/core/script.js)
         lang: langOf(paragraphs.join("\n"), target()),
         created: now, updated: now,
+        ...extra,            // e.g. { url } when the text came from a webpage
     };
     await idbPut("texts", rec);
     return rec;

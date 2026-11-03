@@ -250,7 +250,7 @@ ui.urlForm.addEventListener("submit", async (e) => {
     ui.status.textContent = `fetching ${url}… this runs on this computer, nothing is uploaded`;
     try {
         const { title, paragraphs } = await textFromURL(url);
-        const text = await addText(title, paragraphs);
+        const text = await addText(title, paragraphs, { url });
         ui.status.textContent = "";
         open(text);
     } catch (err) {

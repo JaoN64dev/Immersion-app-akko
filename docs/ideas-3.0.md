@@ -146,8 +146,11 @@ verifiable free pack yet, so they work through *Settings → Dictionaries → ad
      works today.
    - [x] Reader 2.0: 読む → **🔊 read aloud** speaks the text with each word highlighted as it's said
      (browser speech synthesis, nothing uploaded), auto-scrolls to follow, and saves the words met to
-     a per-book word list (`readWords` on the reading record). Card templates v2 left for next pass.
-   - [ ] card templates v2.
+     a per-book word list (`readWords` on the reading record).
+   - [x] card templates v2: mined cards now carry `freq` (frequency rankings) and `url` (source page
+     for web mining); Anki card templates can map fields to `frequency`, `url` alongside the existing
+     `trimmed audio` (recordClip from cueStart→cueEnd), `screenshot` (grabFrame), `pitch` (pitchCardHtml),
+     `pitchNotes`, `wordAudio` (JapanesePod101/Lingua Libre), and `spokenSentence` (VOICEVOX/TTS).
 5. **Everything else** — 12, 10, 11, 18, 19, 20 (biggest, most opinionated, last).
 
 ## Fixes after the first local test (3.0.1)
