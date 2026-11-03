@@ -13,6 +13,7 @@ import { parseSubtitle } from "../subtitles/parse.js";
 import { addText, getText, removeText, renderLibrary, readingOf, saveReading } from "../reader/library.js";
 import { tokenize } from "../words/render.js";
 import { planWeek, planPriming } from "../core/planner.js";
+import { readAloudFrom, stopReadAloud, isReadingAloud } from "../reader/text.js";
 import { KEY as PROGRESS_KEY } from "../progress.js";
 import { langOf } from "../core/script.js";
 import * as reader from "../reader/text.js";
@@ -23,6 +24,9 @@ const ui = {
     library: $("#library"), librarySection: $("#library-section"), status: $("#library-status"),
     pasteOpen: $("#paste-open"), pasteForm: $("#paste-form"), pasteTitle: $("#paste-title"),
     pasteText: $("#paste-text"), pasteCancel: $("#paste-cancel"), textFile: $("#text-file"),
+    urlOpen: $("#url-open"), urlForm: $("#url-form"), urlInput: $("#url-input"), urlCancel: $("#url-cancel"),
+    readAloud: $("#reader-read-aloud"), readAloudControls: $("#reader-read-aloud-controls"),
+    readAloudStop: $("#reader-read-aloud-stop"), readAloudStatus: $("#reader-read-aloud-status"),
     mangaFiles: $("#manga-files"), mangaFolder: $("#manga-folder"), audioFile: $("#audio-file"),
 };
 
@@ -57,6 +61,7 @@ function showLibrary() {
 function open(text) {
     ui.librarySection.hidden = true;
     reader.openText(text);
+    if (ui.readAloud) ui.readAloud.hidden = false;
     document.getElementById("reader-section").scrollIntoView({ behavior: "smooth" });
 }
 
@@ -195,6 +200,89 @@ ui.pasteForm.addEventListener("submit", async (e) => {
     ui.pasteText.value = ui.pasteTitle.value = "";
     open(text);
 });
+
+// ---------- from a URL: fetch a page, extract its text, read it ----------
+// The same pipeline as a pasted text: paragraphs -> addText -> library -> coverage, priming, plan.
+
+ui.urlOpen.addEventListener("click", () => {
+    ui.urlForm.hidden = !ui.urlForm.hidden;
+    if (!ui.urlForm.hidden) ui.urlInput.focus();
+});
+ui.urlCancel.addEventListener("click", () => { ui.urlForm.hidden = true; });
+
+// Noise to strip from a page before taking its text
+const REMOVE = "script, style, nav, header, footer, aside, [role=banner], [role=complementary], [role=navigation], .ad, .advertisement, .ads, .cookie, .modal, .popup, .sidebar, .menu, .share, .social, .comment, .comments";
+const MAIN = "article, main, [role=main]";
+
+// Fetch a URL and pull its readable text out of the HTML. The browser would hit CORS fetching an
+// arbitrary site from localhost, so akko's server fetches the page here on this machine and returns
+// the HTML; the text extraction happens client-side. Nothing is stored remotely: the page goes into
+// the local library like anything else.
+async function textFromURL(url) {
+    const res = await fetch(`/api/reader/from-url`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+    });
+    const body = await res.json().catch(() => ({ error: "the server didn't answer" }));
+    if (!res.ok) throw new Error(body.error || res.statusText);
+    const html = body.html;
+    const title = body.title || new URL(url).hostname;
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    doc.querySelectorAll(REMOVE).forEach((n) => n.remove());
+    const main = doc.querySelector(MAIN);
+    const root = main || doc.body || doc.documentElement;
+    root.querySelectorAll("br").forEach((br) => br.replaceWith("\n"));
+    const blocks = [...root.querySelectorAll("p, h1, h2, h3, h4, h5, h6, li, blockquote, pre, td")];
+    const texts = blocks.length
+        ? blocks.map((b) => b.textContent)
+        : [root.textContent];
+    const paragraphs = texts.flatMap(splitParagraphs);
+    if (!paragraphs.length) throw new Error("couldn't find any text on that page");
+    return { title, paragraphs };
+}
+
+ui.urlForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const url = ui.urlInput.value.trim();
+    if (!url) return;
+    ui.urlForm.hidden = true;
+    ui.status.textContent = `fetching ${url}… this runs on this computer, nothing is uploaded`;
+    try {
+        const { title, paragraphs } = await textFromURL(url);
+        const text = await addText(title, paragraphs, { url });
+        ui.status.textContent = "";
+        open(text);
+    } catch (err) {
+        ui.status.textContent = `couldn't read ${url}: ${err.message}`;
+    } finally {
+        ui.urlInput.value = "";
+    }
+});
+
+// ---------- read aloud ----------
+if (ui.readAloud) {
+    ui.readAloud.addEventListener("click", async () => {
+        if (isReadingAloud()) return;          // stop button handles stopping
+        ui.readAloud.hidden = true;
+        ui.readAloudControls.hidden = false;
+        ui.readAloudStatus.textContent = "";
+        try {
+            await readAloudFrom(reader.currentPosition());
+        } catch (err) {
+            ui.readAloudStatus.textContent = err.message || "couldn't read aloud";
+        } finally {
+            ui.readAloudControls.hidden = true;
+            ui.readAloud.hidden = false;
+        }
+    });
+    ui.readAloudStop.addEventListener("click", () => {
+        stopReadAloud();
+        ui.readAloudControls.hidden = true;
+        ui.readAloud.hidden = false;
+        ui.readAloudStatus.textContent = "";
+    });
+}
 
 ui.textFile.addEventListener("change", async () => {
     const file = ui.textFile.files[0];

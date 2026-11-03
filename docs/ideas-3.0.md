@@ -135,11 +135,22 @@ verifiable free pack yet, so they work through *Settings → Dictionaries → ad
      (`~/.cache/akko/whisper`, the folder `server/asr.js` really reads), the two `pip` alternatives and
      `AKKO_WHISPER`/`AKKO_WHISPER_MODEL`. It opens by itself when there is nothing to use, 読む's failure
      now points at it, and the whole block is one `data-i18n` entry (ja, pt, es).
-   - [ ] model download with a pinned URL and a hash, so "nothing installed" is one click away from
-     "working" without akko shipping a model.
-   - [ ] mining from anything (URL, PDF page) into the reader, then the same text pipeline.
-   - [ ] Reader 2.0: read-aloud with the word highlighted, per-book word lists.
-   - [ ] card templates v2.
+   - [x] model download with a pinned URL and a hash: `POST /api/asr/model` fetches the pinned
+     `ggml-base.bin` (~148 MB) from `https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin`
+     (sha256 `60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe`) into `~/.cache/akko/whisper`,
+     checked against the hash before use; `AKKO_WHISPER_MODEL` remains the escape hatch, akko still ships no model.
+   - [x] mining from anything: 読む → **from a URL** fetches a webpage and extracts its readable
+     text (scripts strip scripts, styles, nav, ads, and take the article/main content) into the same
+     addText pipeline as pasted text — coverage, priming, mining, plan all apply. A PDF page still
+     needs pdf.js (a new dependency) and is left for the next pass; anything that saves as .txt/.html
+     works today.
+   - [x] Reader 2.0: 読む → **🔊 read aloud** speaks the text with each word highlighted as it's said
+     (browser speech synthesis, nothing uploaded), auto-scrolls to follow, and saves the words met to
+     a per-book word list (`readWords` on the reading record).
+   - [x] card templates v2: mined cards now carry `freq` (frequency rankings) and `url` (source page
+     for web mining); Anki card templates can map fields to `frequency`, `url` alongside the existing
+     `trimmed audio` (recordClip from cueStart→cueEnd), `screenshot` (grabFrame), `pitch` (pitchCardHtml),
+     `pitchNotes`, `wordAudio` (JapanesePod101/Lingua Libre), and `spokenSentence` (VOICEVOX/TTS).
 5. **Everything else** — 12, 10, 11, 18, 19, 20 (biggest, most opinionated, last).
 
 ## Fixes after the first local test (3.0.1)

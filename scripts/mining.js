@@ -69,11 +69,13 @@ export async function mine(entry, ctx) {
         reading: entry.reading,
         forms: entry.forms || [],          // other spellings, for finding word audio
         pitch: ((entry.pitch || []).find((p) => p.reading === entry.reading) || {}).accents || [],
+        freq: entry.freq || [],            // frequency rankings (JPDB etc.) for card templates
         meaning: entry.senses.slice(0, 3).map((s) => s.gloss.join("; ")).join(" / "),
         surface: ctx.word || "",
         sentence: ctx.sentence || "",
         source: info.source || "",
         time: info.time || "",
+        url: info.url || "",               // source page, when mined from a URL
         videoName: info.videoName || "",
         cueStart: info.cueStart ?? null,
         cueEnd: info.cueEnd ?? null,

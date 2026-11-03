@@ -24,6 +24,7 @@ export const SOURCES = {
     reading: "reading",
     furigana: "word[reading] (furigana)",
     meaning: "meaning",
+    frequency: "frequency rank (JPDB, lower = more common)",
     pitch: "pitch accent (drawn)",
     pitchNotes: "pitch accent pattern (text)",
     sentence: "sentence",
@@ -33,6 +34,7 @@ export const SOURCES = {
     wordAudio: "word audio",
     screenshot: "screenshot",
     source: "show, episode, time",
+    url: "source page URL (web mining)",
 };
 
 // first match wins; covers Basic, Lapis, Kaishi, JP Mining Note, Animecards…
@@ -262,6 +264,8 @@ function fieldValue(source, item) {
         case "meaning": return escapeHtml(item.meaning);
         case "pitch": return (item.pitch || []).map((n) => pitchCardHtml(item.reading || item.word, n)).join("・");
         case "pitchNotes": return (item.pitch || []).map((n) => escapeHtml(pitchNotes(item.reading || item.word, n))).join("<br>");
+        case "frequency": return (item.freq || []).map((f) => `${escapeHtml(f.title)} ${escapeHtml(f.value)}`).join(" · ");
+        case "url": return escapeHtml(item.url || "");
         case "sentence": return escapeHtml(item.sentence);
         case "translation": return escapeHtml(item.translation || "");
         case "sentenceBold": return bold;

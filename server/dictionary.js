@@ -877,6 +877,26 @@ router.post('/dictionary/from-url', express.json(), installRoute(async (req, res
   res.json({ installed: [done], ...dictionaryInfo() });
 }));
 
+
+// ---------- a page from a URL (for 読む → from a URL) ----------
+// Browser CORS would block fetching an arbitrary site from localhost, so akko fetches it here,
+// on this machine, and returns the HTML. The reader extracts the readable text client-side.
+// Only http(s), a size ceiling, nothing sent anywhere except the request for the page.
+
+const MAX_PAGE = 5e6;         // a page bigger than this is a mistake
+
+router.post('/reader/from-url', express.json(), installRoute(async (req, res) => {
+  const raw = String((req.body && req.body.url) || '').trim();
+  if (!raw) throw new Error('paste the address of a page');
+  let url;
+  try { url = new URL(raw); } catch { throw new Error("that doesn't look like an address"); }
+  if (!/^https?:$/.test(url.protocol)) throw new Error('only http and https addresses');
+  const html = await fetchText(url.href);
+  if (Buffer.byteLength(html) > MAX_PAGE) throw new Error(`that page is too big (${Math.round(Buffer.byteLength(html) / 1e6)} MB)`);
+  const title = (html.match(/<title[^>]*>([^<]*)</i) || [])[1]?.trim() || url.hostname;
+  res.json({ title, html, url: url.href });
+}));
+
 router.post('/dictionary/packs/install', express.json(), installRoute(async (req, res) => {
   const pack = packs.find(String(req.body && req.body.id || ''));
   if (!pack) throw new Error('that pack does not exist');
