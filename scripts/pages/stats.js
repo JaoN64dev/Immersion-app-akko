@@ -4,7 +4,7 @@
 
 import { escapeHtml, store } from "../core/utils.js";
 import * as today from "../core/today.js";
-import { target, learningEnglish } from "../core/target.js";
+import { target, learningEnglish, understood } from "../core/target.js";
 import { wordStats, watchStats, mangaStats, podcastStats, textStats, minedStats, grammarStats, companionStats } from "../totals.js";
 
 // ---------- small formatters ----------
@@ -124,6 +124,40 @@ function timeByDay(days = 30) {
     return out;
 }
 
+// What you can read now: the % of every text you have read, in the three bands a learner can act
+// on. The numbers are the coverage engine's (scripts/core/coverage.js); nothing new is computed
+// here, only counted.
+const READ_BANDS = [
+    { key: "easy", label: "comfortable", from: 95, hint: "95% and up: read it for the story, and mine the few words left" },
+    { key: "stretch", label: "the stretch you want", from: 85, hint: "85–94%: one unknown word every line or two, which is where you learn most" },
+    { key: "hard", label: "too hard for now", from: 0, hint: "below 85%: keep it for later, after the words in between" },
+];
+
+function renderCoverage() {
+    const el = document.getElementById("stats-coverage");
+    if (!el) return;
+    const pcts = Object.values(store.get("akko-reading", {}))
+        .map((r) => r && r.pct)
+        .filter((p) => typeof p === "number" && Number.isFinite(p));
+    if (!pcts.length) {
+        el.innerHTML = `<p class="stats-empty">no finished text yet — read anything to the end and its "${understood()}" % lands here.</p>`;
+        return;
+    }
+    const band = (p) => READ_BANDS.find((b) => p >= b.from);
+    const counts = READ_BANDS.map((b) => ({ ...b, n: pcts.filter((p) => band(p).key === b.key).length }));
+    const mean = Math.round(pcts.reduce((a, p) => a + p, 0) / pcts.length);
+    el.innerHTML = `
+        <p class="hint">the ${pcts.length} text${pcts.length === 1 ? "" : "s"} you've read, by how much of them you knew — a moving picture of what is getting easier:</p>
+        <div class="stats-bar" role="img" aria-label="${escapeHtml(counts.map((b) => `${b.n} ${b.label}`).join(", "))}">
+            ${counts.filter((b) => b.n).map((b) =>
+                `<i style="width:${((b.n / pcts.length) * 100).toFixed(2)}%;background:${b.key === "easy" ? "#0ca30c" : b.key === "stretch" ? "#fab219" : "#8E8D98"}" title="${escapeHtml(b.label)}: ${b.n}"></i>`).join("")}
+        </div>
+        <ul class="stats-legend">
+            ${counts.map((b) => `<li title="${escapeHtml(b.hint)}"><i style="background:${b.key === "easy" ? "#0ca30c" : b.key === "stretch" ? "#fab219" : "#8E8D98"}"></i>${escapeHtml(b.label)} <b>${b.n}</b></li>`).join("")}
+        </ul>
+        <p class="hint">on average <b>${mean}%</b> known. The stretch band is the one to pick from.</p>`;
+}
+
 function renderTimeChart() {
     const el = document.getElementById("stats-time");
     const data = timeByDay();
@@ -223,6 +257,7 @@ async function init() {
     renderTiles({ words, watch, manga, podcast, text, mined, grammar, listening: listeningStats(), days, companion });
     renderTimeChart();
     renderWordBar(words);
+    renderCoverage();
     renderMiningChart(mined.items);
     renderRecent([...watch.recent, ...manga.recent, ...text.recent, ...companion.recent]);
 }
