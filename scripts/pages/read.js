@@ -9,6 +9,7 @@ import { learningEnglish, ofTarget, keyFor, target } from "../core/target.js";
 import { store, escapeHtml } from "../core/utils.js";
 import { idbAll } from "../core/idb.js";
 import { readTextFile, splitParagraphs } from "../reader/import.js";
+import { parseSubtitle } from "../subtitles/parse.js";
 import { addText, getText, removeText, renderLibrary, readingOf, saveReading } from "../reader/library.js";
 import { tokenize } from "../words/render.js";
 import { planWeek, planPriming } from "../core/planner.js";
@@ -21,7 +22,7 @@ const ui = {
     library: $("#library"), librarySection: $("#library-section"), status: $("#library-status"),
     pasteOpen: $("#paste-open"), pasteForm: $("#paste-form"), pasteTitle: $("#paste-title"),
     pasteText: $("#paste-text"), pasteCancel: $("#paste-cancel"), textFile: $("#text-file"),
-    mangaFiles: $("#manga-files"), mangaFolder: $("#manga-folder"),
+    mangaFiles: $("#manga-files"), mangaFolder: $("#manga-folder"), audioFile: $("#audio-file"),
 };
 
 // ---------- text / manga switch (remembered in the address: #manga) ----------
@@ -57,6 +58,33 @@ function open(text) {
     reader.openText(text);
     document.getElementById("reader-section").scrollIntoView({ behavior: "smooth" });
 }
+
+// ---------- speech recognition (server/asr.js) ----------
+//
+// An audio file becomes a text: the tool on this machine writes an SRT, the SRT goes through the same
+// parser the subtitle pages use, and the transcript lands in the library like anything else — so it
+// gets coverage, priming, mining and a place in the plan. Nothing is uploaded, and nothing is
+// downloaded: with no tool installed the server says what to install and this shows that sentence.
+
+ui.audioFile.addEventListener("change", async () => {
+    const file = ui.audioFile.files[0];
+    if (!file) return;
+    ui.status.textContent = `listening to ${file.name}… this runs on this computer and takes as long as it takes`;
+    try {
+        const res = await fetch(`/api/asr/transcribe?lang=${encodeURIComponent(target())}&name=${encodeURIComponent(file.name)}`, { method: "POST", body: file });
+        const body = await res.json().catch(() => ({ error: "the server didn't answer" }));
+        if (!res.ok) throw new Error(body.error || res.statusText);
+        const paragraphs = parseSubtitle(body.srt, "srt").map((c) => c.text.replace(/\n/g, " ").trim()).filter(Boolean);
+        if (!paragraphs.length) throw new Error("no speech in that file");
+        const text = await addText(file.name.replace(/\.[^.]+$/, ""), paragraphs);
+        ui.status.textContent = `made subtitles: ${paragraphs.length} lines from ${file.name}`;
+        open(text);
+    } catch (err) {
+        ui.status.textContent = "couldn't transcribe it: " + err.message;
+    } finally {
+        ui.audioFile.value = "";
+    }
+});
 
 // ---------- the plan (scripts/core/planner.js) ----------
 //

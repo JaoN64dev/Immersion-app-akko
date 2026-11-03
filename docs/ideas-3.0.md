@@ -13,7 +13,8 @@ paid tier, no per-user cost — and no Apple Developer account, so macOS keeps o
 
 - **Phase 1, 2 and 3 are done** (see the checklists below): any language in the table works through
   its own dictionary, the app plans your week from what you have, and the numbers come from one place.
-- **Phase 4 is next**: local speech recognition, mining from anything, Reader 2.0, card templates.
+- **Phase 4 is under way**: speech recognition is in (a Whisper-class tool on your own machine, and
+  読む → subtitles from audio); mining from anything, Reader 2.0 and card templates are next.
 - Phase 5 (`.apkg`, shadowing, handwriting, PWA, cloud v2, the local assistant) is untouched.
 
 ## The headline: any language
@@ -64,7 +65,7 @@ verifiable free pack yet, so they work through *Settings → Dictionaries → ad
 | 6 | Capability-based UI (no broken pages, no dead buttons) | S | done |
 | 7 | **Coverage meter**: "% you know" before an episode or chapter | M | done |
 | 8 | Priming sessions made from what's next | M | done (reader + plan) |
-| 9 | Local speech recognition (Whisper-class, in the app) | L | not started |
+| 9 | Local speech recognition (Whisper-class, in the app) | L | partly: tool, SRT, reader button |
 | 10 | Shadowing: record over the line, compare | L | not started |
 | 11 | Handwriting and stroke order (KanjiVG), ja and zh | M | not started |
 | 12 | Anki two-way: `.apkg` with media and existing SRS | M | not started |
@@ -115,8 +116,15 @@ verifiable free pack yet, so they work through *Settings → Dictionaries → ad
      is uploaded. `GET /api/asr` (status), `POST /api/asr/transcribe?lang=` (audio in, SRT out); 4
      tests, including a tool that writes nothing being an error and not an empty subtitle. No
      auto-download of a model yet: that is the next decision (a URL that stays put, and a hash).
-   - [ ] the ASR page half: a "make subtitles from this file" button where subtitles are loaded, with
-     progress, and the transcript going through the ordinary subtitle path.
+   - [x] the ASR page half, for the reader: 読む → **🎙 subtitles from audio** sends the file, parses the
+     SRT with the same parser the subtitle pages use, and lands the transcript in the library as a text
+     (so it gets coverage, priming, mining and a place in the plan). Settings → **speech recognition**
+     says what is installed here, or what to install. A video file is refused on purpose: Whisper wants
+     audio, and pulling audio out of a video needs ffmpeg — that is the next decision.
+   - [ ] subtitles from audio where subtitles are loaded (the watch page), which needs that ffmpeg step
+     or an audio track the user already has.
+   - [ ] model download with a pinned URL and a hash, so "nothing installed" is one click away from
+     "working" without akko shipping a model.
    - [ ] mining from anything (URL, PDF page) into the reader, then the same text pipeline.
    - [ ] Reader 2.0: read-aloud with the word highlighted, per-book word lists.
    - [ ] card templates v2.

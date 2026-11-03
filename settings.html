@@ -43,6 +43,7 @@
                 <li><a href="#display-section">display</a></li>
                 <li><a href="#stats-section">your stats</a></li>
                 <li><a href="#dictionary-section">dictionaries</a></li>
+                <li><a href="#asr-section">speech recognition</a></li>
                 <li><a href="#backup-section">backup / restore</a></li>
                 <li><a href="#phone-section">use on your phone</a></li>
                 <li id="account-nav" hidden><a href="#account-section">akko account</a></li>
@@ -263,6 +264,16 @@
                         <button id="dict-update" class="ja-only">⟳ download the newest</button>
                     </div>
                     <p id="dict-msg" class="status dark"></p>
+                </div>
+            </section>
+
+            <!-- SPEECH RECOGNITION: a Whisper-class tool on this machine (server/asr.js) -->
+            <section id="asr-section">
+                <h2 class="dashed-heading">Speech recognition</h2>
+                <div class="note settings-note">
+                    <p class="hint">Subtitles for audio you already have — a podcast, a recording, an episode — made on this computer. akko uses a <b>Whisper-class tool you install yourself</b> (whisper.cpp's <code>whisper-cli</code>, OpenAI's <code>whisper</code>, or <code>faster-whisper</code>), finds it on your
+                        <code>PATH</code>, and runs it: no model is bundled, nothing is uploaded, and no service is called. 読む → <b>subtitles from audio</b> turns the result into a text you can read, mine and plan.</p>
+                    <p id="asr-status" class="status dark">checking…</p>
                 </div>
             </section>
 

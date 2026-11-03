@@ -264,6 +264,16 @@ setButtons(false);
 refreshDictionary();
 refreshList();
 
+// speech recognition: what is on this machine, and what to install if nothing is (server/asr.js)
+const asrStatus = $("#asr-status");
+if (asrStatus) {
+    getJson("/api/asr").then((s) => {
+        asrStatus.textContent = s.ready
+            ? `ready: ${s.tools[0].id}${s.model ? ` with ${s.model}` : ""} — running on this computer.`
+            : s.help;
+    }).catch(() => { asrStatus.textContent = "couldn't ask the server about it."; });
+}
+
 // the welcome screen each time akko opens (scripts/site.js)
 const welcomeBox = $("#welcome-on");
 welcomeBox.checked = welcomeOn();
