@@ -104,7 +104,7 @@ test('Settings says how to install it, and names the folder the server looks in'
     assert.match(html, /data-i18n="asr-howto"/, 'the block is translatable as a whole');
     assert.match(html, /<summary>how to install it<\/summary>/);
     assert.match(html, /brew install whisper-cpp/, 'macOS');
-    assert.match(html, /whisper-bin-x64\.zip/, 'Windows');
+    assert.match(html, /cmake --build build --config Release/, 'Windows builds from source');
     assert.match(html, /ggml-base\.bin/, 'the model it needs');
     assert.match(html, /AKKO_WHISPER_MODEL/, 'the escape hatch');
     // the folder in the text is the one server/asr.js reads
