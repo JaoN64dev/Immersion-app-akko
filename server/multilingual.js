@@ -96,11 +96,38 @@ const isHan = (ch) => HAN.test(ch);
 const isWord = (ch) => LETTER.test(ch);
 const isSpace = (ch) => /\s/.test(ch);
 
-// Hangul, Chinese and Latin-only writing systems each get their own way of finding words
+// Languages written without spaces between words, which ICU can still split (scripts/core/target.js
+// says "segment" for these): Thai, Lao, Burmese, Khmer. Node ships with the dictionaries for them.
+const SEGMENTED = new Set(['th', 'lo', 'my', 'km']);
+
+// Hangul, Chinese, Thai and the space-separated majority each get their own way of finding words
 function kindOf(lang) {
     if (lang === 'ko') return 'ko';
     if (lang === 'cmn' || lang === 'yue') return 'han';
+    if (SEGMENTED.has(lang)) return 'segment';
     return 'space';
+}
+
+let segmenter = null;
+let segmenterLang = null;
+// Thai and friends: the word boundaries ICU knows, looked up like any other word
+function splitSegmented(chunk, lang, words) {
+    if (!segmenter || segmenterLang !== lang) {
+        segmenter = typeof Intl !== 'undefined' && Intl.Segmenter ? new Intl.Segmenter(lang, { granularity: 'word' }) : null;
+        segmenterLang = lang;
+    }
+    if (!segmenter) return splitSpaced(chunk, words);          // no ICU for it: spaces are all we have
+    const out = [];
+    for (const part of segmenter.segment(chunk)) {
+        if (part.isWordLike) {
+            out.push(...splitSpaced(part.segment, words));
+        } else if (out.length && /^[\p{M}\u200b\u200d]+$/u.test(part.segment)) {
+            out[out.length - 1].s += part.segment;          // a vowel sign belongs to the word before it
+        } else {
+            out.push({ s: part.segment });                  // a space, punctuation, ฯ
+        }
+    }
+    return out;
 }
 
 // A token: {s: the text as it appears, b: the dictionary word, f: [[text, reading]] for the ruby}
@@ -182,6 +209,7 @@ function tokenizeLine(line, lang, words) {
         const run = rest.slice(0, end);
         if (kind === 'han' && han) out.push(...splitHan(run, words));
         else if (kind === 'ko' && HANGUL.test(run)) out.push(...splitKorean(run, words));
+        else if (kind === 'segment') out.push(...splitSegmented(run, lang, words));
         else out.push(...splitSpaced(run, words));
         at += end;
     }

@@ -98,7 +98,7 @@ async function makePlan() {
         }
         const week = planWeek(items, { days: 7, minutes: 25 });
         // what each text is worth now, saved so the library and Settings → Stats can show it
-        for (const item of week.items) if (item.total) saveReading(item.id, { pct: item.pct, lang: target() });
+        for (const item of week.items) if (item.kind === "text" && item.total) saveReading(item.id, { pct: item.pct, lang: target() });
         showPlan(week);
         ui.status.textContent = "";
     } catch (err) {

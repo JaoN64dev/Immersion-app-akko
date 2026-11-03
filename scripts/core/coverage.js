@@ -46,8 +46,16 @@ export const comprehension = (lines) => {
     return { pct: c.pct, total: c.total, known: c.known, unknown: c.unknown.size, iPlus1: c.iPlus1 };
 };
 
-// content words in a line you don't know yet
-export const unknownIn = (tokens) => new Set((tokens || []).filter((t) => counted(t) && wordStatus(t.b) !== "known" && wordStatus(t.b) !== "ignored").map((t) => t.b));
+// content words in a line you don't know yet (one status lookup per word, not three)
+export const unknownIn = (tokens) => {
+    const out = new Set();
+    for (const t of tokens || []) {
+        if (!counted(t)) continue;
+        const s = wordStatus(t.b);
+        if (s !== "known" && s !== "ignored") out.add(t.b);
+    }
+    return out;
+};
 
 // Priming: what to learn before you read this. A word that would leave a line with no unknown
 // words at all (i+1) is worth more than one that merely shows up a lot, so that comes first, then

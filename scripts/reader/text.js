@@ -137,9 +137,11 @@ function renderStats() {
     // once the whole text is analysed, the library shows its % and the words worth learning come out
     if (done.length === tokens.length) {
         const was = readingOf(rec);
-        if (c.pct !== was.pct) saveReading(rec.id, { pct: c.pct });
-        // lines one word away, kept for Settings → Stats (cheap, and only when it moved)
-        if (c.iPlus1 !== was.iPlus1 || c.total !== was.words) saveReading(rec.id, { iPlus1: c.iPlus1, words: c.total, paragraphs: done.length });
+        const patch = {};
+        if (c.pct !== was.pct) patch.pct = c.pct;
+        // lines one word away, kept for Settings → Stats (and only when it moved: one write)
+        if (c.iPlus1 !== was.iPlus1 || c.total !== was.words) Object.assign(patch, { iPlus1: c.iPlus1, words: c.total, paragraphs: done.length });
+        if (Object.keys(patch).length) saveReading(rec.id, patch);
         renderPrime(done, c);
     } else if (ui.prime) ui.prime.hidden = true;
 }

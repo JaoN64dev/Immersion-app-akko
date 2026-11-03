@@ -94,6 +94,17 @@ test('a spaced language splits on spaces and lets the dictionary take a suffix o
     assert.deepEqual(words('házban', 'hu', dict).map((t) => t.s), ['házban']);
 });
 
+test('Thai: ICU finds the words, and a vowel sign stays with its word', () => {
+    const dict = fake(['ภาษา', 'ไทย', 'มาก']);
+    const line = 'ภาษาไทยดีมาก';
+    const tokens = words(line, 'th', dict);
+    assert.equal(joined(line, 'th', dict), line);
+    assert.equal(tokens[0].s, 'ภาษา');
+    assert.equal(tokens[1].s, 'ไทย');
+    assert.equal(tokens[tokens.length - 1].s, 'มาก', 'no word is left as a bare vowel sign');
+    for (const t of tokens) assert.ok(t.s.length > 0);
+});
+
 test('a line comes back exactly as it went in, whatever the language', () => {
     const dict = fake(['한국어', '中文', 'Haus']);
     for (const [line, lang] of [
@@ -101,6 +112,7 @@ test('a line comes back exactly as it went in, whatever the language', () => {
         ['我愛中文，你 好！', 'cmn'],
         ['Das Haus ist groß. 2 + 2 = 4', 'de'],
         ['Привет, мир!\nкак дела?', 'ru'],
+        ['ภาษาไทยดีมาก ครับ!', 'th'],
         ['', 'ko'],
     ]) {
         assert.equal(joined(line, lang, dict), line, line);
