@@ -123,9 +123,21 @@ export async function extractSubtitle(n, codec) {
 export async function extractAudioWav() {
     if (!file) throw new Error("no video file is open");
     if (busy) throw new Error("still working on a track, try again in a moment");
+    const ff = await getFFmpeg();
+    // make the open file visible to ffmpeg (load() mounts it when it ran first)
+    try { await ff.mount("WORKERFS", { files: [file] }, "/in"); } catch { /* already mounted */ }
+    // without an explicit -map ffmpeg takes the first audio track, which may be the
+    // wrong language when a video has several (e.g. English dub + Japanese original);
+    // pick the track in the language being learned, like dual-audio playback does.
+    if (!tracks.length) {
+        const { lines } = await run(["-hide_banner", "-i", `/in/${file.name}`]); // exits non-zero, prints streams
+        tracks = parseStreams(lines);
+    }
+    const wanted = tracks.find(isWanted) || tracks[0];
+    if (!wanted) throw new Error("the video has no audio track");
     const out = `/audio.wav`;
     const { code } = await run(
-        ["-hide_banner", "-i", `/in/${file.name}`, "-vn", "-sn", "-dn", "-ar", "16000", "-ac", "1", "-f", "wav", out],
+        ["-hide_banner", "-i", `/in/${file.name}`, "-map", `0:a:${wanted.n}`, "-vn", "-sn", "-dn", "-ar", "16000", "-ac", "1", "-f", "wav", out],
     );
     if (code !== 0) throw new Error("ffmpeg couldn't extract the audio");
     const data = await ffmpeg.readFile(out);
