@@ -2,7 +2,11 @@
 // languages are accepted with their own storage, and a tag nobody has looked at still works.
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
+const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const data = new Map();
 globalThis.localStorage = {
     getItem: (k) => (data.has(k) ? data.get(k) : null),
@@ -120,12 +124,30 @@ test("sentences end with 。 in Japanese and Chinese, with a full stop everywher
     for (const tag of ["ko", "de", "ru", "ar"]) assert.equal(usesFullStop(tag), true, tag);
 });
 
-test("the pages a language has: the Japanese lessons are only Japanese", () => {
+test("the pages a language has: Japanese lessons for Japanese, the English ones for English", () => {
     const ja = pagesFor("ja");
     assert.equal(ja.course && ja.grammar && ja.drills && ja.expressions, true);
-    for (const tag of ["en", "ko", "cmn", "de", "sw"]) {
+
+    // English has its own course and grammar (course-en/, grammar-en/), and nothing else: 聴解 is a
+    // JLPT exam and 表現 is Japanese idioms
+    const en = pagesFor("en");
+    assert.equal(en.course && en.grammar, true, "the English course is a course");
+    assert.equal(en.drills || en.expressions, false, "no JLPT drills, no Japanese idioms");
+    assert.equal(en.watch && en.read && en.review && en.listen, true);
+
+    // a third language has the four pages taken away, as before
+    for (const tag of ["ko", "cmn", "de", "sw"]) {
         const pages = pagesFor(tag);
         assert.equal(pages.course || pages.grammar || pages.drills || pages.expressions, false, tag);
         assert.equal(pages.watch && pages.read && pages.review, true, `${tag} can read and review`);
+    }
+});
+
+test("a page a language has really has files behind it", () => {
+    // the flag and the folder must agree, or the tab opens onto an empty page
+    for (const [tag, dirs] of [["ja", ["course", "grammar"]], ["en", ["course-en", "grammar-en"]]]) {
+        const pages = pagesFor(tag);
+        assert.equal(pages.course && pages.grammar, true, tag);
+        for (const dir of dirs) assert.ok(existsSync(path.join(root, dir)), `${dir} exists`);
     }
 });

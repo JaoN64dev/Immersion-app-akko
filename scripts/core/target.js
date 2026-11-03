@@ -39,6 +39,7 @@ export const LANGUAGES = {
         name: "English", english: "English", tokenizer: "space", readings: "ipa",
         dictionary: "wordnet", lessons: false, voices: "os", handwriting: false,
         script: "latin", rtl: false,
+        course: true, grammar: true,        // ./course-en and ./grammar-en: the English course and its grammar
     },
     // dictionary-first
     cmn: first("中文", "Chinese", { tokenizer: "cjk", readings: "pinyin", script: "han", handwriting: true }),
@@ -101,11 +102,18 @@ export const profile = (tag = target()) => LANGUAGES[tag] || {
 // a single capability of the language being learnt: has("lessons"), has("handwriting")…
 export const has = (what) => !!profile()[what];
 
-// The pages a language has. Everything that needs a dictionary is fine; the course, grammar,
-// drills and 表現 are written for Japanese, and nothing else has them yet.
+// The pages a language has. Everything that needs a dictionary is fine, and the course and the
+// grammar are written files that a language either has or doesn't: Japanese has them (course/,
+// grammar/) and so does English (course-en/, grammar-en/ — "lessons: true" is the Japanese set).
+// The 聴解 drills and 表現 are Japanese only: a JLPT exam and Japanese idioms.
 export const pagesFor = (tag = target()) => {
     const p = profile(tag);
-    return { watch: true, read: true, listen: true, review: true, settings: true, course: !!p.lessons, grammar: !!p.lessons, drills: !!p.lessons, expressions: !!p.lessons };
+    const japanese = !!p.lessons;
+    return {
+        watch: true, read: true, listen: true, review: true, settings: true,
+        course: japanese || !!p.course, grammar: japanese || !!p.grammar,
+        drills: japanese, expressions: japanese,
+    };
 };
 
 // label of the "% of words you know" badges
