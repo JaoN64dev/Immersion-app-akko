@@ -153,6 +153,11 @@ export default {
         "play / stop": "играть / стоп",
         "slow (0.75×)": "медленно (0,75×)",
         "the best one here": "лучший здесь",
+
+        "subtitles from the video's audio": 'субтитры из аудио видео',
+        "extracting the audio…": 'извлечение аудио…',
+        "transcribing the audio…": 'транскрибация аудио…',
+        "made subtitles: {n} lines": '{n} строк субтитров создано',
     },
 
     // data-i18n blocks (whole paragraphs with links). Empty until those paragraphs are keyed: a missing

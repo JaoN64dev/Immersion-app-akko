@@ -153,6 +153,11 @@ export default {
         "play / stop": "재생 / 정지",
         "slow (0.75×)": "느리게 (0.75×)",
         "the best one here": "여기서 가장 좋은 것",
+
+        "subtitles from the video's audio": '비디오 오디오에서 자막 만들기',
+        "extracting the audio…": '오디오 추출 중…',
+        "transcribing the audio…": '오디오 전사 중…',
+        "made subtitles: {n} lines": '{n} 줄 자막을 만들었습니다',
     },
 
     // data-i18n blocks (whole paragraphs with links). Empty until those paragraphs are keyed: a missing

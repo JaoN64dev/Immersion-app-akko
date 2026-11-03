@@ -908,6 +908,11 @@ export default {
 
         // ---------- misc chrome from the original French file ----------
         "language you're learning": "la langue que tu apprends",
+
+        "subtitles from the video's audio": "sous-titres à partir de l'audio de la vidéo",
+        "extracting the audio…": "extraction de l'audio…",
+        "transcribing the audio…": "transcription de l'audio…",
+        "made subtitles: {n} lines": '{n} lignes de sous-titres créées',
     },
 
     // data-i18n blocks (whole paragraphs with links).

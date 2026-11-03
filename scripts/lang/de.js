@@ -153,6 +153,11 @@ export default {
         "play / stop": "Abspielen / Stopp",
         "slow (0.75×)": "langsam (0,75×)",
         "the best one here": "die beste hier",
+
+        "subtitles from the video's audio": 'Untertitel aus der Tonspur des Videos',
+        "extracting the audio…": 'Audio wird extrahiert…',
+        "transcribing the audio…": 'Audio wird transkribiert…',
+        "made subtitles: {n} lines": '{n} Untertitelzeilen erstellt',
     },
 
     // data-i18n blocks (whole paragraphs with links). Empty until those paragraphs are keyed: a missing

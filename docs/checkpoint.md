@@ -84,7 +84,6 @@ Do one page, run `npm test`, move on. Never leave a `data-i18n` key without its 
 
 ## Decisions waiting on you
 
-- **ffmpeg**: browser-side (no install, slower) or server-side (needs ffmpeg on the machine)?
 - **How far to take the six tables**: reaching 824 in each is ~4,000 strings of real translation; the
   honest plan is page by page, starting with settings and the first screen.
 
@@ -96,6 +95,21 @@ Do one page, run `npm test`, move on. Never leave a `data-i18n` key without its 
   `~/.cache/akko/whisper` and checked against the hash before use. `POST /api/asr/model` downloads
   it — one click in Settings → speech recognition once whisper-cli is on PATH.
   `AKKO_WHISPER_MODEL` remains the escape hatch, and akko still ships no model.
+- **ffmpeg**: browser-side `@ffmpeg/ffmpeg` (already a dependency, used by dual-audio.js to switch
+  audio tracks). It runs in the browser, keeping with the "runs for free, nothing to install" rule,
+  and extracts a locally opened video's audio to WAV for Whisper. Remote URLs can't be read by
+  ffmpeg.wasm, so watch-page subtitles-from-audio works for local files; server-side ffmpeg stays an
+  option for URLs later.
+
+### What phase 4's ASR item now covers
+
+- local ASR machine half (`server/asr.js`: finds whisper-cli/whisper/faster-whisper, runs it, SRT out)
+- one-click model download (`POST /api/asr/model`, pinned sha256, `~/.cache/akko/whisper`)
+- reader page half (`読む` → subtitles from audio)
+- watch page half (index.html → ffmpeg.wasm extracts audio → `/api/asr/transcribe` → subtitles)
+- in-app install instructions (Settings → speech recognition, all nine tables)
+
+Nothing is uploaded either way.
 
 ## After this checkpoint: the English course was hidden
 

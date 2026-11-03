@@ -123,10 +123,13 @@ verifiable free pack yet, so they work through *Settings → Dictionaries → ad
    - [x] the ASR page half, for the reader: 読む → **🎙 subtitles from audio** sends the file, parses the
      SRT with the same parser the subtitle pages use, and lands the transcript in the library as a text
      (so it gets coverage, priming, mining and a place in the plan). Settings → **speech recognition**
-     says what is installed here, or what to install. A video file is refused on purpose: Whisper wants
-     audio, and pulling audio out of a video needs ffmpeg — that is the next decision.
-   - [ ] subtitles from audio where subtitles are loaded (the watch page), which needs that ffmpeg step
-     or an audio track the user already has.
+     says what is installed here, or what to install.
+   - [x] subtitles from audio where subtitles are loaded (the watch page): ffmpeg.wasm — already a
+     dependency, used by dual-audio.js to switch audio tracks — extracts the video's audio to WAV and
+     `POST /api/asr/transcribe` turns it into an SRT, loaded as subtitles the same way any .srt is
+     (coverage, priming, mining, plan all apply). Remote URLs can't be read by ffmpeg.wasm, so this
+     works for locally opened video files; ffmpeg.wasm runs in the browser, keeping with the "runs for
+     free, nothing to install" rule.
    - [x] **the instructions are in the app**: Settings → speech recognition has *how to install it* —
      `brew install whisper-cpp`, the Windows zip and `PATH`, the Linux two lines, where the model goes
      (`~/.cache/akko/whisper`, the folder `server/asr.js` really reads), the two `pip` alternatives and

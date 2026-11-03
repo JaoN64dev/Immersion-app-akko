@@ -903,6 +903,11 @@ export default {
     "add from a link": "リンクから追加",
     "a Yomitan .zip for this language. The community list is at": "この言語の Yomitan 辞書（.zip）。一覧は",
     "downloading the dictionary… (this can take a minute)": "辞書をダウンロードしています…（1分ほどかかることがあります）",
+
+        "subtitles from the video's audio": '🎙 動画の音声から字幕を作る',
+        "extracting the audio…": '音声を抽出中…',
+        "transcribing the audio…": '音声を文字にしています…',
+        "made subtitles: {n} lines": '{n} 行の字幕を作りました',
     },
 
 

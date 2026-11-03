@@ -4,6 +4,8 @@
 import { el } from "../core/dom.js";
 import { state } from "../core/state.js";
 import { store, timeFormatter } from "../core/utils.js";
+import { target } from "../core/target.js";
+import { t } from "../i18n.js";
 import * as settings from "../player/settings.js";
 import * as search from "../search.js";
 import * as subtitles from "../subtitles/browser.js";
@@ -140,5 +142,38 @@ function showTranscript(show) {
 transcriptToggle.addEventListener("click", () => showTranscript(playerLayout.classList.contains("no-transcript")));
 document.getElementById("transcript-close").addEventListener("click", () => showTranscript(false));
 showTranscript(store.get("akko-transcript-shown", true));
+
+// ---------- subtitles from the video's audio (phase 4: ffmpeg extract -> Whisper -> SRT) ----------
+// Pulls the audio out of a locally opened video, transcribes it with the machine's Whisper tool,
+// and loads the result as subtitles the same way any .srt is loaded — so it gets coverage,
+// priming, mining and a place in the plan. Nothing is uploaded.
+const makeSubs = $("#make-subs-from-audio");
+const subsFromAudioStatus = $("#asr-from-audio-status");
+if (makeSubs) {
+    makeSubs.addEventListener("click", async () => {
+        makeSubs.disabled = true;
+        subsFromAudioStatus.textContent = "";
+        try {
+            subsFromAudioStatus.textContent = t("extracting the audio…");
+            const wav = await dualAudio.extractAudioWav();
+            subsFromAudioStatus.textContent = t("transcribing the audio…");
+            const lang = target();
+            const res = await fetch(`/api/asr/transcribe?lang=${encodeURIComponent(lang)}&name=${encodeURIComponent(state.videoName || "video")}`, {
+                method: "POST",
+                body: wav,
+            });
+            const body = await res.json().catch(() => ({ error: "the server didn't answer" }));
+            if (!res.ok) throw new Error(body.error || res.statusText);
+            const srt = body.srt;
+            if (!srt) throw new Error("the server returned no subtitles");
+            cues.loadSubtitleText(srt, "srt", state.videoName || "video");
+            subsFromAudioStatus.textContent = t("made subtitles: {n} lines").replace("{n}", String(state.cues.length));
+            makeSubs.disabled = false;
+        } catch (err) {
+            makeSubs.disabled = false;
+            subsFromAudioStatus.textContent = err.message || "couldn't make subtitles from the audio";
+        }
+    });
+}
 
 remindBackup();

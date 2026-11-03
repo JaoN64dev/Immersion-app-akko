@@ -153,6 +153,11 @@ export default {
         "play / stop": "播放 / 停止",
         "slow (0.75×)": "慢 (0.75×)",
         "the best one here": "这里最好的",
+
+        "subtitles from the video's audio": '从视频音频生成字幕',
+        "extracting the audio…": '正在提取音频…',
+        "transcribing the audio…": '正在转录音频…',
+        "made subtitles: {n} lines": '已生成 {n} 行字幕',
     },
 
     // data-i18n blocks (whole paragraphs with links). Empty until those paragraphs are keyed: a missing

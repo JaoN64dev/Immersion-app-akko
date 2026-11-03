@@ -897,6 +897,11 @@ export default {
     "add from a link": "adicionar por um link",
     "a Yomitan .zip for this language. The community list is at": "um .zip Yomitan para este idioma. A lista da comunidade está em",
     "downloading the dictionary… (this can take a minute)": "baixando o dicionário… (pode levar um minuto)",
+
+        "subtitles from the video's audio": 'legendas a partir do áudio do vídeo',
+        "extracting the audio…": 'extraindo o áudio…',
+        "transcribing the audio…": 'transcrevendo o áudio…',
+        "made subtitles: {n} lines": '{n} linhas de legendas criadas',
     },
 
 

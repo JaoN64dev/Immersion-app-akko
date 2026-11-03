@@ -914,6 +914,11 @@ export default {
         "add from a link": "aggiungi da un link",
         "a Yomitan .zip for this language. The community list is at": "un .zip Yomitan per questa lingua. La lista della comunità è su",
         "downloading the dictionary… (this can take a minute)": "scaricamento del dizionario… (può richiedere un minuto)",
+
+        "subtitles from the video's audio": "sottotitoli dall'audio del video",
+        "extracting the audio…": "estrazione dell'audio…",
+        "transcribing the audio…": "trascrizione dell'audio…",
+        "made subtitles: {n} lines": '{n} righe di sottotitoli create',
     },
 
     // data-i18n blocks (whole paragraphs with links).
