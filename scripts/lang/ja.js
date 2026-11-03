@@ -904,6 +904,8 @@ export default {
 
 
     html: {
+        "about-who": 'こんにちは、akkoです！アニメを見たり、本を読んだり、日本語で聴いたりしながら、いまやっていることを離れずに単語を調べて、Anki に送れるようにこのサイトを作りました。自分のパソコンの中で動きます。',
+        "about-whats-new": 'これは <b>バージョン2.0</b> です。新しいもの: 慣用句や言い回しに専用の <a href="/expressions.html">表現ページ</a>（出会ったものと、辞書にある 慣用句・ことわざ・四字熟語 のすべて）; インターフェースは <b>English・日本語・Português・Español</b>; 復習は単語・<b>穴埋め</b>・<b>先に台詞</b> で出題できます; バックアップは <b>録音入りの .zip</b> にもできます; そして言葉・位置・復習・採掘した単語とその音声や画像まで、<b>akko アカウント</b> でパソコン・スマホ・ブラウザの間でそろえられます（設定 → akko account。任意で、使わない限り何も外に出ません）。',
         "watch-bio": 'ようこそ！動画ファイルは <a href="https://nyaa.si" target="akko-window">nyaa.si</a> でどうぞ…',
         "dict-help": '<b>Yomitan 形式</b>の辞書（.zip）を追加できます。たとえば <a href="https://jitendex.org" target="_blank" rel="noopener">Jitendex</a> や国語辞典など。単語のポップアップで JMdict の下に、下の順番で表示されます。<a href="https://github.com/scriptin/jmdict-simplified/releases" target="_blank" rel="noopener">jmdict-simplified</a> の <code>jmdict-eng-….json.zip</code> や <code>kanjidic2-en-….json.zip</code> は、内蔵の辞書と入れ替わります。<b>最新版をダウンロード</b>で内蔵の辞書を更新できます（約13 MB）。覚えた単語や進み具合はそのままです。',
         "dict-help-en": '<b>Yomitan 形式</b>の辞書（.zip）を追加できます。たとえば英英辞典や、自分の言語への辞書など。単語のポップアップで定義の下に、下の順番で表示されます。覚えた単語や進み具合はそのままです。',

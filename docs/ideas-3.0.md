@@ -161,6 +161,19 @@ community list linked right there. That covers every language today; nothing is 
 nothing is uploaded anywhere. Packs stay worth making for the ones people pick most (German first),
 but no language needs one to work.
 
+**The rest of the gap, measured.** `npm run i18n-audit` lists every English text node on a page that
+has no key in the three tables. It is 117 today (3+ words; `--all` counts the brand names too), mostly
+long paragraphs in `settings.html` (30), `listening.html` (14), `index.html` (11), `about.html`,
+`review.html` and `grammar.html` (10 each). Two causes, and they need different fixes:
+
+- a paragraph split by `<b>`/`<a>` is several text nodes, so no key can ever match it — the fix is
+  `data-i18n="…"` on the paragraph and one `html` key, as `about.html` now does for *who* and
+  *what's new*;
+- a plain paragraph just needs a key.
+
+Do it page by page, starting with `settings.html` (the page you open to fix things) and `index.html`
+(the first screen), and keep `npm run i18n-audit` going down: it exits 0 always, it is a map, not a test.
+
 Still open from that session: **more interface languages** (en/ja/pt/es today; a new one is a file +
 an entry in the picker, but it needs a real translation, so pt-BR gets reviewed first).
 
