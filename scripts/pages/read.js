@@ -13,6 +13,7 @@ import { parseSubtitle } from "../subtitles/parse.js";
 import { addText, getText, removeText, renderLibrary, readingOf, saveReading } from "../reader/library.js";
 import { tokenize } from "../words/render.js";
 import { planWeek, planPriming } from "../core/planner.js";
+import { readAloudFrom, stopReadAloud, isReadingAloud } from "../reader/text.js";
 import { KEY as PROGRESS_KEY } from "../progress.js";
 import { langOf } from "../core/script.js";
 import * as reader from "../reader/text.js";
@@ -24,6 +25,8 @@ const ui = {
     pasteOpen: $("#paste-open"), pasteForm: $("#paste-form"), pasteTitle: $("#paste-title"),
     pasteText: $("#paste-text"), pasteCancel: $("#paste-cancel"), textFile: $("#text-file"),
     urlOpen: $("#url-open"), urlForm: $("#url-form"), urlInput: $("#url-input"), urlCancel: $("#url-cancel"),
+    readAloud: $("#reader-read-aloud"), readAloudControls: $("#reader-read-aloud-controls"),
+    readAloudStop: $("#reader-read-aloud-stop"), readAloudStatus: $("#reader-read-aloud-status"),
     mangaFiles: $("#manga-files"), mangaFolder: $("#manga-folder"), audioFile: $("#audio-file"),
 };
 
@@ -58,6 +61,7 @@ function showLibrary() {
 function open(text) {
     ui.librarySection.hidden = true;
     reader.openText(text);
+    if (ui.readAloud) ui.readAloud.hidden = false;
     document.getElementById("reader-section").scrollIntoView({ behavior: "smooth" });
 }
 
@@ -255,6 +259,30 @@ ui.urlForm.addEventListener("submit", async (e) => {
         ui.urlInput.value = "";
     }
 });
+
+// ---------- read aloud ----------
+if (ui.readAloud) {
+    ui.readAloud.addEventListener("click", async () => {
+        if (isReadingAloud()) return;          // stop button handles stopping
+        ui.readAloud.hidden = true;
+        ui.readAloudControls.hidden = false;
+        ui.readAloudStatus.textContent = "";
+        try {
+            await readAloudFrom(rec.position);
+        } catch (err) {
+            ui.readAloudStatus.textContent = err.message || "couldn't read aloud";
+        } finally {
+            ui.readAloudControls.hidden = true;
+            ui.readAloud.hidden = false;
+        }
+    });
+    ui.readAloudStop.addEventListener("click", () => {
+        stopReadAloud();
+        ui.readAloudControls.hidden = true;
+        ui.readAloud.hidden = false;
+        ui.readAloudStatus.textContent = "";
+    });
+}
 
 ui.textFile.addEventListener("change", async () => {
     const file = ui.textFile.files[0];

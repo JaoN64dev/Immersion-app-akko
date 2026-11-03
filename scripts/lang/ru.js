@@ -51,6 +51,8 @@ export default {
         "load": "загрузить",
         "open a file": "открыть файл",
         "paste text": "вставить текст",
+        "read aloud": 'читать вслух',
+        "stop": 'стоп',
         "from a URL": 'из URL',
         "show": "показать",
         "hide": "скрыть",

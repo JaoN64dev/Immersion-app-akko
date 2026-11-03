@@ -307,6 +307,8 @@ export default {
         "title": "タイトル",
         "untitled": "無題",
         "read it": "読む",
+        "read aloud": '読み上げ',
+        "stop": '停止',
         "cancel": "キャンセル",
         "Library": "ライブラリ",
         "back to the library": "ライブラリに戻る",

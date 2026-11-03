@@ -57,6 +57,7 @@ export function openText(text) {
 }
 
 function close() {
+    stopReadAloud();
     job++;
     if (observer) observer.disconnect();
     rec = null;
@@ -188,6 +189,130 @@ function trackPosition() {
     clearTimeout(saveTimer);
     const { id, position } = rec;
     saveTimer = setTimeout(() => saveReading(id, { position }), 600);
+}
+
+// ---------- read aloud ----------
+
+let readJob = 0;
+let readUtterance = null;
+let readHighlight = null;
+
+export function stopReadAloud() {
+    readJob++;
+    if (readUtterance) {
+        readUtterance.onend = null;
+        readUtterance.onboundary = null;
+        readUtterance = null;
+    }
+    if (typeof speechSynthesis !== "undefined") speechSynthesis.cancel();
+    unhighlightRead();
+}
+
+export function isReadingAloud() {
+    return !!readUtterance;
+}
+
+function highlightRead(el) {
+    unhighlightRead();
+    readHighlight = el;
+    if (el) {
+        el.classList.add("reading-aloud");
+        el.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" });
+    }
+}
+function unhighlightRead() {
+    if (readHighlight) {
+        readHighlight.classList.remove("reading-aloud");
+        readHighlight = null;
+    }
+}
+
+// character range for each word span in a drawn paragraph
+function offsetMap(tk, paraEl) {
+    const out = [];
+    let pos = 0, si = 0;
+    const spans = paraEl.querySelectorAll(".w[data-o]");
+    for (const t of tk) {
+        const start = pos;
+        pos += t.s.length;
+        if (t.s === "\n" || !t.b) continue;
+        const span = spans[si++];
+        if (span) out.push({ el: span, start, end: pos });
+    }
+    return out;
+}
+
+function tokenIndexAt(tk, charIndex) {
+    let pos = 0;
+    for (let i = 0; i < tk.length; i++) {
+        const end = pos + tk[i].s.length;
+        if (charIndex >= pos && charIndex < end) return i;
+        pos = end;
+    }
+    return -1;
+}
+
+// Read every paragraph from `start` onward, speaking each with word-by-word highlighting.
+// Nothing is sent anywhere: the browser's own speech synthesis does the talking.
+export async function readAloudFrom(start) {
+    stopReadAloud();
+    readJob++;
+    const myJob = readJob;
+    const n = rec.paragraphs.length;
+    const met = new Set();
+
+    for (let i = start; i < n && readJob === myJob; i++) {
+        const tk = tokens[i];
+        if (!tk || !tk.length) continue;   // not tokenized yet
+        draw(i);
+        goTo(i);
+        const paraEl = ui.text.children[i];
+        const map = offsetMap(tk, paraEl);
+        if (!map.length) continue;          // no highlightable words
+
+        const text = tk.map((t) => t.s).join("");
+        await new Promise((resolve) => {
+            if (readJob !== myJob) { resolve(); return; }
+            if (typeof speechSynthesis === "undefined") { resolve(); return; }
+
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = "ja-JP";
+            u.rate = 1;
+
+            let current = -1;
+            u.onboundary = (event) => {
+                if (readJob !== myJob) return;
+                if (event.name !== "word" && event.name !== "white-space") return;
+                let found = -1;
+                for (let m = 0; m < map.length; m++) {
+                    if (event.charIndex >= map[m].start && event.charIndex < map[m].end) { found = m; break; }
+                }
+                if (found !== -1 && found !== current) {
+                    current = found;
+                    highlightRead(map[found].el);
+                    const ti = tokenIndexAt(tk, map[found].start);
+                    const t = tk[ti];
+                    if (t && t.b) met.add(t.b);
+                }
+            };
+            u.onend = () => { readUtterance = null; resolve(); };
+            u.onerror = () => { readUtterance = null; resolve(); };
+
+            readUtterance = u;
+            speechSynthesis.speak(u);
+        });
+        unhighlightRead();
+    }
+
+    // per-book word list: words met during read-aloud are saved with the text's reading record
+    if (met.size && rec) {
+        const was = readingOf(rec);
+        const existing = was.readWords || [];
+        const merged = [...new Set([...existing, ...met])];
+        if (merged.length !== existing.length) saveReading(rec.id, { readWords: merged });
+    }
+
+    readJob++;
 }
 
 // ---------- settings ----------

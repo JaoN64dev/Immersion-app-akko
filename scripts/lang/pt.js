@@ -301,6 +301,8 @@ export default {
         "title": "título",
         "untitled": "sem título",
         "read it": "ler",
+        "read aloud": 'ler em voz alta',
+        "stop": 'parar',
         "cancel": "cancelar",
         "Library": "Biblioteca",
         "back to the library": "voltar à biblioteca",

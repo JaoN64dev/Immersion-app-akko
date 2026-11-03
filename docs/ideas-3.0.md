@@ -144,7 +144,9 @@ verifiable free pack yet, so they work through *Settings → Dictionaries → ad
      addText pipeline as pasted text — coverage, priming, mining, plan all apply. A PDF page still
      needs pdf.js (a new dependency) and is left for the next pass; anything that saves as .txt/.html
      works today.
-   - [ ] Reader 2.0: read-aloud with the word highlighted, per-book word lists.
+   - [x] Reader 2.0: 読む → **🔊 read aloud** speaks the text with each word highlighted as it's said
+     (browser speech synthesis, nothing uploaded), auto-scrolls to follow, and saves the words met to
+     a per-book word list (`readWords` on the reading record). Card templates v2 left for next pass.
    - [ ] card templates v2.
 5. **Everything else** — 12, 10, 11, 18, 19, 20 (biggest, most opinionated, last).
 

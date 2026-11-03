@@ -115,12 +115,17 @@
                 </section>
 
                 <section id="reader-section" hidden>
-                    <div class="bubble reader-bar">
-                        <button id="reader-back" title="back to the library">← library</button>
-                        <b id="reader-title" class="reader-title" lang="ja"></b>
-                        <span id="reader-stats" class="word-stats"></span>
-                        <span id="reader-badge" class="comp-badge inline" hidden></span>
-                    </div>
+                <div class="bubble reader-bar">
+                    <button id="reader-back" title="back to the library">← library</button>
+                    <b id="reader-title" class="reader-title" lang="ja"></b>
+                    <span id="reader-stats" class="word-stats"></span>
+                    <span id="reader-badge" class="comp-badge inline" hidden></span>
+                    <button id="reader-read-aloud" title="read this text aloud" hidden>🔊 read aloud</button>
+                </div>
+                <div id="reader-read-aloud-controls" class="reader-read-aloud-controls" hidden>
+                    <button id="reader-read-aloud-stop" title="stop reading aloud">⏹ stop</button>
+                    <span id="reader-read-aloud-status" class="status"></span>
+                </div>
                     <!-- the words worth learning before this text (scripts/core/coverage.js) -->
                     <p id="reader-prime" class="reader-prime" hidden></p>
                     <div class="toolbar reader-tools">
