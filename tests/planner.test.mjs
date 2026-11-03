@@ -112,3 +112,19 @@ test("a word you already know is never in the plan's priming, and ignored words 
     const words = planPriming(planWeek(items, { days: 7 })).map((p) => p.word);
     assert.deepEqual(words, ["鳥"]);
 });
+
+test("a video or a podcast arrives with its % and is planned without tokenizing it", () => {
+    const items = [
+        { id: "v1", kind: "video", title: "Episode 3", pct: 91, minutes: 24, position: 600 },
+        { id: "p1", kind: "podcast", title: "A podcast", pct: 60, minutes: 20 },
+        { id: "t1", kind: "text", title: "A text", lines: text(30, 30) },
+    ];
+    const { days, items: assessed } = planWeek(items, { days: 7, minutes: 60 });
+    const planned = days.flatMap((d) => d.items);
+    assert.deepEqual(planned.map((i) => i.id), ["v1", "t1", "p1"], "stretch, then comfortable, then hard");
+    const video = assessed.find((i) => i.id === "v1");
+    assert.equal(video.band, "stretch");
+    assert.equal(video.total, 0, "nothing re-tokenized");
+    // the priming only has words from the text, which is the only thing with tokens
+    assert.deepEqual(planPriming({ days, items: assessed }).length, 0, "a 100% text has nothing to learn");
+});

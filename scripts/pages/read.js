@@ -12,6 +12,7 @@ import { readTextFile, splitParagraphs } from "../reader/import.js";
 import { addText, getText, removeText, renderLibrary, readingOf, saveReading } from "../reader/library.js";
 import { tokenize } from "../words/render.js";
 import { planWeek, planPriming } from "../core/planner.js";
+import { KEY as PROGRESS_KEY } from "../progress.js";
 import * as reader from "../reader/text.js";
 import * as manga from "../reader/manga.js";
 
@@ -77,7 +78,18 @@ async function makePlan() {
         const items = [];
         for (const t of texts) {
             const { position, pct } = readingOf(t);
-            items.push({ id: t.id, title: t.title, lines: await tokenize(t.paragraphs), position, pct });
+            items.push({ id: t.id, kind: "text", title: t.title, lines: await tokenize(t.paragraphs), position, pct });
+        }
+        // what you watch and listen to counts too, and needs no tokenizing: those pages recorded the %
+        // (scripts/player/render.js, scripts/podcasts/player.js)
+        for (const [id, r] of Object.entries(store.get(PROGRESS_KEY, {}))) {
+            if (!r || typeof r.pct !== "number") continue;
+            const title = (r.anime && r.anime.title && (r.anime.title.romaji || r.anime.title.native)) || r.videoName || "a video";
+            items.push({ id, kind: "video", title, pct: r.pct, position: r.time || 0, minutes: r.duration ? Math.max(5, Math.round(r.duration / 60)) : 15 });
+        }
+        for (const [id, r] of Object.entries(store.get(keyFor("akko-podcast-progress"), {}))) {
+            if (!r || typeof r.pct !== "number") continue;
+            items.push({ id, kind: "podcast", title: r.title || "an episode", pct: r.pct, position: r.time || 0, minutes: r.duration ? Math.max(5, Math.round(r.duration / 60)) : 20 });
         }
         const week = planWeek(items, { days: 7, minutes: 25 });
         // what each text is worth now, saved so the library and Settings → Stats can show it
@@ -106,12 +118,14 @@ function showPlan(week) {
         <ol class="plan-days">
             ${week.days.map((d) => `<li>
                 <b>day ${d.day}</b>
-                ${d.items.map((i) => `<button class="plan-item" data-id="${escapeHtml(i.id)}" title="${escapeHtml(i.band === "stretch" ? "the stretch: one unknown word every line or two" : i.band === "comfortable" ? "comfortable: read it for the story" : "too hard for now")}">${escapeHtml(i.title)} <small>${i.pct}%${i.band === "stretch" ? " · stretch" : ""}</small></button>`).join(" ")}
+                ${d.items.map((i) => (i.kind && i.kind !== "text"
+                    ? `<a class="plan-item" href="${i.kind === "video" ? "/" : "/podcasts.html"}" title="open it where it lives">${escapeHtml(i.title)} <small>${i.pct}%${i.band === "stretch" ? " · stretch" : ""}</small></a>`
+                    : `<button class="plan-item" data-id="${escapeHtml(i.id)}" title="${escapeHtml(i.band === "stretch" ? "the stretch: one unknown word every line or two" : i.band === "comfortable" ? "comfortable: read it for the story" : "too hard for now")}">${escapeHtml(i.title)} <small>${i.pct}%${i.band === "stretch" ? " · stretch" : ""}</small></button>`)).join(" ")}
                 <small class="plan-time">${d.minutes} min</small>
             </li>`).join("")}
         </ol>
         ${words.length ? `<p class="hint">learn these first: ${words.map((w) => `<span class="prime-word" title="${w.count} time${w.count > 1 ? "s" : ""} across the week">${escapeHtml(w.sample)}</span>`).join(" ")}</p>` : ""}`;
-    plan.box.querySelectorAll(".plan-item").forEach((b) => b.addEventListener("click", async () => {
+    plan.box.querySelectorAll("button.plan-item").forEach((b) => b.addEventListener("click", async () => {
         const text = await getText(b.dataset.id);
         if (text) open(text);
     }));

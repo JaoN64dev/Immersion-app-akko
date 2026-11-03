@@ -29,6 +29,20 @@ export const minutesFor = (words) => Math.max(5, Math.round((words || 0) / WORDS
 // -> the same items with {pct, total, unknown, iPlus1, band, minutes, started}
 export function assess(items, { status } = {}) {
     return items.map((item) => {
+        // A video or a podcast already knows its number: its page recorded the coverage it was
+        // showing (scripts/player/render.js, scripts/podcasts/player.js), so there are no tokens here
+        // to count — and nothing to re-tokenize just to plan a week.
+        if (!item.lines && typeof item.pct === "number") {
+            return {
+                ...item,
+                total: item.total || 0,
+                unknown: item.unknown || 0,
+                iPlus1: item.iPlus1 || 0,
+                band: bandOf(item.pct).key,
+                minutes: item.minutes || 15,
+                started: !!item.started || item.position > 0,
+            };
+        }
         const c = coverage(item.lines || [], status ? { status } : undefined);
         const words = c.total;
         return {

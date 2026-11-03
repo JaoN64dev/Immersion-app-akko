@@ -136,9 +136,9 @@ const READ_BANDS = [
 function renderCoverage() {
     const el = document.getElementById("stats-coverage");
     if (!el) return;
-    const pcts = Object.values(store.get("akko-reading", {}))
-        .filter((r) => r && typeof r.pct === "number" && Number.isFinite(r.pct) && (!r.lang || r.lang === target()))
-        .map((r) => r.pct);
+    const records = Object.values(store.get("akko-reading", {}))
+        .filter((r) => r && typeof r.pct === "number" && Number.isFinite(r.pct) && (!r.lang || r.lang === target()));
+    const pcts = records.map((r) => r.pct);
     if (!pcts.length) {
         el.innerHTML = `<p class="stats-empty">no finished text yet — read anything to the end and its "${understood()}" % lands here.</p>`;
         return;
@@ -155,7 +155,17 @@ function renderCoverage() {
         <ul class="stats-legend">
             ${counts.map((b) => `<li title="${escapeHtml(b.hint)}"><i style="background:${b.key === "easy" ? "#0ca30c" : b.key === "stretch" ? "#fab219" : "#8E8D98"}"></i>${escapeHtml(b.label)} <b>${b.n}</b></li>`).join("")}
         </ul>
-        <p class="hint">on average <b>${mean}%</b> known. The stretch band is the one to pick from.</p>`;
+        <p class="hint">on average <b>${mean}%</b> known. The stretch band is the one to pick from.</p>
+        ${oneAway(records)}`;
+}
+
+// lines that are one word away, counted by the reader as it analysed each text
+// (scripts/reader/text.js writes iPlus1 and paragraphs into the reading record)
+function oneAway(records) {
+    const lines = records.reduce((n, r) => n + (Number.isFinite(r.iPlus1) ? r.iPlus1 : 0), 0);
+    const paragraphs = records.reduce((n, r) => n + (Number.isFinite(r.paragraphs) ? r.paragraphs : 0), 0);
+    if (!lines || !paragraphs) return "";
+    return `<p class="hint"><b>${lines}</b> of the ${paragraphs} lines you've read are one word away: those are the ones to mine.</p>`;
 }
 
 function renderTimeChart() {

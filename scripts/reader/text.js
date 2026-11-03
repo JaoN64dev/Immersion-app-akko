@@ -136,7 +136,10 @@ function renderStats() {
     ui.badge.title = `you know ${c.known} of the ${c.total} words in this text (ignored words don't count)`;
     // once the whole text is analysed, the library shows its % and the words worth learning come out
     if (done.length === tokens.length) {
-        if (c.pct !== readingOf(rec).pct) saveReading(rec.id, { pct: c.pct });
+        const was = readingOf(rec);
+        if (c.pct !== was.pct) saveReading(rec.id, { pct: c.pct });
+        // lines one word away, kept for Settings → Stats (cheap, and only when it moved)
+        if (c.iPlus1 !== was.iPlus1 || c.total !== was.words) saveReading(rec.id, { iPlus1: c.iPlus1, words: c.total, paragraphs: done.length });
         renderPrime(done, c);
     } else if (ui.prime) ui.prime.hidden = true;
 }
