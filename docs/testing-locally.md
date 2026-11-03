@@ -65,9 +65,21 @@ npm run check-lessons
 - A video file is not accepted on purpose: Whisper wants audio, and pulling audio out of a video
   needs ffmpeg. That is the next decision, not something to discover in a crash.
 
+**6. The fixes after the first local test**
+- Switch the interface to Português or 日本語 in Settings → Display: the plan box, "learn these first",
+  the Stats bands and the speech recognition section all speak that language now.
+- With the dark theme: the plan box is a dark panel with readable text (it used to be cream on cream).
+- Settings → Dictionary → *add from a link*: paste a Yomitan `.zip` address for the language you are
+  learning (any of the 29, from the community list) and it installs like an uploaded file.
+- Paste a Japanese text while learning German: it files itself in the Japanese library and is
+  tokenized as Japanese, so "learn these first" offers words, not sentences.
+
 ## Known rough edges, so they do not look like bugs
 
-- **German, Polish, Russian, Spanish, Italian** have no one-click pack yet (no licensed, versioned
+- **The interface is in en / ja / pt / es.** The language you *learn* is a different list (29); adding
+  an interface language needs a full translation of ~800 strings, so it is a reviewed contribution,
+  not something to machine-translate quietly.
+- **German, Polish, Russian, Spanish, Italian** have no one-click pack yet — use *add from a link* (no licensed, versioned
   Yomitan release I could verify). They work through Settings → Dictionaries → **add a .zip**; word
   splitting is "space + let the dictionary take a suffix off", which is right for articles and rough
   for heavy inflection.

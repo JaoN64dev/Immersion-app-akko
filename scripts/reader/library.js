@@ -7,6 +7,7 @@ import { idbAll, idbGet, idbPut, idbDelete } from "../core/idb.js";
 import { store, escapeHtml } from "../core/utils.js";
 import { pctLevel } from "../words/status.js";
 import { target, ofTarget, understood } from "../core/target.js";
+import { langOf } from "../core/script.js";
 
 const newId = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now() + "-" + Math.random().toString(36).slice(2));
 
@@ -15,7 +16,11 @@ export async function addText(title, paragraphs) {
     const rec = {
         id: newId(), title: title || "untitled", paragraphs,
         chars: paragraphs.reduce((n, p) => n + p.length, 0),
-        position: 0, pct: null, lang: target(), created: now, updated: now,
+        position: 0, pct: null,
+        // the language it is written in, not the one being learnt: a Japanese book pasted during a
+        // German session belongs to the Japanese library (scripts/core/script.js)
+        lang: langOf(paragraphs.join("\n"), target()),
+        created: now, updated: now,
     };
     await idbPut("texts", rec);
     return rec;
@@ -41,7 +46,17 @@ export async function removeText(id) {
 }
 
 export async function renderLibrary(list, { onOpen, onDelete }) {
-    const texts = (await idbAll("texts")).filter(ofTarget).sort((a, b) => readingOf(b).updated - readingOf(a).updated);
+    const all = await idbAll("texts");
+    // Texts saved before the language was worked out from the writing system (a Japanese book pasted
+    // during a German session) are filed again as what they are, so they show up where they belong.
+    for (const t of all) {
+        const proper = langOf((t.paragraphs || []).join("\n"), t.lang || "ja");
+        if (proper !== t.lang) {
+            t.lang = proper;
+            idbPut("texts", t).catch(() => { /* the next render tries again */ });
+        }
+    }
+    const texts = all.filter(ofTarget).sort((a, b) => readingOf(b).updated - readingOf(a).updated);
     if (!texts.length) {
         list.innerHTML = `<li class="empty">nothing here yet. paste some text or open a book (.epub / .txt).</li>`;
         return;

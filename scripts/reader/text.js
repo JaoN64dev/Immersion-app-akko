@@ -14,7 +14,8 @@ import { bindWordDisplay } from "../words/display.js";
 import { watchHover } from "../words/hover.js";
 import { enableWordClicks } from "../popup.js";
 import { readingOf, saveReading } from "./library.js";
-import { understood } from "../core/target.js";
+import { understood, target } from "../core/target.js";
+import { langOf } from "../core/script.js";
 import { prime, coverageIfKnown } from "../core/coverage.js";
 
 const BATCH = 150;             // paragraphs per /api/tokenize request
@@ -40,6 +41,8 @@ export const isOpen = () => rec !== null;
 export function openText(text) {
     job++;
     rec = { ...text, position: readingOf(text).position };
+    // the language it is written in (a book filed before this was detected still reads right)
+    rec.txtLang = langOf((text.paragraphs || []).join("\n"), text.lang || target());
     tokens = new Array(text.paragraphs.length);
     if (ui.prime) ui.prime.hidden = true;          // last text's "learn these first" is not this one's
     near.clear();
@@ -107,7 +110,7 @@ async function tokenizeAll(myJob) {
 
     for (const s of starts) {
         let batch;
-        try { batch = await tokenize(rec.paragraphs.slice(s, s + BATCH)); } catch { return; }
+        try { batch = await tokenize(rec.paragraphs.slice(s, s + BATCH), rec.txtLang || target()); } catch { return; }
         if (myJob !== job) return;
         batch.forEach((t, k) => {
             tokens[s + k] = t;

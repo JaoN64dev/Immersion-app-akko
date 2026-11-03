@@ -17,6 +17,7 @@
     "dist": "node tools/pack-extension.js && electron-builder --publish never",
     "test": "node --test \"tests/*.test.*\"",
     "check-lessons": "node tools/check-lessons.js",
+    "i18n-audit": "node tools/i18n-audit.js",
     "pack-extension": "node tools/pack-extension.js"
   },
   "dependencies": {

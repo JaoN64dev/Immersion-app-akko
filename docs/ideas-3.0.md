@@ -130,6 +130,53 @@ verifiable free pack yet, so they work through *Settings → Dictionaries → ad
    - [ ] card templates v2.
 5. **Everything else** — 12, 10, 11, 18, 19, 20 (biggest, most opinionated, last).
 
+## Fixes after the first local test (3.0.1)
+
+Reported from a real session, all fixed on the branch that follows the merge:
+
+- **The plan box was unreadable in the dark theme.** The new CSS carried five literal colours
+  (`#fbf7ec`, `#f4e9c8`, `#7a6a3d`…) while the text inside inherits the theme's light `--on-panel`:
+  cream on cream, invisible. Every 3.0 panel now takes its colours from the theme variables
+  (`--post-bg`, `--ink`, `--ink-soft`, `--table-highlight`), and `tests/theme.test.js` fails if a
+  literal colour comes back to those selectors.
+- **The new interface text was English only.** Every 3.0 string — the plan, the priming chips, the
+  bands in Stats, the language note, the speech recognition section — is now a key in
+  `scripts/lang/{ja,pt,es}.js`, written as whole sentences with `{n}`/`{lang}`/`{tool}` placeholders so
+  the interface's own language applies. The ASR status comes back from the server as a *code*
+  (`missing` / `model` / `ready`) and the page words it, instead of the server writing English.
+- **"learn these first" offered whole sentences as words.** A Japanese book pasted during a German
+  session was filed as German and split by the space splitter, so each line came back as one word.
+  `scripts/core/script.js` reads the writing system, files a text under the language it is *written
+  in*, migrates texts that were filed wrongly, and every text is tokenized with its own language
+  (`tokenize(lines, lang)`), never the target's. Near-empty texts (a stray "AAA OI OI") are kept out
+  of the plan.
+- **A language with no dictionary now says so** in Settings → Learning, next to the picker, instead of
+  opening a popup with nothing in it.
+
+**"Muitos idiomas não têm dicionário" now has a way through that is not a pack.**
+Settings → Dictionary → *add from a link*: paste the address of any Yomitan `.zip` for the language you
+are learning, and the server — on your machine — downloads it, checks it really is a Yomitan
+dictionary, and installs it (`POST /api/dictionary/from-url`). Only http(s), a size ceiling, and the
+community list linked right there. That covers every language today; nothing is hosted by us and
+nothing is uploaded anywhere. Packs stay worth making for the ones people pick most (German first),
+but no language needs one to work.
+
+**The rest of the gap, measured.** `npm run i18n-audit` lists every English text node on a page that
+has no key in the three tables. It is 117 today (3+ words; `--all` counts the brand names too), mostly
+long paragraphs in `settings.html` (30), `listening.html` (14), `index.html` (11), `about.html`,
+`review.html` and `grammar.html` (10 each). Two causes, and they need different fixes:
+
+- a paragraph split by `<b>`/`<a>` is several text nodes, so no key can ever match it — the fix is
+  `data-i18n="…"` on the paragraph and one `html` key, as `about.html` now does for *who* and
+  *what's new*;
+- a plain paragraph just needs a key.
+
+Do it page by page, starting with `settings.html` (the page you open to fix things) and `index.html`
+(the first screen), and keep `npm run i18n-audit` going down: it exits 0 always, it is a map, not a test.
+
+Still open from that session: **more interface languages** (en/ja/pt/es today; a new one is a file +
+an entry in the picker, but it needs a real translation, so pt-BR gets reviewed first).
+
 ## Constraints to respect
 
 - **Licences**: CC-CEDICT and CC-Canto (CC BY-SA), KRDICT (CC BY-SA 2.0 KR), Wiktionary-derived
