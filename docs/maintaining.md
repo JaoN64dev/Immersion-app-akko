@@ -116,9 +116,13 @@ Yomitan dictionaries), `dist/`, `cloud-local/`. `.gitignore` covers them; only `
 `docs/how-it-works.md` → *How to…* has the recipes (a page, an API, interface text, a grammar
 lesson, something new saved in the browser). Two more, for this file's topics:
 
-- **A new interface language**: a table in `scripts/lang/` with the same keys as `ja.js`
-  (`tests/i18n.test.mjs` checks that), add it to `TABLES` in `scripts/i18n.js` and to
-  `LANGUAGES` (the Settings switch), and to `electronLanguages` if Chromium's texts should follow.
+- **A new interface language**: a file in `scripts/lang/` (`text:` and `html:`, same format as
+  `ja.js`), imported and added to `TABLES` **and** `LANGUAGES` in `scripts/i18n.js` — the Settings
+  switch builds itself from `LANGUAGES` — and to `electronLanguages` if Chromium's texts should
+  follow. A new table can be partial: translate `CORE` first (the menu, the buttons, the settings
+  sections; `tests/i18n.test.mjs` holds the list), then `npm run i18n-audit -- --lang xx` says what is
+  left. Every key must be an English string that exists in `ja.js`, placeholders `{n}` must survive,
+  and `ja`/`pt`/`es` stay key-identical — the test checks all of it.
 - **A new backup field**: it's either an `akko-*` localStorage key (`scripts/core/utils.js`, the
   `store`) or an IndexedDB store (`scripts/core/idb.js` — add it to `IDB_STORES` if backups should
   carry it, and to the `.zip` only if it's a Blob).
