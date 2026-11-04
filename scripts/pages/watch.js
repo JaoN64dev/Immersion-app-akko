@@ -149,8 +149,11 @@ showTranscript(store.get("akko-transcript-shown", true));
 // priming, mining and a place in the plan. Nothing is uploaded.
 const makeSubs = $("#make-subs-from-audio");
 const subsFromAudioStatus = $("#asr-from-audio-status");
+let subsFromAudioRunning = false;
 if (makeSubs) {
     makeSubs.addEventListener("click", async () => {
+        if (subsFromAudioRunning) return;
+        subsFromAudioRunning = true;
         makeSubs.disabled = true;
         subsFromAudioStatus.textContent = "";
         try {
@@ -169,10 +172,11 @@ if (makeSubs) {
             if (!srt) throw new Error("the server returned no subtitles");
             cues.loadSubtitleText(srt, "srt", state.videoName || "video");
             subsFromAudioStatus.textContent = t("made subtitles: {n} lines").replace("{n}", String(state.cues.length));
-            makeSubs.disabled = false;
         } catch (err) {
-            makeSubs.disabled = false;
             subsFromAudioStatus.textContent = err.message || "couldn't make subtitles from the audio";
+        } finally {
+            makeSubs.disabled = false;
+            subsFromAudioRunning = false;
         }
     });
 }
