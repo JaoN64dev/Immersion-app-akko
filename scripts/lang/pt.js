@@ -301,6 +301,8 @@ export default {
         "title": "título",
         "untitled": "sem título",
         "read it": "ler",
+        "stroke order": "ordem dos traços",
+        "stroke order needs the internet the first time": "a ordem dos traços precisa de internet na primeira vez",
         "Anki deck (.apkg)": "baralho do Anki (.apkg)",
         "{n} cards ✓ open the file with Anki": "{n} cartões ✓ abra o arquivo com o Anki",
         "couldn't make the deck: ": "não foi possível criar o baralho: ",

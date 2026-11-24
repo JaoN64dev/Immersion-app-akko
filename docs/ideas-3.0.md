@@ -67,7 +67,7 @@ verifiable free pack yet, so they work through *Settings → Dictionaries → ad
 | 8 | Priming sessions made from what's next | M | done (reader + plan) |
 | 9 | Local speech recognition (Whisper-class, in the app) | L | done: tool, model download, reader + watch page |
 | 10 | Shadowing: record over the line, compare | L | not started |
-| 11 | Handwriting and stroke order (KanjiVG), ja and zh | M | not started |
+| 11 | Handwriting and stroke order (KanjiVG), ja and zh | M | stroke order done (ja); handwriting not started |
 | 12 | Anki two-way: `.apkg` with media and existing SRS | M | export done (import of an .apkg: not yet) |
 | 13 | Card templates v2: trimmed audio, screenshot, pitch, frequency | M | done (frequency, FreqSort, URL) |
 | 14 | Study planner: "what now?", a time budget | M | done (planner); heatmap left |
@@ -188,6 +188,11 @@ verifiable free pack yet, so they work through *Settings → Dictionaries → ad
      word) make a second export update instead of doubling. Checked against Anki's own importer (the
      `anki` Python package, 26.9.4): fields, media, schedule, no duplicates on re-import.
      `tests/apkg.test.mjs` covers the schedule and FreqSort.
+   - [x] **stroke order** (feature 11, first half): tap a kanji in the popup's 漢字 section and it
+     draws itself stroke by stroke, numbered; tap again to replay. KanjiVG (pinned r20250816, jsDelivr,
+     CC BY-SA 3.0, credited on the pages and in the README), fetched per kanji and kept for the
+     session; only path data and number positions are read from the file (`scripts/words/strokes.js`).
+     Handwriting input and Chinese stroke order are still open.
 
 ## Fixes after the first local test (3.0.1)
 

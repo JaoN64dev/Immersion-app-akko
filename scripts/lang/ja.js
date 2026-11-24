@@ -307,6 +307,8 @@ export default {
         "title": "タイトル",
         "untitled": "無題",
         "read it": "読む",
+        "stroke order": "書き順",
+        "stroke order needs the internet the first time": "書き順は最初の一回だけインターネットが必要です",
         "Anki deck (.apkg)": "Anki デッキ（.apkg）",
         "{n} cards ✓ open the file with Anki": "{n} 枚のカード ✓ ファイルを Anki で開いてください",
         "couldn't make the deck: ": "デッキを作れませんでした：",
