@@ -2,7 +2,7 @@
 // display options, the Japanese dictionary, stats (scripts/pages/stats.js draws them) and backup / restore.
 
 import { $ } from "../core/dom.js";
-import { getJson, postJson, escapeHtml } from "../core/utils.js";
+import { getJson, postJson, escapeHtml, store } from "../core/utils.js";
 import {
     target, setTarget, nativeLang, setNative, NATIVE_LANGUAGES, welcomeOn, setWelcome,
     LANGUAGES, LANGUAGE_CHOICES, profile,
@@ -387,3 +387,23 @@ help.init();
 
 // ---------- akko account: words and mined words online ----------
 account.init();
+
+// ---------- the local assistant (server/assistant.js, scripts/words/explain.js) ----------
+// Is Ollama running here, which models does it have, and which one 🧠 explain uses ("akko-assistant").
+(function assistant() {
+    const status = $("#assistant-status");
+    if (!status) return;
+    const row = $("#assistant-model-row"), pick = $("#assistant-model"), help = $("#assistant-help");
+    const KEY = "akko-assistant";
+    getJson("/api/assistant").then((s) => {
+        help.open = !s.running || !s.models.length;
+        if (!s.running) { status.textContent = t("Ollama isn't running on this computer: 🧠 explain shows akko's own breakdown only."); return; }
+        if (!s.models.length) { status.textContent = t("Ollama is running but has no model yet: see step 2 below."); return; }
+        status.textContent = t("Ollama is running here with {n} model(s): 🧠 explain also writes an explanation.").replace("{n}", String(s.models.length));
+        row.hidden = false;
+        pick.innerHTML = s.models.map((m) => `<option>${escapeHtml(m)}</option>`).join("");
+        const saved = store.get(KEY, {}).model;
+        pick.value = s.models.includes(saved) ? saved : s.models[0];
+        pick.addEventListener("change", () => store.set(KEY, { model: pick.value }));
+    }).catch(() => { status.textContent = t("couldn't ask the server about it."); });
+})();

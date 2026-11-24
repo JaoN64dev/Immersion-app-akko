@@ -44,6 +44,7 @@
                 <li><a href="#stats-section">your stats</a></li>
                 <li><a href="#dictionary-section">dictionaries</a></li>
                 <li><a href="#asr-section">speech recognition</a></li>
+                <li><a href="#assistant-section">local assistant</a></li>
                 <li><a href="#backup-section">backup / restore</a></li>
                 <li><a href="#phone-section">use on your phone</a></li>
                 <li id="account-nav" hidden><a href="#account-section">akko account</a></li>
@@ -310,6 +311,23 @@
                             <p><b>or a Python one</b>, if you already use Python: <code>pip install openai-whisper</code>, or <code>pip install faster-whisper</code> — these bring their own models.</p>
                             <p><b>anywhere else</b>: start akko with <code>AKKO_WHISPER</code> set to the command and <code>AKKO_WHISPER_MODEL</code> to the model file, and it uses those.</p>
                             <p>Nothing is uploaded and no service is called: the audio, the model and the tool stay on this machine.</p>
+                        </div>
+                    </details>
+                </div>
+            </section>
+
+            <section id="assistant-section">
+                <h2 class="dashed-heading">Local assistant</h2>
+                <div class="note settings-note">
+                    <p class="hint" data-i18n="assistant-intro">In the word popup, <b>🧠 explain</b> breaks the whole sentence down: every word with its dictionary form, reading and meaning, and the grammar lessons in it. That part is akko's own and always works. With <b>Ollama</b> on this computer, a language model also writes an explanation: a translation, the sentence word by word, the grammar, and what is easy to miss. It runs here, free and offline: nothing is sent anywhere.</p>
+                    <p id="assistant-status" class="status dark">checking…</p>
+                    <label id="assistant-model-row" class="row" hidden>model <select id="assistant-model"></select></label>
+                    <details id="assistant-help" class="asr-help">
+                        <summary>how to set it up</summary>
+                        <div class="asr-howto" data-i18n="assistant-howto">
+                            <p>1. Install <b>Ollama</b> from <a href="https://ollama.com/download" target="_blank" rel="noopener">ollama.com</a> (Windows, macOS, Linux) and leave it running.</p>
+                            <p>2. In a terminal, download a model that knows the language you learn. For Japanese and most others, <code>ollama pull qwen2.5:7b</code> (about 4.7 GB, wants 8 GB of memory or more); on a smaller computer, <code>ollama pull qwen2.5:3b</code> (about 2 GB).</p>
+                            <p>3. Reload this page: akko finds it by itself. A model can be wrong, so the dictionary part stays the reference. <code>AKKO_OLLAMA</code> points akko at an Ollama somewhere else.</p>
                         </div>
                     </details>
                 </div>

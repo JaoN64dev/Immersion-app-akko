@@ -1858,3 +1858,16 @@ main .review-modes button[aria-selected="true"] {background: var(--post-bg); col
 .shadow-actions {display: flex; align-items: center; gap: .6em; flex-wrap: wrap;}
 .shadow-actions .hint {font-size: .8em; color: var(--ink-soft);}
 .shadow-score {font-weight: bold;}
+
+/* ---- 🧠 explain: a sentence broken down (scripts/words/explain.js) ---- */
+.explain-dialog {max-width: min(46em, calc(100vw - 32px)); max-height: 85vh; width: 100%; border: 2px solid var(--border-color); border-radius: 10px; background: var(--post-bg); color: var(--ink); padding: 1em 1.2em;}
+.explain-dialog::backdrop {background: #0007;}
+.explain-head {display: flex; align-items: center; gap: .6em;}
+.explain-head .explain-close {margin-left: auto;}
+.explain-sentence {font-size: 1.3em; margin: .4em 0 .6em;}
+.explain-table {border-collapse: collapse; width: 100%; font-size: .95em;}
+.explain-table th, .explain-table td {text-align: left; padding: .25em .5em; border-bottom: 1px solid var(--border-color); vertical-align: top;}
+.explain-table th {font-weight: normal; color: var(--ink-soft);}
+.explain-grammar {margin: .6em 0 0;}
+.explain-ai {margin-top: .8em; border-top: 2px dashed var(--border-color); padding-top: .4em;}
+.explain-text h1, .explain-text h2, .explain-text h3 {font-size: 1em; margin: .7em 0 .2em;}

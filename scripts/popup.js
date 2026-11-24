@@ -272,6 +272,7 @@ function render(word, { entries, inflection, kanji, grammar = [], more = [], exp
         ${lemma && lemma.toLowerCase() !== word.toLowerCase() ? `<span class="lemma" lang="${target()}">→ ${escapeHtml(lemma)}</span>` : ""}
         ${link}
         ${!en && ctx && ctx.sentence && ctx.sentence.length > 1 ? `<button class="say-sentence" title="hear the whole sentence">▶ sentence</button>` : ""}
+        ${ctx && ctx.sentence && ctx.sentence.length > 1 ? `<button class="explain-sentence-btn" title="the whole sentence, word by word, with its grammar (and a local model's explanation, when one is installed)">🧠 explain</button>` : ""}
         <button class="close" title="close">✕</button></div>
         ${expressionHtml(expression)}
         ${inflectionHtml(lemma || word, inflection)}
@@ -306,6 +307,11 @@ function render(word, { entries, inflection, kanji, grammar = [], more = [], exp
         sayWord(e.word, e.reading || "").catch(failed);
     }));
     popup.querySelector(".say-sentence")?.addEventListener("click", () => saySentence(ctx.sentence).catch(failed));
+    popup.querySelector(".explain-sentence-btn")?.addEventListener("click", async () => {
+        const sentence = ctx.sentence;           // before the await: the popup may close meanwhile
+        const { explainSentence } = await import("./words/explain.js");
+        explainSentence(sentence);
+    });
 }
 
 // as: for an expression, its key (its status) and its text as written here (bold in the card)
