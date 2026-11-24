@@ -1,4 +1,5 @@
-// Several episodes at once: pick (or drag in) a whole season, and akko plays them in order.
+// Several episodes at once: pick (or drag in) a whole season, and akko plays them in order. A season
+// in one torrent (scripts/player/torrent.js) lands here too: its entries carry their own open().
 // A bar under the player picks an episode; when one ends, "Next episode ⏭" shows over the video
 // (N), or the next one starts by itself if that's ticked. Moving to another episode drops the
 // last one's subtitles: the new one gets its own saved ones, the ones inside its file, or new ones.
@@ -25,16 +26,26 @@ const ui = {
 
 let files = [];
 let at = -1;
+let owner = null;              // what the list holds, e.g. a torrent's hash (null: local files)
 
 // episode order: by the episode number in the name, then the name
 const order = (a, b) => (episodeOf(a.name) ?? 1e9) - (episodeOf(b.name) ?? 1e9) || a.name.localeCompare(b.name, undefined, { numeric: true });
 
-export function set(list) {
-    files = list.filter((f) => VIDEO.test(f.name) || f.type.startsWith("video/")).sort(order);
+// list: Files, or entries {name, open()}; start: the name of the episode to begin with;
+// play: false when that episode is already playing (a torrent reopened from "continue watching")
+export function set(list, { tag = null, start = null, play = true } = {}) {
+    files = list.filter((f) => VIDEO.test(f.name) || (f.type || "").startsWith("video/")).sort(order);
+    owner = files.length ? tag : null;
     at = -1;
     ui.bar.hidden = files.length < 2;
-    if (files.length) go(0);
+    if (!files.length) return;
+    const first = Math.max(0, files.findIndex((f) => f.name === start));
+    if (play) go(first);
+    else { at = first; render(); }
 }
+
+export const tag = () => owner;
+export const peekNext = () => (at >= 0 && at < files.length - 1 ? files[at + 1] : null);
 
 function go(i) {
     if (i < 0 || i >= files.length) return;
@@ -43,7 +54,8 @@ function go(i) {
     // the last episode's subtitles aren't this one's
     clearSubs();
     subs2.clear({ save: false });
-    openFile(files[i]);
+    if (files[i].open) files[i].open();
+    else openFile(files[i]);
     render();
 }
 

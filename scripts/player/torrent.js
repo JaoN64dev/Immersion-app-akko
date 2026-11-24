@@ -1,55 +1,67 @@
-// A magnet link in the "paste a link" box: the server runs the torrent (server/torrent.js) and the
-// player gets the episode as an ordinary link, /api/torrent/<hash>/<file>/<name> — so "continue
+// A magnet link or a .torrent in the Watch page: the server runs the torrent (server/torrent.js) and
+// the player gets the episode as an ordinary link, /api/torrent/<hash>/<file>/<name> — so "continue
 // watching", the progress, subtitles matching the episode and everything else work as for any link.
-// The bar under the source buttons picks the episode, says how the download goes, and deletes the
-// files; leaving the episode (another video, or closing the page) stops the sharing.
+//
+// A torrent with several episodes (a season "batch") goes into the episode bar of
+// scripts/player/playlist.js, like a season of local files: ◀ the list ▶, "Next episode ⏭" when one
+// ends, N, and "play the next one by itself". It opens on the episode watched last (or the one
+// after, when that one was finished), and the next episode starts downloading near the end of this
+// one, so it plays at once.
+//
+// The torrent bar says how the download goes and deletes the files; leaving the torrent (another
+// video, or closing the page) stops the sharing.
 
-import { $ } from "../core/dom.js";
-import { escapeHtml, postJson, getJson } from "../core/utils.js";
+import { $, el } from "../core/dom.js";
+import { postJson, getJson, store, episodeOf } from "../core/utils.js";
 import { t } from "../i18n.js";
+import { KEY as PROGRESS_KEY } from "../progress.js";
+import * as playlist from "./playlist.js";
+import { pickEpisode } from "./torrent-episodes.js";
 
-const ui = {
-    bar: $("#torrent-bar"), file: $("#torrent-file"), status: $("#torrent-status"), del: $("#torrent-delete"),
-};
+const ui = { bar: $("#torrent-bar"), status: $("#torrent-status"), del: $("#torrent-delete") };
 
 const LINK = /^\/api\/torrent\/([a-f0-9]{40})\/(\d+)\//;
+const PREFETCH_AT = 0.8;          // this far into an episode, the next one starts downloading
 export const isMagnet = (s) => /^magnet:\?/i.test(String(s || "").trim());
 export const hashOf = (url) => (LINK.exec(url || "") || [])[1] || null;
+const indexOf = (url) => Number((LINK.exec(url || "") || [])[2]);
 export const linkFor = (hash, f) => `/api/torrent/${hash}/${f.index}/${encodeURIComponent(f.name)}`;
+// a link to a .torrent file, like nyaa's download button (…/download/123456.torrent)
+export const isTorrentLink = (s) => /^https?:\/\/\S+(\.torrent(\?|#|$)|\/download\/\d+\/?$)/i.test(String(s || "").trim());
+export const isTorrentFile = (f) => !!f && /\.torrent$/i.test(f.name);
 
 let current = null;           // hash of the torrent playing
-let files = [];
+let files = [];               // its episodes, in watching order
 let poll = null;
-let open = () => {};          // video.js openUrl, given in init (no import cycle)
+let prefetched = null;        // the link already asked for ahead of time
+let open = () => {};          // video.js openUrl, given in init
 
 const mb = (b) => (b >= 1e6 ? `${(b / 1e6).toFixed(1)} MB/s` : `${Math.round(b / 1e3)} KB/s`);
 const say = (text) => { if (ui.status) ui.status.textContent = text; };
 
-function renderFiles(selectedIndex) {
-    if (!ui.file) return;
-    ui.file.innerHTML = files.map((f) => `<option value="${f.index}">${escapeHtml(f.path || f.name)}</option>`).join("");
-    if (selectedIndex !== undefined) ui.file.value = String(selectedIndex);
-    ui.file.closest("label").hidden = files.length < 2;
-}
+// watching order: the episode number in the name, then the name (the same as the episode bar)
+const watchingOrder = (list) => [...list].sort((a, b) =>
+    (episodeOf(a.name) ?? 1e9) - (episodeOf(b.name) ?? 1e9) || (a.path || a.name).localeCompare(b.path || b.name, undefined, { numeric: true }));
+
+// the torrent's episodes as entries of the episode bar (each one opens its own link)
+const entries = (hash) => files.map((f) => ({ name: f.name, index: f.index, open: () => open(linkFor(hash, f)) }));
 
 async function refresh() {
     if (!current) return;
     try {
         const s = await getJson(`/api/torrent/${current}`);
         if (!s.running) { say(t("not sharing now")); return; }
-        if (s.files && s.files.length) files = s.files;
-        const playing = files.find((f) => String(f.index) === (ui.file && ui.file.value)) || files[0];
+        const playing = (s.files || []).find((f) => f.index === indexOf(el.video.currentSrc.replace(location.origin, "")));
         say(t("⇣ {down} · ⇡ {up} · {peers} peers · {pct}% of this episode here")
             .replace("{down}", mb(s.down)).replace("{up}", mb(s.up)).replace("{peers}", String(s.peers))
             .replace("{pct}", String(playing ? playing.progress : 0)));
     } catch { /* the server restarted: the next poll tries again */ }
 }
 
-function show(hash, selectedIndex) {
+function show(hash) {
     current = hash;
     if (!ui.bar) return;
     ui.bar.hidden = false;
-    renderFiles(selectedIndex);
     clearInterval(poll);
     poll = setInterval(refresh, 2000);
     refresh();
@@ -60,37 +72,40 @@ function show(hash, selectedIndex) {
 export function leaving(nextUrl = "") {
     if (!current || hashOf(nextUrl) === current) return;
     navigator.sendBeacon(`/api/torrent/${current}/stop`);
+    if (playlist.tag() === current) playlist.set([]);
     current = null;
+    files = [];
     clearInterval(poll);
     if (ui.bar) ui.bar.hidden = true;
 }
 
-// A torrent link is being played (picked here, or reopened from "continue watching")
+// A torrent link is playing (opened here, from the episode bar, or from "continue watching"): show
+// the bar, and for a batch make sure the episode bar holds this torrent's episodes
 export async function attach(url) {
     const hash = hashOf(url);
     if (!hash) return;
-    const index = Number(LINK.exec(url)[2]);
-    if (hash !== current) files = [];
-    show(hash, index);
+    show(hash);
     if (!files.length) {
-        try { const s = await getJson(`/api/torrent/${hash}`); if (s.files) { files = s.files; renderFiles(index); } } catch { /* shown on the next poll */ }
+        try { const s = await getJson(`/api/torrent/${hash}`); if (s.files) files = watchingOrder(s.files); } catch { /* single episode then */ }
+    }
+    if (files.length > 1 && playlist.tag() !== hash) {
+        const f = files.find((x) => x.index === indexOf(url));
+        playlist.set(entries(hash), { tag: hash, start: f && f.name, play: false });
     }
 }
 
-// a link to a .torrent file, like nyaa's download button (…/download/123456.torrent)
-export const isTorrentLink = (s) => /^https?:\/\/\S+(\.torrent(\?|#|$)|\/download\/\d+\/?$)/i.test(String(s || "").trim());
-export const isTorrentFile = (f) => !!f && /\.torrent$/i.test(f.name);
-
-// Ask the server for the torrent's episodes and play the first. request() sends the magnet, the
+// Ask the server for the torrent's episodes and open the right one. request() sends the magnet, the
 // link or the file and resolves to the server's answer.
 async function start(request) {
     if (ui.bar) ui.bar.hidden = false;
     say(t("asking the peers for the torrent's file list… (up to a minute and a half)"));
     try {
         const r = await request();
-        files = r.files;
+        files = watchingOrder(r.files);
         current = r.hash;
-        open(linkFor(r.hash, files[0]));
+        const first = pickEpisode(Object.values(store.get(PROGRESS_KEY, {})), r.hash, files);
+        if (files.length > 1) playlist.set(entries(r.hash), { tag: r.hash, start: first.name });
+        else { playlist.set([]); open(linkFor(r.hash, first)); }
     } catch (err) {
         say(t("couldn't open the torrent: ") + err.message);
     }
@@ -109,13 +124,21 @@ export const openTorrentFile = (file) => start(async () => {
     return body;
 });
 
+// Near the end of an episode, ask for the start of the next one: the server then fetches it while
+// this one finishes, so "Next episode" plays at once
+function prefetchNext() {
+    if (!current || !(el.video.duration > 0) || el.video.currentTime / el.video.duration < PREFETCH_AT) return;
+    const next = playlist.peekNext();
+    if (!next || next.index === undefined || playlist.tag() !== current) return;
+    const link = linkFor(current, next);
+    if (prefetched === link) return;
+    prefetched = link;
+    fetch(link, { headers: { Range: "bytes=0-65535" } }).then((r) => r.body && r.body.cancel()).catch(() => {});
+}
+
 export function init({ openUrl }) {
     open = openUrl;
     if (!ui.bar) return;
-    ui.file.addEventListener("change", () => {
-        const f = files.find((x) => String(x.index) === ui.file.value);
-        if (f && current) open(linkFor(current, f));
-    });
     ui.del.addEventListener("click", async () => {
         if (!current || !confirm(t("stop this torrent and delete what it downloaded?"))) return;
         const hash = current;
@@ -123,5 +146,6 @@ export function init({ openUrl }) {
         await fetch(`/api/torrent/${hash}`, { method: "DELETE" }).catch(() => {});
         say("");
     });
+    el.video.addEventListener("timeupdate", prefetchNext);
     window.addEventListener("pagehide", () => leaving());
 }
