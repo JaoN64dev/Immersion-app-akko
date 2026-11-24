@@ -8,11 +8,14 @@ import * as dualAudio from "./dual-audio.js";
 import * as progress from "../progress.js";
 import { setPresence, tickPresence } from "../core/presence.js";
 import * as playlist from "./playlist.js";
+import * as torrent from "./torrent.js";
 
 const HLS_JS = "https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.20/hls.min.js";
 let hls = null;
 
-function resetVideo() {
+// nextUrl: what opens next, so an episode of the same torrent keeps it running
+function resetVideo(nextUrl = "") {
+    torrent.leaving(nextUrl);
     if (hls) { hls.destroy(); hls = null; }
     if (el.video.src.startsWith("blob:")) URL.revokeObjectURL(el.video.src);
     el.video.removeAttribute("src");
@@ -29,7 +32,8 @@ export function openFile(file) {
 }
 
 export async function openUrl(url) {
-    resetVideo();
+    if (torrent.isMagnet(url)) return torrent.openMagnet(url);   // it comes back here as an /api/torrent/… link
+    resetVideo(url);
     state.videoName = decodeURIComponent(url.split("/").pop().split("?")[0]);
     if (/\.m3u8(\?|$)/i.test(url) && !el.video.canPlayType("application/vnd.apple.mpegurl")) {
         await loadScript(HLS_JS);
@@ -41,6 +45,7 @@ export async function openUrl(url) {
     }
     progress.open(`url:${url}`, { videoName: state.videoName, url });
     videoLoaded();
+    torrent.attach(url);
 }
 
 function videoLoaded() {
@@ -82,6 +87,7 @@ export function reopen(rec) {
 }
 
 export function init() {
+    torrent.init({ openUrl });
     // one file, or several (a whole season: they become the playlist, scripts/player/playlist.js)
     el.videoFile.addEventListener("change", () => {
         const files = [...el.videoFile.files];

@@ -1844,3 +1844,8 @@ main .review-modes button[aria-selected="true"] {background: var(--post-bg); col
 .review-cloze .blank {letter-spacing: .08em; color: var(--main-color);}
 .review-audio-hint {font-size: .85em; color: var(--ink-soft); margin: 0;}
 .review-play.big {font-size: 1.1em; padding: .4em 1em;}
+
+/* ---- watch: a magnet link (scripts/player/torrent.js) ---- */
+.torrent-bar {display: flex; flex-wrap: wrap; align-items: center; gap: .5em 1em;}
+.torrent-bar select {max-width: 28em;}
+.torrent-note {flex-basis: 100%; margin: 0; font-size: .82em; color: var(--ink-soft);}

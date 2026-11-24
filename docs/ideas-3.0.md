@@ -194,6 +194,15 @@ verifiable free pack yet, so they work through *Settings → Dictionaries → ad
      finds each note type's word field by name, and applies the AnkiConnect import's rule (a mature
      card → known, else learning; known/ignored words never go down). Checked with files from Anki's
      own exporter in both layouts.
+   - [x] **watching from a magnet link** (not in the original 20; asked for): paste a `magnet:` link in
+     the Watch page's link box. `server/torrent.js` runs it with WebTorrent 3.0.21 (TCP/UDP + DHT, where
+     nyaa's peers are), downloads only the chosen episode in playback order, and serves it as
+     `/api/torrent/<hash>/<file>/<name>` with Range requests, so the player, seeking, progress and
+     "continue watching" treat it like any link. One torrent at a time, upload capped at 100 KB/s,
+     stopped when the episode closes or nothing plays for 5 minutes; files stay in `<data>/torrents`
+     (deletable from the bar) so whole-file features can use them. The bar says that it shares while it
+     plays. `tests/torrent.test.mjs` seeds the sample locally and checks the list, exact byte ranges,
+     stop and delete, offline. 10-bit x265 releases still need a browser that plays HEVC.
    - [x] **OpenAI whisper without ffmpeg**: the `whisper` command sends every input through ffmpeg and
      failed with `FileNotFoundError: [WinError 2]` where ffmpeg isn't installed (reported from a real
      session). A 16-bit PCM WAV now goes through `server/whisper-wav.py` instead (Python's `wave` module,

@@ -161,7 +161,7 @@
                         <input id="video-file" type="file" accept="video/*,.mkv" multiple hidden>
                     </label>
                     <form id="url-form" class="url-form">
-                        <input id="video-url" type="url" placeholder="or paste a direct video link (.mp4 / .webm / .m3u8)">
+                        <input id="video-url" type="url" placeholder="or paste a direct video link (.mp4 / .webm / .m3u8) or a magnet link">
                         <button type="submit">load</button>
                     </form>
                     <label class="btn">own subtitle file
@@ -172,6 +172,13 @@
                     </label>
                     <button type="button" id="make-subs-from-audio" title="transcribe a video opened from this computer with Whisper, on this machine (Settings → speech recognition)">subtitles from the video's audio</button>
                     <span id="asr-from-audio-status" class="status dark"></span>
+                </div>
+                <!-- a magnet link pasted above: its episodes and how the download goes (scripts/player/torrent.js) -->
+                <div id="torrent-bar" class="bubble torrent-bar" hidden>
+                    <label hidden>episode <select id="torrent-file"></select></label>
+                    <span id="torrent-status" class="status dark"></span>
+                    <button id="torrent-delete" type="button" class="quiet-danger">delete downloaded files</button>
+                    <p class="hint torrent-note">While an episode plays, akko shares the pieces it already has with other people, as every torrent client does (at most 100 KB/s, and it stops when you close the episode). What you download and share is up to you.</p>
                 </div>
                 <div id="audio-bar" class="bubble audio-bar" hidden>
                     <label>audio <select id="audio-track"></select></label>
