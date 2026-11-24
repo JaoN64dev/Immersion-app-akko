@@ -11,6 +11,7 @@ import { toast } from "../core/toast.js";
 import { setWordStatus, saveWords } from "../words/status.js";
 import { saveItem } from "../mining.js";
 import { pitchCardHtml, pitchNotes } from "../words/pitch.js";
+import { freqRank } from "./schedule.js";
 import { keepMedia } from "../core/media.js";
 
 const KEY = "akko-anki";
@@ -238,7 +239,7 @@ async function captureMedia(item, media, wantShot, wantAudio) {
 
 // Pronunciation of the word itself, found by the server (JapanesePod101, then Lingua Libre;
 // for English, dictionaryapi.dev)
-const fetchWordAudio = (item) => {
+export const fetchWordAudio = (item) => {
     const params = new URLSearchParams({ word: item.word, reading: item.reading || "", lang: item.lang || "ja" });
     (item.forms || []).forEach((f) => params.append("form", f));
     return getJson(`/api/audio?${params}`);
@@ -256,13 +257,9 @@ async function spokenSentence(text) {
 
 // ---------- building the note ----------
 
-// The most common rank among the word's frequency lists, as a bare number (empty when it has none)
-export function freqRank(item) {
-    const ranks = (item.freq || []).map((f) => parseInt(String(f.value).replace(/[^d]/g, ""), 10)).filter((n) => n > 0);
-    return ranks.length ? String(Math.min(...ranks)) : "";
-}
+export { freqRank };
 
-function fieldValue(source, item) {
+export function fieldValue(source, item) {
     const bold = item.surface && item.sentence.includes(item.surface)
         ? escapeHtml(item.sentence).replace(escapeHtml(item.surface), `<b>${escapeHtml(item.surface)}</b>`)
         : escapeHtml(item.sentence);

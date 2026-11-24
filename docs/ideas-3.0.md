@@ -68,7 +68,7 @@ verifiable free pack yet, so they work through *Settings → Dictionaries → ad
 | 9 | Local speech recognition (Whisper-class, in the app) | L | done: tool, model download, reader + watch page |
 | 10 | Shadowing: record over the line, compare | L | not started |
 | 11 | Handwriting and stroke order (KanjiVG), ja and zh | M | not started |
-| 12 | Anki two-way: `.apkg` with media and existing SRS | M | not started |
+| 12 | Anki two-way: `.apkg` with media and existing SRS | M | export done (import of an .apkg: not yet) |
 | 13 | Card templates v2: trimmed audio, screenshot, pitch, frequency | M | done (frequency, FreqSort, URL) |
 | 14 | Study planner: "what now?", a time budget | M | done (planner); heatmap left |
 | 15 | Stats 2.0: coverage growth, i+1 lines, retention by source | M | done: bands, i+1 lines, retention by source, next level |
@@ -180,6 +180,14 @@ verifiable free pack yet, so they work through *Settings → Dictionaries → ad
      and a font's radical look-alikes (⽣) become the kanji (生). A scanned PDF says it has no text.
 
 5. **Everything else** — 12, 10, 11, 18, 19, 20 (biggest, most opinionated, last).
+   - [x] **an Anki deck without AnkiConnect** (feature 12, the export half): Watch → mined words →
+     **Anki deck (.apkg)**. sql.js (pinned 1.10.3, jsDelivr) writes the collection in the browser and
+     JSZip packs it with the picture and line audio akko kept, and each word said by a speaker when
+     there is one. Words reviewed in 復習 arrive with their interval and next review; the rest are new.
+     Fixed ids for the note type ("akko"), the deck (`akko::Japanese` …) and every note (from the mined
+     word) make a second export update instead of doubling. Checked against Anki's own importer (the
+     `anki` Python package, 26.9.4): fields, media, schedule, no duplicates on re-import.
+     `tests/apkg.test.mjs` covers the schedule and FreqSort.
 
 ## Fixes after the first local test (3.0.1)
 

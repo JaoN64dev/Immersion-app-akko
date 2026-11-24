@@ -161,7 +161,7 @@ if (makeSubs) {
             const wav = await dualAudio.extractAudioWav((p) => say(`${t("extracting the audio…")} ${Math.round(p * 100)}%`));
             if (state.videoName !== video) return say("");
             say(t("transcribing the audio…"));
-            const name = (video || "video").replace(/.[^.]+$/, "") + ".wav";   // it is a WAV now, whatever the video was
+            const name = (video || "video").replace(/\.[^.]+$/, "") + ".wav";   // it is a WAV now, whatever the video was
             const res = await fetch(`/api/asr/transcribe?lang=${encodeURIComponent(target())}&name=${encodeURIComponent(name)}`, {
                 method: "POST",
                 body: wav,
@@ -170,7 +170,7 @@ if (makeSubs) {
             if (!res.ok) throw new Error(body.error || res.statusText);
             if (!body.srt) throw new Error("the server returned no subtitles");
             if (state.videoName !== video) return say("");
-            cues.loadSubtitleText(body.srt, "srt", (video || "video").replace(/.[^.]+$/, "") + " (from audio).srt");
+            cues.loadSubtitleText(body.srt, "srt", (video || "video").replace(/\.[^.]+$/, "") + " (from audio).srt");
             say(t("made subtitles: {n} lines").replace("{n}", String(state.cues.length)));
         } catch (err) {
             say(err.message || "couldn't make subtitles from the audio");

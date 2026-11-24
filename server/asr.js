@@ -93,7 +93,7 @@ function status() {
     const all = models();
     // whisper.cpp reads only ggml .bin models: OpenAI whisper keeps its .pt files in ~/.cache/whisper
     // too, and handing one of those to whisper-cli fails
-    const usable = found.length && found[0].family === 'cpp' ? all.filter((m) => /.bin$/i.test(m.file)) : all;
+    const usable = found.length && found[0].family === 'cpp' ? all.filter((m) => /\.bin$/i.test(m.file)) : all;
     return {
         tools: found,
         model: model || (usable[0] && usable[0].file) || null,
