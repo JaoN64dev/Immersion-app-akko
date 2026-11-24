@@ -37,6 +37,7 @@
   },
   "build": {
     "appId": "io.github.jaon64dev.akko",
+    "npmRebuild": false,
     "productName": "akko",
     "directories": {
       "output": "dist"

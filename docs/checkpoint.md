@@ -1,3 +1,36 @@
+# Checkpoint — 2026-11-24: 3.0.0 is ready
+
+Everything below the line is the 2026-11-03 checkpoint, kept for its traps and decisions.
+
+## Where 3.0 stands
+
+- `package.json` is **3.0.0**; the notes for the GitHub release are `docs/release-3.0.md`; the About
+  page's *what's new* is the 3.0 one in all nine languages. Releasing = `git tag 3.0.0` and push the
+  tag (`docs/maintaining.md`).
+- Of the 20 features in `docs/ideas-3.0.md`, all are done except: **18** (phone app / PWA) and **19**
+  (cloud v2) — both left out on purpose; **4** (dictionary packs for de/pl/ru/es/it) waits for a
+  licensed release; **5** (one-click language bundles) is partly done; Chinese stroke order (part of
+  11) waits for a dataset with a licence decided.
+- Added on the way, not in the 20: watching from magnet links / .torrent files (`server/torrent.js`),
+  OpenAI whisper without ffmpeg (`server/whisper-wav.py`).
+- All nine interface tables are complete and `tests/i18n.test.mjs` treats them as such: a new English
+  string needs its entry in all nine.
+- `npm test`: 240 tests, 236 pass, 4 skip (platform-only), 0 fail.
+
+## Traps found this time
+
+- Editing files through shell one-liners loses backslashes (`[^\d]` became `[^d]` three times). Write
+  edit scripts to a file, or use an editor.
+- Headless Chrome blocks unmuted autoplay: a test that plays to the end has to mute the video.
+- A seeder made with a custom torrent `name` can't find its own files: tests seed the folder as it is.
+- WebTorrent 3 gives `torrentFile` as a `Uint8Array`, not a `Buffer`.
+- The desktop build: WebTorrent brings small native helpers (bufferutil, utf-8-validate, utp-native,
+  node-datachannel, fs-native-extensions). They ship N-API binaries for every system, so
+  `build.npmRebuild` is false: without it electron-builder tries to compile them and needs Visual
+  Studio. Checked: the packaged server (Electron as Node) streams a torrent with exact bytes.
+
+---
+
 # Checkpoint — 2026-11-03
 
 Written at the end of a long session, to pick up cold tomorrow with the fewest steps.
