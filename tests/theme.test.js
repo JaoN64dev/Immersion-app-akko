@@ -18,7 +18,7 @@ function rule(selector) {
 }
 
 test('the 3.0 panels take every colour from the theme, never from a literal', () => {
-    const selectors = ['.library-plan', '.plan-time', '.reader-prime', '.reader-prime b', '.prime-word', '.prime-gain', '.welcome-other', '#learning-note', '.dict-pack .hint', '.reader-words summary', '.reader-words-list small', '.stats-level-fill', '.stats-table th', '.strokes-svg', '.strokes-svg text'];
+    const selectors = ['.library-plan', '.plan-time', '.reader-prime', '.reader-prime b', '.prime-word', '.prime-gain', '.welcome-other', '#learning-note', '.dict-pack .hint', '.reader-words summary', '.reader-words-list small', '.stats-level-fill', '.stats-table th', '.strokes-svg', '.strokes-svg text', '.hm', '.hm-0', '.hm-month', '.heatmap-legend'];
     for (const sel of selectors) {
         const body = rule(sel);
         assert.ok(body, `${sel} is in style.css`);

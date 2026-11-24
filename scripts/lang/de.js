@@ -892,6 +892,11 @@ export default {
         "couldn't ask the server about it.": "konnte den Server nicht danach fragen.",
         "a Yomitan .zip for this language. The community list is at": "eine Yomitan-.zip für diese Sprache. Die Community-Liste findest du unter",
         "downloading the dictionary… (this can take a minute)": "lade das Wörterbuch herunter… (das kann eine Minute dauern)",
+        "Your year": "Dein Jahr",
+        "{n} days with the language in the last year · longest run {m} days · {h} h in all": "{n} Tage mit der Sprache im letzten Jahr · längste Serie {m} Tage · {h} Std insgesamt",
+        "less": "weniger",
+        "more": "mehr",
+        "{date}: {n} min": "{date}: {n} Min",
     },
 
     // data-i18n blocks (whole paragraphs with links). Empty until those paragraphs are keyed: a missing

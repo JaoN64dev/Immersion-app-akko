@@ -893,6 +893,11 @@ export default {
         "couldn't ask the server about it.": "не удалось спросить об этом сервер.",
         "a Yomitan .zip for this language. The community list is at": "Yomitan .zip для этого языка. Список сообщества —",
         "downloading the dictionary… (this can take a minute)": "скачиваю словарь… (это может занять минуту)",
+        "Your year": "Ваш год",
+        "{n} days with the language in the last year · longest run {m} days · {h} h in all": "дней с языком за последний год: {n} · самая длинная серия: {m} дн. · всего {h} ч",
+        "less": "меньше",
+        "more": "больше",
+        "{date}: {n} min": "{date}: {n} мин",
     },
 
     // data-i18n blocks (whole paragraphs with links). Empty until those paragraphs are keyed: a missing

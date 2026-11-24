@@ -953,6 +953,11 @@ export default {
         "🔊 read aloud": "🔊 lire à voix haute",
         "⏹ stop": "⏹ arrêter",
         "how to install it": "comment l'installer",
+        "Your year": "Ton année",
+        "{n} days with the language in the last year · longest run {m} days · {h} h in all": "{n} jours avec la langue sur la dernière année · plus longue série {m} jours · {h} h en tout",
+        "less": "moins",
+        "more": "plus",
+        "{date}: {n} min": "{date} : {n} min",
     },
 
     // data-i18n blocks (whole paragraphs with links).

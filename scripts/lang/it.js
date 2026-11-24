@@ -959,6 +959,11 @@ export default {
         "🔊 read aloud": "🔊 leggi ad alta voce",
         "⏹ stop": "⏹ ferma",
         "how to install it": "come installarlo",
+        "Your year": "Il tuo anno",
+        "{n} days with the language in the last year · longest run {m} days · {h} h in all": "{n} giorni con la lingua nell'ultimo anno · serie più lunga {m} giorni · {h} h in tutto",
+        "less": "meno",
+        "more": "di più",
+        "{date}: {n} min": "{date}: {n} min",
     },
 
     // data-i18n blocks (whole paragraphs with links).

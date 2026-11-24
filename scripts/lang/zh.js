@@ -892,6 +892,11 @@ export default {
         "couldn't ask the server about it.": "无法向服务器询问这件事。",
         "a Yomitan .zip for this language. The community list is at": "这门语言的 Yomitan .zip。社区列表在",
         "downloading the dictionary… (this can take a minute)": "正在下载词典…（可能需要一分钟）",
+        "Your year": "你的一年",
+        "{n} days with the language in the last year · longest run {m} days · {h} h in all": "过去一年有 {n} 天接触这门语言 · 最长连续 {m} 天 · 共 {h} 小时",
+        "less": "少",
+        "more": "多",
+        "{date}: {n} min": "{date}：{n} 分钟",
     },
 
     // data-i18n blocks (whole paragraphs with links). Empty until those paragraphs are keyed: a missing

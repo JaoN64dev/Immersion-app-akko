@@ -70,7 +70,7 @@ verifiable free pack yet, so they work through *Settings → Dictionaries → ad
 | 11 | Handwriting and stroke order (KanjiVG), ja and zh | M | stroke order done (ja); handwriting not started |
 | 12 | Anki two-way: `.apkg` with media and existing SRS | M | done: deck export, known words from an .apkg |
 | 13 | Card templates v2: trimmed audio, screenshot, pitch, frequency | M | done (frequency, FreqSort, URL) |
-| 14 | Study planner: "what now?", a time budget | M | done (planner); heatmap left |
+| 14 | Study planner: "what now?", a time budget | M | done (planner + year heatmap) |
 | 15 | Stats 2.0: coverage growth, i+1 lines, retention by source | M | done: bands, i+1 lines, retention by source, next level |
 | 16 | Reader 2.0: EPUB/text/manga, read-aloud, per-book words | L | done |
 | 17 | Mine from anything: a URL, text or PDF page | M | done |
@@ -194,6 +194,10 @@ verifiable free pack yet, so they work through *Settings → Dictionaries → ad
      finds each note type's word field by name, and applies the AnkiConnect import's rule (a mature
      card → known, else learning; known/ignored words never go down). Checked with files from Anki's
      own exporter in both layouts.
+   - [x] **your year** (feature 14, the heatmap): Settings → Stats → *Your year*, one square per day for
+     the last 53 weeks, darker with more time (under 15 min / 30 / 60 / more), from the days
+     `scripts/core/today.js` already keeps. A summary line says the same in words (active days, longest
+     run, hours). `scripts/core/heatmap.js` is pure (`tests/heatmap.test.mjs`); colours come from the theme.
    - [x] **stroke order** (feature 11, first half): tap a kanji in the popup's 漢字 section and it
      draws itself stroke by stroke, numbered; tap again to replay. KanjiVG (pinned r20250816, jsDelivr,
      CC BY-SA 3.0, credited on the pages and in the README), fetched per kanji and kept for the

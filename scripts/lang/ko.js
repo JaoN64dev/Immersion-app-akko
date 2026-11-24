@@ -892,6 +892,11 @@ export default {
         "couldn't ask the server about it.": "서버에 물어볼 수 없었습니다.",
         "a Yomitan .zip for this language. The community list is at": "이 언어용 Yomitan .zip. 커뮤니티 목록 →",
         "downloading the dictionary… (this can take a minute)": "사전 다운로드 중… (1분 정도 걸릴 수 있습니다)",
+        "Your year": "나의 한 해",
+        "{n} days with the language in the last year · longest run {m} days · {h} h in all": "지난 1년 동안 언어와 함께한 날 {n}일 · 최장 연속 {m}일 · 총 {h}시간",
+        "less": "적음",
+        "more": "많음",
+        "{date}: {n} min": "{date}: {n}분",
     },
 
     // data-i18n blocks (whole paragraphs with links). Empty until those paragraphs are keyed: a missing

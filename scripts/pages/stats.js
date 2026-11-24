@@ -6,6 +6,7 @@ import { escapeHtml, store } from "../core/utils.js";
 import * as today from "../core/today.js";
 import { target, learningEnglish, keyFor } from "../core/target.js";
 import * as levels from "../core/levels.js";
+import { yearGrid } from "../core/heatmap.js";
 import { t } from "../i18n.js";
 import { wordStats, watchStats, mangaStats, podcastStats, textStats, minedStats, grammarStats, companionStats } from "../totals.js";
 
@@ -236,6 +237,39 @@ const TYPE_INFO = {
     netflix: { label: "Netflix", color: "var(--extra7)" },
 };
 
+// ---------- your year (scripts/core/heatmap.js) ----------
+// One square per day, darker the longer you spent with the language. Every square says its day and
+// minutes on hover; the summary line says the same in words, so the colours never have to.
+
+function renderYear() {
+    const el = document.getElementById("stats-year");
+    if (!el) return;
+    const g = yearGrid(today.allDays(target()), today.dayOf());
+    if (!g.active) {
+        el.innerHTML = `<p class="stats-empty">${escapeHtml(t("nothing yet: time counts while you watch, listen, read, review or do listening drills."))}</p>`;
+        return;
+    }
+    const locale = document.documentElement.lang || undefined;
+    const month = new Intl.DateTimeFormat(locale, { month: "short", timeZone: "UTC" });
+    const dayName = new Intl.DateTimeFormat(locale, { weekday: "short", day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+    const when = (day) => dayName.format(new Date(day + "T00:00:00Z"));
+    const labels = g.months.map((m) => `<span class="hm-month" style="grid-column:${m.week + 1} / span 3">${escapeHtml(month.format(Date.UTC(m.year, m.month, 1)))}</span>`).join("");
+    const cells = g.weeks.map((week, w) => week.map((c, d) => (c
+        ? `<i class="hm hm-${c.level}" style="grid-column:${w + 1};grid-row:${d + 2}" title="${escapeHtml(t("{date}: {n} min").replace("{date}", when(c.day)).replace("{n}", String(Math.round(c.seconds / 60))))}"></i>`
+        : "")).join("")).join("");
+    const summary = t("{n} days with the language in the last year · longest run {m} days · {h} h in all")
+        .replace("{n}", String(g.active)).replace("{m}", String(g.longest)).replace("{h}", g.hours.toLocaleString(locale));
+    el.innerHTML = `
+        <p class="hint">${escapeHtml(summary)}</p>
+        <div class="heatmap-scroll">
+            <div class="heatmap" role="img" aria-label="${escapeHtml(summary)}">${labels}${cells}</div>
+        </div>
+        <p class="heatmap-legend" aria-hidden="true">${escapeHtml(t("less"))} <i class="hm hm-0"></i><i class="hm hm-1"></i><i class="hm hm-2"></i><i class="hm hm-3"></i><i class="hm hm-4"></i> ${escapeHtml(t("more"))}</p>`;
+    // the newest weeks are on the right: start there on a narrow screen
+    const scroll = el.querySelector(".heatmap-scroll");
+    scroll.scrollLeft = scroll.scrollWidth;
+}
+
 // ---------- your next level (scripts/core/levels.js) ----------
 
 function renderLevel() {
@@ -318,6 +352,7 @@ async function init() {
     renderCoverage();
     renderMiningChart(mined.items);
     renderLevel();
+    renderYear();
     renderRetention(mined.items);
     renderRecent([...watch.recent, ...manga.recent, ...text.recent, ...companion.recent]);
 }
