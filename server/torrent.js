@@ -2,7 +2,7 @@
 // nyaa's peers are; a browser could only reach the few WebRTC ones), only the episode you pick is
 // downloaded, in playback order, and the player gets it as a plain video URL with seeking.
 //
-//   POST   /api/torrent                {magnet}        -> the torrent's video files, once its info arrives
+//   POST   /api/torrent   {magnet} | {url of a .torrent} | the .torrent itself  -> its video files
 //   GET    /api/torrent                                -> the torrents akko kept (for the list / delete)
 //   GET    /api/torrent/:hash                          -> speed, peers, how much of each episode is here
 //   GET    /api/torrent/:hash/:index/:name             -> the episode itself (Range requests, for seeking)
@@ -72,28 +72,101 @@ function whenReady(torrent) {
     });
 }
 
-// The running torrent for this magnet or hash, added (or resumed from the files already on disk) if needed
-async function open(magnetOrHash) {
+// ---------- .torrent files ----------
+// A .torrent is bencoded; its info-hash (the torrent's id, the same one a magnet link carries) is the
+// sha1 of the raw bytes of its "info" dictionary. Reading just enough bencode to find those bytes
+// also tells a real .torrent from anything else.
+
+function bencodeEnd(buf, at) {
+    const c = buf[at];
+    if (c === 0x69) {                                                       // i…e
+        const e = buf.indexOf(0x65, at);
+        if (e < 0) throw new Error('cut short');
+        return e + 1;
+    }
+    if (c === 0x6c || c === 0x64) {                                         // l…e, d…e
+        let p = at + 1;
+        while (buf[p] !== 0x65) { if (p >= buf.length) throw new Error('cut short'); p = bencodeEnd(buf, p); }
+        return p + 1;
+    }
+    if (c >= 0x30 && c <= 0x39) {                                           // <length>:<bytes>
+        const colon = buf.indexOf(0x3a, at);
+        const length = Number(buf.toString('latin1', at, colon));
+        if (colon < 0 || !Number.isInteger(length) || colon + 1 + length > buf.length) throw new Error('cut short');
+        return colon + 1 + length;
+    }
+    throw new Error('not bencode');
+}
+
+function infoHashOf(bytes) {
+    try {
+        if (!(bytes instanceof Uint8Array)) return null;                    // a Buffer, or WebTorrent's Uint8Array
+        const buf = Buffer.isBuffer(bytes) ? bytes : Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+        if (buf[0] !== 0x64) return null;
+        let p = 1;
+        while (p < buf.length && buf[p] !== 0x65) {
+            const keyEnd = bencodeEnd(buf, p);
+            const key = buf.toString('latin1', buf.indexOf(0x3a, p) + 1, keyEnd);
+            const valueEnd = bencodeEnd(buf, keyEnd);
+            if (key === 'info') return require('crypto').createHash('sha1').update(buf.subarray(keyEnd, valueEnd)).digest('hex');
+            p = valueEnd;
+        }
+    } catch { /* not a torrent */ }
+    return null;
+}
+
+// What to give webtorrent for a torrent akko kept: its magnet, or the .torrent saved next to it
+function sourceOf(hash) {
+    const entry = readIndex()[hash] || {};
+    if (entry.magnet) return entry.magnet;
+    if (entry.torrentFile) {
+        try { return fs.readFileSync(path.join(DIR, entry.torrentFile)); } catch { /* deleted by hand */ }
+    }
+    return null;
+}
+
+// The running torrent for a magnet link, a .torrent file's bytes, or the hash of one akko kept —
+// added (or resumed from the files already on disk) if needed
+async function open(from) {
     const c = await client();
-    let hash = validHash(magnetOrHash) ? magnetOrHash : null;
-    let magnet = hash ? (readIndex()[hash] || {}).magnet : magnetOrHash;
-    if (!magnet) throw Object.assign(new Error('akko doesn\'t know that torrent any more: paste its magnet link again'), { status: 404 });
+    let hash = Buffer.isBuffer(from) ? infoHashOf(from) : validHash(from) ? from : null;
+    const source = Buffer.isBuffer(from) || !validHash(from) ? from : sourceOf(hash);
+    if (!source) throw Object.assign(new Error('akko doesn\'t know that torrent any more: open its magnet link or .torrent again'), { status: 404 });
     let torrent = hash ? await c.get(hash) : null;
-    if (!torrent) torrent = await c.get(magnet);
+    if (!torrent && !Buffer.isBuffer(source)) torrent = await c.get(source);
     if (!torrent) {
         fs.mkdirSync(DIR, { recursive: true });
-        torrent = c.add(magnet, { path: DIR, deselect: true });
+        torrent = c.add(source, { path: DIR, deselect: true });
     }
     await whenReady(torrent);
     hash = torrent.infoHash;
     await stopOthers(hash);
     const index = readIndex();
     if (!index[hash]) {
-        index[hash] = { magnet, name: torrent.name, added: Date.now() };
+        const entry = { name: torrent.name, added: Date.now() };
+        if (Buffer.isBuffer(source)) {
+            entry.torrentFile = `${hash}.torrent`;
+            fs.writeFileSync(path.join(DIR, entry.torrentFile), source);
+        } else entry.magnet = source;
+        index[hash] = entry;
         writeIndex(index);
     }
     touch();
     return torrent;
+}
+
+// a .torrent from a link (nyaa's download button): fetched here, http(s) only, small
+async function fetchTorrent(url) {
+    let u;
+    try { u = new URL(url); } catch { throw new Error('that doesn\'t look like a link'); }
+    if (!/^https?:$/.test(u.protocol)) throw new Error('only http and https links');
+    const res = await fetch(u.href, { redirect: 'follow', signal: AbortSignal.timeout(30e3), headers: { 'User-Agent': 'Mozilla/5.0 (akko immersion player)' } })
+        .catch((err) => { throw new Error(err.name === 'TimeoutError' ? 'the site took too long to answer' : `couldn't reach it (${err.message})`); });
+    if (!res.ok) throw new Error(`the site answered ${res.status}`);
+    const buf = Buffer.from(await res.arrayBuffer());
+    if (buf.length > 5e6) throw new Error('that file is too big to be a .torrent');
+    if (!infoHashOf(buf)) throw new Error('that link isn\'t a .torrent file');
+    return buf;
 }
 
 const videos = (torrent) => torrent.files
@@ -106,11 +179,20 @@ const videos = (torrent) => torrent.files
 const router = express.Router();
 const fail = (res, err) => res.status(err.status || 400).json({ error: err.message });
 
-router.post('/', express.json(), async (req, res) => {
-    const magnet = String((req.body && req.body.magnet) || '').trim();
-    if (!isMagnet(magnet)) return res.status(400).json({ error: 'that isn\'t a magnet link (magnet:?xt=urn:btih:…)' });
+// {magnet}, {url} of a .torrent (nyaa's download link), or the .torrent file itself as the body
+router.post('/', express.raw({ type: ['application/x-bittorrent', 'application/octet-stream'], limit: '5mb' }), express.json(), async (req, res) => {
     try {
-        const t = await open(magnet);
+        let from;
+        if (Buffer.isBuffer(req.body)) {
+            if (!infoHashOf(req.body)) return res.status(400).json({ error: 'that isn\'t a .torrent file' });
+            from = req.body;
+        } else if (req.body && req.body.url) {
+            from = await fetchTorrent(String(req.body.url).trim());
+        } else {
+            from = String((req.body && req.body.magnet) || '').trim();
+            if (!isMagnet(from)) return res.status(400).json({ error: 'that isn\'t a magnet link (magnet:?xt=urn:btih:…)' });
+        }
+        const t = await open(from);
         const files = videos(t);
         if (!files.length) return res.status(400).json({ error: 'there is no video in that torrent' });
         res.json({ hash: t.infoHash, name: t.name, files });
@@ -187,6 +269,7 @@ router.delete('/:hash', async (req, res) => {
         const target = path.resolve(DIR, entry.name);
         if (target.startsWith(path.resolve(DIR) + path.sep)) fs.rmSync(target, { recursive: true, force: true });
     }
+    if (entry && entry.torrentFile) fs.rmSync(path.join(DIR, `${hash}.torrent`), { force: true });
     delete index[hash];
     writeIndex(index);
     res.json({ ok: true });
@@ -207,4 +290,4 @@ async function close() {
     await new Promise((r) => c.destroy(r));
 }
 
-module.exports = { router, isMagnet, validHash, DIR, close };
+module.exports = { router, isMagnet, validHash, infoHashOf, DIR, close, client };

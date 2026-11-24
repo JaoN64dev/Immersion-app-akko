@@ -10,6 +10,7 @@ import { el, $ } from "../core/dom.js";
 import { store, episodeOf } from "../core/utils.js";
 import { toast } from "../core/toast.js";
 import { openFile } from "./video.js";
+import { isTorrentFile, openTorrentFile } from "./torrent.js";
 import { clearSubs, loadSubtitleText } from "./cues.js";
 import * as subs2 from "./subs2.js";
 
@@ -87,6 +88,8 @@ function readText(file) {
 }
 
 async function dropped(list) {
+    const torrentFile = list.find(isTorrentFile);
+    if (torrentFile) { openTorrentFile(torrentFile); return; }
     const videos = list.filter((f) => VIDEO.test(f.name) || f.type.startsWith("video/"));
     const subs = list.filter((f) => SUBS.test(f.name));
     if (!videos.length && !subs.length) { toast("drop video files (.mkv, .mp4…) or subtitles (.srt, .ass, .vtt)", true); return; }

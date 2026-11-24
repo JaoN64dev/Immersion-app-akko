@@ -32,7 +32,8 @@ export function openFile(file) {
 }
 
 export async function openUrl(url) {
-    if (torrent.isMagnet(url)) return torrent.openMagnet(url);   // it comes back here as an /api/torrent/… link
+    // a magnet or a .torrent link comes back here as an /api/torrent/… link
+    if (torrent.isMagnet(url) || torrent.isTorrentLink(url)) return torrent.openLink(url);
     resetVideo(url);
     state.videoName = decodeURIComponent(url.split("/").pop().split("?")[0]);
     if (/\.m3u8(\?|$)/i.test(url) && !el.video.canPlayType("application/vnd.apple.mpegurl")) {
@@ -91,6 +92,8 @@ export function init() {
     // one file, or several (a whole season: they become the playlist, scripts/player/playlist.js)
     el.videoFile.addEventListener("change", () => {
         const files = [...el.videoFile.files];
+        const torrentFile = files.find(torrent.isTorrentFile);
+        if (torrentFile) { el.videoFile.value = ""; torrent.openTorrentFile(torrentFile); return; }
         if (files.length > 1) playlist.set(files);
         else if (files[0]) { playlist.set([]); openFile(files[0]); }
     });

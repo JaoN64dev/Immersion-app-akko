@@ -77,12 +77,17 @@ export async function attach(url) {
     }
 }
 
-// A magnet link was pasted: ask the server for the torrent's episodes and play the first
-export async function openMagnet(magnet) {
+// a link to a .torrent file, like nyaa's download button (…/download/123456.torrent)
+export const isTorrentLink = (s) => /^https?:\/\/\S+(\.torrent(\?|#|$)|\/download\/\d+\/?$)/i.test(String(s || "").trim());
+export const isTorrentFile = (f) => !!f && /\.torrent$/i.test(f.name);
+
+// Ask the server for the torrent's episodes and play the first. request() sends the magnet, the
+// link or the file and resolves to the server's answer.
+async function start(request) {
     if (ui.bar) ui.bar.hidden = false;
     say(t("asking the peers for the torrent's file list… (up to a minute and a half)"));
     try {
-        const r = await postJson("/api/torrent", { magnet: magnet.trim() });
+        const r = await request();
         files = r.files;
         current = r.hash;
         open(linkFor(r.hash, files[0]));
@@ -90,6 +95,19 @@ export async function openMagnet(magnet) {
         say(t("couldn't open the torrent: ") + err.message);
     }
 }
+
+// A magnet link, or a link to a .torrent, pasted in the link box
+export const openLink = (link) => start(() => postJson("/api/torrent",
+    isMagnet(link) ? { magnet: link.trim() } : { url: link.trim() }));
+export const openMagnet = openLink;
+
+// A .torrent file picked or dropped
+export const openTorrentFile = (file) => start(async () => {
+    const res = await fetch("/api/torrent", { method: "POST", headers: { "Content-Type": "application/x-bittorrent" }, body: file });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(body.error || `request failed (${res.status})`);
+    return body;
+});
 
 export function init({ openUrl }) {
     open = openUrl;

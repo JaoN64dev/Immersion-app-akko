@@ -87,3 +87,50 @@ test('stop keeps the file; delete removes it and forgets the torrent', { timeout
     assert.equal(fs.existsSync(file), false);
     assert.deepEqual(await (await fetch(base)).json(), []);
 });
+
+// ---------- .torrent files: picked, dropped, or linked (nyaa's download button) ----------
+
+test('the info-hash read from a .torrent is the one WebTorrent computes, and junk has none', () => {
+    assert.equal(torrent.infoHashOf(seed.torrentFile), seed.infoHash);
+    assert.equal(torrent.infoHashOf(Buffer.from('<html>not a torrent</html>')), null);
+    assert.equal(torrent.infoHashOf(Buffer.from('d4:infoi12')), null, 'cut short');
+    assert.equal(torrent.infoHashOf(Buffer.from('d4:info999999:x')), null, 'a length past the end');
+});
+
+test('a .torrent file sent as the body opens and streams, and is kept for resuming', { timeout: 120e3 }, async () => {
+    const bad = await fetch(base, { method: 'POST', headers: { 'content-type': 'application/x-bittorrent' }, body: 'nope' });
+    assert.equal(bad.status, 400);
+    const r = await fetch(base, { method: 'POST', headers: { 'content-type': 'application/x-bittorrent' }, body: seed.torrentFile });
+    const body = await r.json();
+    assert.equal(r.status, 200, body.error);
+    assert.equal(body.hash, seed.infoHash);
+    // a .torrent names no peers and this test runs offline (no DHT): hand the seeder over directly
+    const running = await (await torrent.client()).get(body.hash);
+    running.addPeer(`127.0.0.1:${seeder.address().port}`);
+    const link = `${base}/${body.hash}/${body.files[0].index}/${encodeURIComponent(body.files[0].name)}`;
+    const part = await fetch(link, { headers: { Range: 'bytes=0-99' } });
+    assert.deepEqual(Buffer.from(await part.arrayBuffer()), bytes.subarray(0, 100));
+    assert.ok(fs.existsSync(path.join(torrent.DIR, `${seed.infoHash}.torrent`)), 'the .torrent is kept, so the link still works after a restart');
+    await fetch(`${base}/${seed.infoHash}`, { method: 'DELETE' });
+    assert.equal(fs.existsSync(path.join(torrent.DIR, `${seed.infoHash}.torrent`)), false, 'and deleted with the torrent');
+});
+
+test('a link to a .torrent is fetched by the server; a link to anything else is refused', { timeout: 120e3 }, async () => {
+    const http = await import('node:http');
+    const site = http.createServer((req, res) => {
+        if (req.url === '/download/123.torrent') { res.writeHead(200, { 'content-type': 'application/x-bittorrent' }); return res.end(seed.torrentFile); }
+        res.writeHead(200, { 'content-type': 'text/html' }); res.end('<html>a page</html>');
+    });
+    await new Promise((r) => site.listen(0, '127.0.0.1', r));
+    const at = `http://127.0.0.1:${site.address().port}`;
+    try {
+        const page = await fetch(base, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: `${at}/view/123` }) });
+        assert.equal(page.status, 400);
+        assert.match((await page.json()).error, /isn't a \.torrent/);
+        const r = await fetch(base, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: `${at}/download/123.torrent` }) });
+        const body = await r.json();
+        assert.equal(r.status, 200, body.error);
+        assert.equal(body.hash, seed.infoHash);
+        await fetch(`${base}/${seed.infoHash}`, { method: 'DELETE' });
+    } finally { site.close(); }
+});
