@@ -1,8 +1,7 @@
 // Simplified Chinese text for the interface. Same format as scripts/lang/ja.js (see there and scripts/i18n.js):
 // left = the English exactly as on the page, right = the Simplified Chinese.
 //
-// Simplified Chinese: the chrome first — navigation, buttons, the settings sections, Review and
-// the plan. Whatever is not here stays English until someone adds it (npm run i18n-audit -- --lang zh).
+// Simplified Chinese: complete. A new English string needs its entry here too (tests/i18n.test.mjs).
 
 export default {
     text: {
@@ -901,5 +900,26 @@ export default {
         "Download the base model (~150 MB)": '下载基础模型（~150 MB）',
         "downloading the base model… (about 150 MB, this can take a while)": '正在下载基础模型…（约 150 MB，可能需要一些时间）',
         "asr-howto": "<p>akko 不会替你安装任何东西，也不需要账号：请在运行 akko 的电脑上安装，然后刷新本页。</p><p><b>whisper.cpp</b> — 小巧，在 CPU 上运行，也是 akko 最先寻找的：</p><ul><li><b>macOS</b>：<code>brew install whisper-cpp</code></li><li><b>Windows</b>：从源码编译 — <code>git clone https://github.com/ggml-org/whisper.cpp &amp;&amp; cd whisper.cpp &amp;&amp; cmake -B build &amp;&amp; cmake --build build --config Release</code>，然后把 <code>build/bin</code> 加入 <code>PATH</code>（如果你有 <code>winget</code>、<code>choco</code> 或 <code>scoop</code>，也可以用它们安装）</li><li><b>Linux</b>：<code>git clone https://github.com/ggml-org/whisper.cpp &amp;&amp; cd whisper.cpp &amp;&amp; cmake -B build &amp;&amp; cmake --build build -j</code>，然后把 <code>build/bin</code> 加入 <code>PATH</code></li></ul><p><b>模型</b> — whisper.cpp 需要一个模型，约 150 MB：从<a href=\"https://huggingface.co/ggerganov/whisper.cpp\" target=\"_blank\" rel=\"noopener\">模型页面</a>下载 <code>ggml-base.bin</code>，保存到 <code>~/.cache/akko/whisper</code>（Windows：<code>C:\\Users\\you\\.cache\\akko\\whisper</code>）。<code>ggml-small.bin</code> 听得更准但更慢；<code>ggml-tiny.bin</code> 更快但听得少。</p><p><b>或者用 Python 的</b>，如果你已经在用 Python：<code>pip install openai-whisper</code> 或 <code>pip install faster-whisper</code> — 它们自带模型。</p><p><b>放在别处</b>：启动 akko 时设置 <code>AKKO_WHISPER</code>（命令）和 <code>AKKO_WHISPER_MODEL</code>（模型文件），它就会使用这些。</p><p>不会上传任何东西，也不会调用任何服务：音频、模型和工具都留在这台电脑上。</p>",
+        "about-who": "你好，我是 akko！我做这个网站是为了看动画、用日语阅读和收听、不打断正在做的事就能查词，并把它们发送到 Anki。它在你自己的电脑上运行。",
+        "about-whats-new": "这是 <b>2.0 版</b>。新内容：惯用语和固定说法有了自己的 <a href=\"/expressions.html\">表現 页面</a>（你遇到过的，以及词典里所有的 慣用句・ことわざ・四字熟語）；界面支持 <b>English、日本語、Português 和 Español</b>；復習 可以用单词、<b>填空</b>或<b>先听句子</b>来提问；备份可以是<b>包含录音的 .zip</b>；而且一切——单词、播放位置、復習、收集的词及其音频和图片——都可以通过 <b>akko 账号</b>在你的电脑、手机和浏览器之间保持同步（设置 → akko 账号；可选，不用账号时什么都不会离开电脑）。",
+        "watch-bio": "欢迎！视频文件可以从 <a href=\"https://nyaa.si\" target=\"akko-window\">nyaa.si</a> 获取…",
+        "dict-help": "你可以添加更多 <b>Yomitan 格式</b>（.zip）的词典，比如 <a href=\"https://jitendex.org\" target=\"_blank\" rel=\"noopener\">Jitendex</a> 或日日词典：它们会按下面的顺序显示在单词弹窗中 JMdict 的下方。来自 <a href=\"https://github.com/scriptin/jmdict-simplified/releases\" target=\"_blank\" rel=\"noopener\">jmdict-simplified</a> 的 <code>jmdict-eng-….json.zip</code> 或 <code>kanjidic2-en-….json.zip</code> 则会替换内置词典，<b>下载最新</b>会更新它（约 13 MB）。你的单词和进度不受影响。",
+        "dict-help-en": "你可以添加 <b>Yomitan 格式</b>（.zip）的词典，例如英英词典或英译你母语的词典：它们会按下面的顺序显示在单词弹窗中释义的下方。你的单词和进度不受影响。",
+        "os-help": "观看页可以在 <a href=\"https://www.opensubtitles.com\" target=\"_blank\" rel=\"noopener\">OpenSubtitles.com</a> 上搜索英文字幕。这需要一个免费的 API 密钥：在那里注册账号，然后在个人资料里打开 <b>API consumers</b> 并创建一个。不登录每天约可下载 5 次；用你的账号可下载 20 次。密钥和登录信息只保存在这台电脑上（不保存密码）。",
+        "watch-en-hint": "<p>在下面加载视频，然后用<b>自己的字幕文件</b>加载它的英文字幕（.srt / .ass / .vtt）。免费英文字幕：<a href=\"https://www.opensubtitles.org\" target=\"_blank\" rel=\"noopener\">OpenSubtitles</a>、<a href=\"https://subdl.com\" target=\"_blank\" rel=\"noopener\">SubDL</a>。很多视频文件里已经有英文字幕；用 MKVToolNix 之类的工具可以把它们存成 .srt。</p> <p>想听美式口音，可以试试情景喜剧和剧集（<i>Friends</i>、<i>The Office</i>、<i>Modern Family</i>）、动画电影和 YouTube。</p>",
+        "course-howto": "<p>每一步都是应用 <code>course</code> 文件夹里的一个 Markdown 文件。编辑文件即可修改某一步，或复制 <code>course/_template.md</code> 来添加一步。重新加载本页后即可看到改动。</p> <p>每一步的 <code>goal:</code> 行（认识的词、语法级别、收集的词、读过的字数、漫画页数、小时数）会与你在应用里完成的内容核对。<code>course/README.md</code> 解释了所有选项。</p>",
+        "anki-hint": "需要打开 Anki 并安装 <a href=\"https://ankiweb.net/shared/info/2055492159\" target=\"_blank\" rel=\"noopener\">AnkiConnect</a> 插件（代码 <code>2055492159</code>）。",
+        "manga-hint": "漫画的文字是图片的一部分，所以需要 OCR 才能点击。打开页面并点<b>对这一卷做 OCR</b>：<a href=\"https://github.com/kha-white/mokuro\" target=\"_blank\" rel=\"noopener\">mokuro</a> 会在这台电脑上识别它们（需要先运行一次 <code>pip install mokuro</code>），文字会被保存，所以每卷只需要做一次。你也可以把自己做的 <code>.mokuro</code> 文件和页面一起打开。",
+        "grammar-howto": "<p>课程是应用 <code>grammar</code> 文件夹里的 Markdown 文件。要添加一课，复制 <code>grammar/_template.md</code>，重命名并编辑。重新加载本页即可看到改动，无需重启服务器。</p> <p>每个文件在开头设置标题、意思、级别和顺序。它的 <code>detect:</code> 行描述如何在字幕和文本中找到这个语法。<code>grammar/README.md</code> 解释了所有选项。</p>",
+        "listening-howto": "<p>练习是 Markdown 文件。把你自己的放进下面的文件夹（里面已经有说明 <code>README.md</code> 和可复制的 <code>_template.md</code>）。在桌面版中，<b>akko → 打开数据文件夹</b> 可以直接去那里。</p> <p>每个 <code>##</code> 标题开始一道题：<code>Q:</code> 是问题，<code>男:</code> 和 <code>女:</code> 是台词，<code>-</code> 是选项，正确的选项后面加 <code>*</code>。重新加载本页即可看到改动。</p> <p><b>真实录音</b>：把音频文件（.mp3、.m4a、.wav…）放在你的题组旁边，在题目里写 <code>audio: file.mp3</code>，或写 <code>audio: file.mp3 1:05-1:48</code> 只播放那一段。它会代替电脑语音播放。适合从 jlpt.jp 下载的 JLPT 官方样题，或朋友朗读原文的录音。它们都留在你的电脑上。</p>",
+        "review-howto": "你标为<b>学习中</b>的词（在任何词上按 <kbd>2</kbd>），每个都会在你快要忘记之前回来（间隔重复，FSRS）：先是今天到期的，然后每天最多 20 个新词。<kbd>M</kbd> 改变卡片的提问方式：<b>单词</b>、<b>填空</b>（在句子中隐藏该词）或<b>先听句子</b>（先听句子，再看词）。收集的词会显示它的句子，如果来自视频，还有场景和那句台词（<kbd>P</kbd> 再播放一次）。评估你记得多好：<b>重来</b>、<b>困难</b>、<b>良好</b>或<b>简单</b>（按键 <kbd>1</kbd>–<kbd>4</kbd>）。当一个词 3 周内都不会到期，或你按了<b>认识</b>（<kbd>K</kbd>），它就离开复习。",
+        "expressions-howto": "惯用语不只是字面意思：<b lang=\"ja\">首を長くする</b> 是「翘首以盼」，不是长脖子。akko 会给你观看和阅读时发现的惯用语加下划线，并把它们和你的单词分开保存。全都在这里：你遇到过的（附上你遇到它们的句子），以及词典里所有的惯用语、谚语、<b lang=\"ja\">四字熟語</b>和日常用语。",
+        "review-empty": "没有要复习的词。观看或阅读时用 <kbd>2</kbd> 键把词标为<b>学习中</b>（收集单词也会这样做）。",
+        "phone-hint": "第一次时，Windows 可能会询问 akko 能否使用网络：请在<b>专用网络</b>上允许。单词、进度、復習 和收集的词会与这台电脑上的 akko 双向共享，就像其他窗口一样。",
+        "companion-intro": "安装浏览器扩展 <b>akko companion</b>（Chrome 或 Edge）后，YouTube 视频、Netflix 节目以及其他带有你所学语言字幕的视频网站，都能用上 akko 的可点击字幕：词典、你的单词颜色，以及「+ 收集」到 Anki。观看时标记和收集的词会回到这里，时间也会计入今天和你的连续天数。",
+        "companion-step1": "在 Chrome 中打开 <b translate=\"no\">chrome://extensions</b>（Edge：<b translate=\"no\">edge://extensions</b>），并开启<b>开发者模式</b>。",
+        "companion-hint": "这个文件夹随 akko 一起提供（并随它更新：更新后，在 chrome://extensions 里点击扩展的重新加载箭头）。每个 <a href=\"https://github.com/JaoN64dev/Immersion-app-akko/releases/latest\" target=\"_blank\" rel=\"noopener\">发布版本</a>里也有 <b>akko-companion.zip</b>。",
+        "account-privacy": "<p><b>保存什么</b>：你的邮箱；你的密码的哈希值（绝不保存密码本身）；你的词表；你收集的词（单词、读音和意思、句子及其翻译、来源和时间）以及它们的录音（句子音频和一张图片）；你登录过的电脑名称，以及每台上次使用的时间。</p> <p><b>保存在哪里</b>：Cloudflare（数据库和文件存储），为 akko 运行。它只用于让你的电脑保持同步：没有广告，没有追踪，绝不出售或分享。</p> <p><b>属于你</b>：<i>下载我的数据</i>会给你全部内容；<i>删除账号</i>会删除全部内容，包括录音。没有账号时，什么都不会离开你的电脑。</p>",
+        "asr-intro": "为你已有的音频——播客、录音、一集节目——在这台电脑上生成字幕。akko 使用<b>你自己安装的 Whisper 类工具</b>（whisper.cpp 的 <code>whisper-cli</code>、OpenAI 的 <code>whisper</code> 或 <code>faster-whisper</code>），在你的 <code>PATH</code> 中找到它并运行：不附带模型，不上传任何东西，也不调用任何服务。読む → <b>从音频生成字幕</b> 会把结果变成可以阅读、收集和规划的文本。",
     },
 };

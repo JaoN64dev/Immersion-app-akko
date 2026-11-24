@@ -2,7 +2,7 @@
 // Italian text for the interface. Same format as scripts/lang/ja.js (see there and scripts/i18n.js):
 // left = the English exactly as on the page, right = the Italian.
 //
-// Whatever is not here stays English until someone adds it (npm run i18n-audit -- --lang it).
+// Complete. A new English string needs its entry here too (tests/i18n.test.mjs).
 
 export default {
     text: {

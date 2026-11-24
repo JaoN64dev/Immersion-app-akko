@@ -12,9 +12,11 @@ import ru from "../scripts/lang/ru.js";
 import zh from "../scripts/lang/zh.js";
 import ko from "../scripts/lang/ko.js";
 
-const COMPLETE = { ja, pt, es };
+// every table is complete now: a new string needs its entry in all nine, or these tests fail
+const COMPLETE = { ja, pt, es, de, fr, it, ru, zh, ko };
 // the ones that are growing: the chrome is translated, the long explanations are still English
-const GROWING = { de, fr, it, ru, zh, ko };
+// a new interface language can start here with the navigation, then move to COMPLETE
+const GROWING = {};
 
 const holes = (s) => (s.match(/\{\w+\}/g) || []).sort().join(" ");
 const links = (s) => (s.match(/href="[^"]*"/g) || []).join(" ");
@@ -60,7 +62,7 @@ for (const [name, table] of Object.entries(GROWING)) {
     });
 }
 
-for (const [name, table] of Object.entries({ pt, es })) {
+for (const [name, table] of Object.entries({ pt, es, de, fr, it, ru, zh, ko })) {
     test(`${name}: the same entries as ja`, () => {
         const missing = Object.keys(ja.text).filter((k) => !(k in table.text));
         const extra = Object.keys(table.text).filter((k) => !(k in ja.text));

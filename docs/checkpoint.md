@@ -36,7 +36,15 @@ Written at the end of a long session, to pick up cold tomorrow with the fewest s
 
 ## Tomorrow, in this order
 
-### 1. Keep filling the six new tables (highest value per hour)
+### 1. ~~Keep filling the six new tables~~ — done
+
+All nine tables are complete (every text string and every `data-i18n` block): de, fr, it, ru, zh and ko
+joined ja/pt/es as COMPLETE in `tests/i18n.test.mjs`, so a new English string now needs its entry in
+all nine or the tests fail. What `npm run i18n-audit` still lists is the same for every language: the
+marquee, and the pieces of `data-i18n` blocks (translated as whole blocks, counted piece by piece).
+The Russian table keeps akko's first-person lines free of gendered verb forms.
+
+### 1b. (was) Keep filling the six new tables
 
 Start with the page you actually open: `settings.html`.
 
