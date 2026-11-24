@@ -25,6 +25,7 @@ export const SOURCES = {
     furigana: "word[reading] (furigana)",
     meaning: "meaning",
     frequency: "frequency rank (JPDB, lower = more common)",
+    freqSort: "frequency rank, the number alone (for sorting: Lapis FreqSort)",
     pitch: "pitch accent (drawn)",
     pitchNotes: "pitch accent pattern (text)",
     sentence: "sentence",
@@ -40,6 +41,9 @@ export const SOURCES = {
 // first match wins; covers Basic, Lapis, Kaishi, JP Mining Note, Animecards…
 const GUESSES = [
     [/^is[A-Z]|^is /, ""],                                   // Lapis card-type flags
+    [/freq.*sort|sort.*freq/i, "freqSort"],                   // Lapis FreqSort: a number to sort by
+    [/freq/i, "frequency"],
+    [/^(url|link|source.?url|page.?url)$/i, "url"],
     [/sentence.?(eng|translation|meaning)/i, "translation"],
     [/sentence.?furigana/i, ""],
     [/(word|expression|vocab|term|reading).?audio/i, "wordAudio"],
@@ -56,7 +60,7 @@ const GUESSES = [
     [/source|notes|misc/i, "source"],
 ];
 // sources added after people had already set up their fields
-const LATER_SOURCES = ["wordAudio", "pitch", "pitchNotes", "translation"];
+const LATER_SOURCES = ["wordAudio", "pitch", "pitchNotes", "translation", "frequency", "freqSort", "url"];
 const guess = (field) => (GUESSES.find(([re]) => re.test(field)) || [null, ""])[1];
 
 // always read fresh: another page may have changed it
@@ -252,6 +256,12 @@ async function spokenSentence(text) {
 
 // ---------- building the note ----------
 
+// The most common rank among the word's frequency lists, as a bare number (empty when it has none)
+export function freqRank(item) {
+    const ranks = (item.freq || []).map((f) => parseInt(String(f.value).replace(/[^d]/g, ""), 10)).filter((n) => n > 0);
+    return ranks.length ? String(Math.min(...ranks)) : "";
+}
+
 function fieldValue(source, item) {
     const bold = item.surface && item.sentence.includes(item.surface)
         ? escapeHtml(item.sentence).replace(escapeHtml(item.surface), `<b>${escapeHtml(item.surface)}</b>`)
@@ -265,6 +275,7 @@ function fieldValue(source, item) {
         case "pitch": return (item.pitch || []).map((n) => pitchCardHtml(item.reading || item.word, n)).join("・");
         case "pitchNotes": return (item.pitch || []).map((n) => escapeHtml(pitchNotes(item.reading || item.word, n))).join("<br>");
         case "frequency": return (item.freq || []).map((f) => `${escapeHtml(f.title)} ${escapeHtml(f.value)}`).join(" · ");
+        case "freqSort": return freqRank(item);
         case "url": return escapeHtml(item.url || "");
         case "sentence": return escapeHtml(item.sentence);
         case "translation": return escapeHtml(item.translation || "");

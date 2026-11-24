@@ -115,17 +115,15 @@
                 </section>
 
                 <section id="reader-section" hidden>
-                <div class="bubble reader-bar">
-                    <button id="reader-back" title="back to the library">← library</button>
-                    <b id="reader-title" class="reader-title" lang="ja"></b>
-                    <span id="reader-stats" class="word-stats"></span>
-                    <span id="reader-badge" class="comp-badge inline" hidden></span>
-                    <button id="reader-read-aloud" title="read this text aloud" hidden>🔊 read aloud</button>
-                </div>
-                <div id="reader-read-aloud-controls" class="reader-read-aloud-controls" hidden>
-                    <button id="reader-read-aloud-stop" title="stop reading aloud">⏹ stop</button>
-                    <span id="reader-read-aloud-status" class="status"></span>
-                </div>
+                    <div class="bubble reader-bar">
+                        <button id="reader-back" title="back to the library">← library</button>
+                        <b id="reader-title" class="reader-title" lang="ja"></b>
+                        <span id="reader-stats" class="word-stats"></span>
+                        <span id="reader-badge" class="comp-badge inline" hidden></span>
+                        <button id="reader-read-aloud" title="read this text aloud, from where you are" hidden>🔊 read aloud</button>
+                        <span id="reader-read-aloud-controls" hidden><button id="reader-read-aloud-stop" title="stop reading aloud">⏹ stop</button></span>
+                        <span id="reader-read-aloud-status" class="status"></span>
+                    </div>
                     <!-- the words worth learning before this text (scripts/core/coverage.js) -->
                     <p id="reader-prime" class="reader-prime" hidden></p>
                     <div class="toolbar reader-tools">
@@ -144,6 +142,12 @@
                         <label title="underline grammar from the lessons (purple dots)"><input id="grammar-marks" type="checkbox" checked> underline grammar</label>
                     </div>
                     <article id="reader-text" class="reader-text" lang="ja"></article>
+                    <!-- this text's words: the unknown ones by how often they come up (scripts/reader/text.js) -->
+                    <details id="reader-words" class="note reader-words" hidden>
+                        <summary id="reader-words-summary"></summary>
+                        <button id="reader-words-download" type="button">download as .tsv</button>
+                        <ul id="reader-words-list" class="reader-words-list" lang="ja"></ul>
+                    </details>
                 </section>
             </div>
 

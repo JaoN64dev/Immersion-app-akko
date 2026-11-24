@@ -6,9 +6,9 @@ import { initKeys } from "../keys.js";
 import { remindBackup } from "../core/reminder.js";
 import { t } from "../i18n.js";
 import { learningEnglish, ofTarget, keyFor, target } from "../core/target.js";
-import { store, escapeHtml } from "../core/utils.js";
+import { store, escapeHtml, postJson } from "../core/utils.js";
 import { idbAll } from "../core/idb.js";
-import { readTextFile, splitParagraphs } from "../reader/import.js";
+import { readTextFile, splitParagraphs, htmlParagraphs, htmlTitle } from "../reader/import.js";
 import { parseSubtitle } from "../subtitles/parse.js";
 import { addText, getText, removeText, renderLibrary, readingOf, saveReading } from "../reader/library.js";
 import { tokenize } from "../words/render.js";
@@ -210,36 +210,17 @@ ui.urlOpen.addEventListener("click", () => {
 });
 ui.urlCancel.addEventListener("click", () => { ui.urlForm.hidden = true; });
 
-// Noise to strip from a page before taking its text
-const REMOVE = "script, style, nav, header, footer, aside, [role=banner], [role=complementary], [role=navigation], .ad, .advertisement, .ads, .cookie, .modal, .popup, .sidebar, .menu, .share, .social, .comment, .comments";
-const MAIN = "article, main, [role=main]";
-
 // Fetch a URL and pull its readable text out of the HTML. The browser would hit CORS fetching an
-// arbitrary site from localhost, so akko's server fetches the page here on this machine and returns
-// the HTML; the text extraction happens client-side. Nothing is stored remotely: the page goes into
-// the local library like anything else.
+// arbitrary site from localhost, so akko's server fetches the page here on this machine (decoding
+// Shift_JIS/EUC-JP pages properly) and returns the HTML; the text is taken out here with the same
+// extractor as an opened .html file (furigana dropped, nested blocks once). Nothing is stored
+// remotely: the page goes into the local library like anything else.
 async function textFromURL(url) {
-    const res = await fetch(`/api/reader/from-url`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
-    });
-    const body = await res.json().catch(() => ({ error: "the server didn't answer" }));
-    if (!res.ok) throw new Error(body.error || res.statusText);
-    const html = body.html;
-    const title = body.title || new URL(url).hostname;
-    const doc = new DOMParser().parseFromString(html, "text/html");
-    doc.querySelectorAll(REMOVE).forEach((n) => n.remove());
-    const main = doc.querySelector(MAIN);
-    const root = main || doc.body || doc.documentElement;
-    root.querySelectorAll("br").forEach((br) => br.replaceWith("\n"));
-    const blocks = [...root.querySelectorAll("p, h1, h2, h3, h4, h5, h6, li, blockquote, pre, td")];
-    const texts = blocks.length
-        ? blocks.map((b) => b.textContent)
-        : [root.textContent];
-    const paragraphs = texts.flatMap(splitParagraphs);
+    const body = await postJson("/api/reader/from-url", { url });
+    const title = htmlTitle(body.html) || body.title || new URL(url).hostname;
+    const paragraphs = htmlParagraphs(body.html, false, { webPage: true });
     if (!paragraphs.length) throw new Error("couldn't find any text on that page");
-    return { title, paragraphs };
+    return { title, paragraphs, url: body.url || url };
 }
 
 ui.urlForm.addEventListener("submit", async (e) => {
@@ -249,8 +230,8 @@ ui.urlForm.addEventListener("submit", async (e) => {
     ui.urlForm.hidden = true;
     ui.status.textContent = `fetching ${url}… this runs on this computer, nothing is uploaded`;
     try {
-        const { title, paragraphs } = await textFromURL(url);
-        const text = await addText(title, paragraphs, { url });
+        const { title, paragraphs, url: finalUrl } = await textFromURL(url);
+        const text = await addText(title, paragraphs, { url: finalUrl });
         ui.status.textContent = "";
         open(text);
     } catch (err) {

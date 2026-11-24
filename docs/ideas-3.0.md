@@ -13,8 +13,8 @@ paid tier, no per-user cost — and no Apple Developer account, so macOS keeps o
 
 - **Phase 1, 2 and 3 are done** (see the checklists below): any language in the table works through
   its own dictionary, the app plans your week from what you have, and the numbers come from one place.
-- **Phase 4 is under way**: speech recognition is in (a Whisper-class tool on your own machine, and
-  読む → subtitles from audio); mining from anything, Reader 2.0 and card templates are next.
+- **Phase 4 is done** except a PDF page as a source (needs pdf.js): speech recognition on the reader
+  and the watch page, a webpage into the reader, read-aloud with a per-book word list, card templates v2.
 - Phase 5 (`.apkg`, shadowing, handwriting, PWA, cloud v2, the local assistant) is untouched.
 
 ## The headline: any language
@@ -65,15 +65,15 @@ verifiable free pack yet, so they work through *Settings → Dictionaries → ad
 | 6 | Capability-based UI (no broken pages, no dead buttons) | S | done |
 | 7 | **Coverage meter**: "% you know" before an episode or chapter | M | done |
 | 8 | Priming sessions made from what's next | M | done (reader + plan) |
-| 9 | Local speech recognition (Whisper-class, in the app) | L | partly: tool, SRT, reader button |
+| 9 | Local speech recognition (Whisper-class, in the app) | L | done: tool, model download, reader + watch page |
 | 10 | Shadowing: record over the line, compare | L | not started |
 | 11 | Handwriting and stroke order (KanjiVG), ja and zh | M | not started |
 | 12 | Anki two-way: `.apkg` with media and existing SRS | M | not started |
-| 13 | Card templates v2: trimmed audio, screenshot, pitch, frequency | M | not started |
+| 13 | Card templates v2: trimmed audio, screenshot, pitch, frequency | M | done (frequency, FreqSort, URL) |
 | 14 | Study planner: "what now?", a time budget | M | done (planner); heatmap left |
 | 15 | Stats 2.0: coverage growth, i+1 lines, retention by source | M | partly: bands, average, i+1 lines |
-| 16 | Reader 2.0: EPUB/text/manga, read-aloud, per-book words | L | partly: EPUB import and the reader exist from 2.0 |
-| 17 | Mine from anything: a URL, text or PDF page | M | partly: pasted text only |
+| 16 | Reader 2.0: EPUB/text/manga, read-aloud, per-book words | L | done |
+| 17 | Mine from anything: a URL, text or PDF page | M | URL + text done; PDF needs pdf.js |
 | 18 | Mobile parity as a PWA | L | not started (the LAN page exists) |
 | 19 | Cloud v2 + self-host: reviews, positions, shared decks | L | not started (2.0 sync exists) |
 | 20 | Opt-in local assistant: a grammar breakdown of the line | L | not started |
@@ -151,6 +151,26 @@ verifiable free pack yet, so they work through *Settings → Dictionaries → ad
      for web mining); Anki card templates can map fields to `frequency`, `url` alongside the existing
      `trimmed audio` (recordClip from cueStart→cueEnd), `screenshot` (grabFrame), `pitch` (pitchCardHtml),
      `pitchNotes`, `wordAudio` (JapanesePod101/Lingua Libre), and `spokenSentence` (VOICEVOX/TTS).
+   - [x] **phase 4 fixes, after reading it all back**:
+     - 読む → from a URL decodes the page in its own charset (Shift_JIS / EUC-JP: Aozora Bunko and
+       older sites were mojibake), times out after 30 s, and stops downloading past 5 MB instead of
+       after. The text comes out through the same extractor as an opened .html file, which drops
+       furigana (`<rt>`) and counts a `<blockquote><p>` once; a page written as one `<div>` with
+       `<br>`s (Aozora) is read whole instead of keeping only its title. `tests/reader-url.test.js`.
+     - read aloud: Stop no longer leaves the run hanging (and the words met are saved when you stop);
+       paragraphs not analysed yet are read instead of skipped; one utterance per sentence, since
+       Chrome cuts long ones off; a voice is picked for the text's language (zh-CN for cmn, zh-HK for
+       yue…) and a missing one is said instead of read in English; the page itself no longer scrolls
+       with every word.
+     - per-book words: under the text, the words of it you don't know yet by how often they come up,
+       plus how many were met reading aloud, downloadable as a .tsv.
+     - watch page → subtitles from audio is a real `<button>` (a `<label>` can't be disabled, so a
+       double click ran two transcriptions), shows extraction %, uploads the WAV as `.wav`, and drops
+       a result whose video was closed meanwhile.
+     - whisper.cpp is only offered ggml `.bin` models: OpenAI whisper's `.pt` files share
+       `~/.cache/whisper` and whisper-cli can't read them. `tests/asr-models.test.js`.
+     - Anki: fields named Frequency / FreqSort / URL map themselves; `freqSort` gives the bare rank.
+
 5. **Everything else** — 12, 10, 11, 18, 19, 20 (biggest, most opinionated, last).
 
 ## Fixes after the first local test (3.0.1)

@@ -88,14 +88,17 @@ function status() {
     }
     const model = process.env.AKKO_WHISPER_MODEL && fs.existsSync(process.env.AKKO_WHISPER_MODEL) ? process.env.AKKO_WHISPER_MODEL : null;
     const all = models();
+    // whisper.cpp reads only ggml .bin models: OpenAI whisper keeps its .pt files in ~/.cache/whisper
+    // too, and handing one of those to whisper-cli fails
+    const usable = found.length && found[0].family === 'cpp' ? all.filter((m) => /.bin$/i.test(m.file)) : all;
     return {
         tools: found,
-        model: model || (all[0] && all[0].file) || null,
+        model: model || (usable[0] && usable[0].file) || null,
         models: all,
-        ready: !!(found.length && (found[0].family !== 'cpp' || model || all.length)),
+        ready: !!(found.length && (found[0].family !== 'cpp' || model || usable.length)),
         // said in the app when there is nothing: what to install, and that nothing is sent anywhere
         help: found.length
-            ? (found[0].family === 'cpp' && !model && !all.length
+            ? (found[0].family === 'cpp' && !model && !usable.length
                 ? 'whisper.cpp needs a model: download one (e.g. ggml-base.bin) into ~/.cache/akko/whisper, or set AKKO_WHISPER_MODEL.'
                 : '')
             : 'no speech recognition found. Install whisper.cpp (whisper-cli), OpenAI whisper, or faster-whisper, and akko will use it on this machine — nothing is uploaded.',
