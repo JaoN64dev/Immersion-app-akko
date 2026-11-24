@@ -23,21 +23,21 @@ Everything a version needs, from the code to the release. How akko works inside 
    line), the phone (`akko.html` on the home network), and the extension on YouTube / Netflix.
 3. **Versions**: `package.json` → `version`, `extension/manifest.json` → its own version (the
    extension's zip is named from it, `tools/pack-extension.js`). They move separately: the app is
-   2.0.0, the first published extension is 1.0.0.
+   3.0.0, the first published extension is 1.0.0.
 4. **The docs of a feature**: `README.md`, the in-app About page (`about.html`), `how-it-works.md`
    for whoever changes the code, and the website (`website/`, see below).
 
 ## The release
 
 ```
-git tag 2.0.0
-git push origin 2.0.0
+git tag 3.0.0
+git push origin 3.0.0
 ```
 
 That starts the **build** workflow: the tests on the three systems, then `npm run dist` on each
 (Windows `nsis` + `portable`, macOS `.dmg` and `.zip`, Linux `.AppImage`, plus the extension's
 `.zip`), and everything lands in a **draft release**. Paste the notes (they're in `docs/` for the
-big ones, e.g. `release-2.0.md`), check the files, publish.
+big ones, e.g. `release-3.0.md`), check the files, publish.
 
 What an update needs in the release, besides the installers: `latest.yml` (Windows) and its
 `.blockmap`, `latest-linux.yml` (AppImage). Without them the app's update check only opens the

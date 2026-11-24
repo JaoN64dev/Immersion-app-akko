@@ -227,7 +227,7 @@ listening/       the 聴解 listening exercises (Markdown)
 samples/         the sample video, its subtitles and the sample novel
 tools/           npm run check-lessons, npm run pack-extension
 tests/           npm test
-docs/            how the code works, how to cut a release (maintaining.md), the 2.0 notes
+docs/            how the code works, how to cut a release (maintaining.md), the 3.0 release notes
 ```
 
 How everything fits together, step by step, is in [docs/how-it-works.md](docs/how-it-works.md); building a release, in [docs/maintaining.md](docs/maintaining.md).
