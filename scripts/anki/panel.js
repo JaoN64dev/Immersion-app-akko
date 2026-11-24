@@ -74,6 +74,14 @@ export function init() {
             ...(ui.spoken ? { spokenSentence: ui.spoken.checked } : {}), ...(ui.keep ? { keep: ui.keep.checked } : {}) });
         if (ui.auto.checked && !client.isConnected()) connect();
     }));
+    const importFile = document.getElementById("anki-import-file");
+    if (importFile) importFile.addEventListener("change", async () => {
+        const file = importFile.files[0];
+        importFile.value = "";
+        if (!file) return;
+        const { importKnownFromFile } = await import("./import-apkg.js");
+        await importKnownFromFile(file, say);
+    });
     ui.importBtn.addEventListener("click", async () => {
         ui.importBtn.disabled = true;
         await client.importKnown();

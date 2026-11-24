@@ -33,3 +33,31 @@ test('FreqSort is the most common rank as a bare number', () => {
     assert.equal(freqRank({ freq: [] }), '');
     assert.equal(freqRank({}), '');
 });
+
+// ---------- importing an Anki file (scripts/anki/import-apkg.js) ----------
+// The whole import was checked in a browser against files made by Anki's own exporter, in both
+// layouts (collection.anki21 and the zstd collection.anki21b).
+const { wordFieldIndex, statusOf, cleanWord } = await import('../scripts/anki/schedule.js');
+
+test('the word field: named like one, else the first; never the sentence or the reading', () => {
+    assert.equal(wordFieldIndex(['Sentence', 'Word', 'Reading', 'Meaning']), 1);
+    assert.equal(wordFieldIndex(['Expression', 'Reading', 'Meaning']), 0);
+    assert.equal(wordFieldIndex(['SentenceWord', 'Vocab', 'VocabAudio']), 1, 'not a sentence field that says word, not the audio');
+    assert.equal(wordFieldIndex(['Front', 'Back']), 0);
+    assert.equal(wordFieldIndex(['Text', 'Extra']), 0, 'nothing says word: the first field');
+});
+
+test('a mature card (21 days or more) makes the word known; anything else learning', () => {
+    assert.equal(statusOf([40]), 'known');
+    assert.equal(statusOf([21]), 'known');
+    assert.equal(statusOf([5, 0]), 'learning');
+    assert.equal(statusOf([5, 30]), 'known', 'one mature card is enough');
+    assert.equal(statusOf([]), 'learning');
+});
+
+test('a field becomes the word: markup, furigana and alternatives dropped', () => {
+    assert.equal(cleanWord('<b>犬</b>[いぬ]'), '犬');
+    assert.equal(cleanWord('食べる, 喰べる'), '食べる');
+    assert.equal(cleanWord('&nbsp;猫&nbsp;'), '猫');
+    assert.equal(cleanWord(''), '');
+});

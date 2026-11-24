@@ -11,7 +11,7 @@ import { toast } from "../core/toast.js";
 import { setWordStatus, saveWords } from "../words/status.js";
 import { saveItem } from "../mining.js";
 import { pitchCardHtml, pitchNotes } from "../words/pitch.js";
-import { freqRank } from "./schedule.js";
+import { freqRank, cleanWord } from "./schedule.js";
 import { keepMedia } from "../core/media.js";
 
 const KEY = "akko-anki";
@@ -339,10 +339,6 @@ export async function keepOnly(item, media) {
 
 // ---------- importing known words ----------
 
-// "<b>食べる</b>[たべる]" / "食べる, 喰べる" -> "食べる"
-const cleanWord = (html) => String(html || "")
-    .replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/\[[^\]]*\]/g, "")
-    .trim().split(/[\s,、・;/]+/)[0];
 
 // Mature cards (interval ≥ 21 days) -> known, the rest -> learning
 export async function importKnown() {

@@ -301,6 +301,7 @@ export default {
         "title": "título",
         "untitled": "sin título",
         "read it": "leer",
+        "or from an Anki file (.apkg)": "o desde un archivo de Anki (.apkg)",
         "stroke order": "orden de los trazos",
         "stroke order needs the internet the first time": "el orden de los trazos necesita internet la primera vez",
         "Anki deck (.apkg)": "mazo de Anki (.apkg)",

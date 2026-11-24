@@ -52,7 +52,7 @@ const BACK = `{{FrontSide}}
 
 const EXT = { "audio/webm": "webm", "audio/ogg": "ogg", "audio/mpeg": "mp3", "audio/wav": "wav", "audio/mp4": "m4a", "image/jpeg": "jpg", "image/png": "png" };
 
-async function getSql() {
+export async function getSql() {
     await loadScript(`${SQLJS}sql-wasm.js`);
     return window.initSqlJs({ locateFile: (f) => SQLJS + f });
 }

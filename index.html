@@ -304,6 +304,11 @@
                             <button id="anki-import">import known words from this deck</button>
                             <span class="hint">mature cards (interval ≥ 21 days) → known, the rest → learning</span>
                         </div>
+                        <div class="row import-row">
+                            <label class="btn" title="an .apkg or .colpkg exported from Anki: no AnkiConnect, Anki doesn't even need to be open">or from an Anki file (.apkg)
+                                <input id="anki-import-file" type="file" accept=".apkg,.colpkg" hidden>
+                            </label>
+                        </div>
                         <p id="anki-msg" class="status dark"></p>
                     </div>
                 </details>
