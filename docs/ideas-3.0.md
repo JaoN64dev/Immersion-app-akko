@@ -67,7 +67,7 @@ verifiable free pack yet, so they work through *Settings → Dictionaries → ad
 | 8 | Priming sessions made from what's next | M | done (reader + plan) |
 | 9 | Local speech recognition (Whisper-class, in the app) | L | done: tool, model download, reader + watch page |
 | 10 | Shadowing: record over the line, compare | L | done (Watch page) |
-| 11 | Handwriting and stroke order (KanjiVG), ja and zh | M | stroke order done (ja); handwriting not started |
+| 11 | Handwriting and stroke order (KanjiVG), ja and zh | M | done: stroke order (ja), handwriting lookup |
 | 12 | Anki two-way: `.apkg` with media and existing SRS | M | done: deck export, known words from an .apkg |
 | 13 | Card templates v2: trimmed audio, screenshot, pitch, frequency | M | done (frequency, FreqSort, URL) |
 | 14 | Study planner: "what now?", a time budget | M | done (planner + year heatmap) |
@@ -194,6 +194,11 @@ verifiable free pack yet, so they work through *Settings → Dictionaries → ad
      finds each note type's word field by name, and applies the AnkiConnect import's rule (a mature
      card → known, else learning; known/ignored words never go down). Checked with files from Anki's
      own exporter in both layouts.
+   - [x] **handwriting** (feature 11, second half): 🔍 *look up a word* in the menu of every page with a
+     popup (and the / key) opens a box to type, paste or ✍ draw a word; the result opens in the usual
+     popup. The drawing is recognised in the browser by KanjiCanvas (MIT, pinned commit, loaded on first
+     use, ~2,200 kanji, any stroke order): drawing 十 gives 十 first. Chinese stroke order still waits
+     for a dataset whose licence is decided.
    - [x] **the local assistant** (feature 20): 🧠 explain in the word popup, on every page. First akko's
      own breakdown — each word with its dictionary form, reading and first meaning, and the grammar
      lessons in the sentence — then, when **Ollama** runs on this computer, a written explanation by a

@@ -941,6 +941,13 @@ export default {
         "the sentence, explained": "句子讲解",
         "🧠 explain": "🧠 讲解",
         "the whole sentence, word by word, with its grammar (and a local model's explanation, when one is installed)": "整句逐词讲解，附语法（若安装了本地模型，还有它的说明）",
+        "🔍 look up a word": "🔍 查词",
+        "type, paste or draw a word (/)": "输入、粘贴或手写一个词 (/)",
+        "type, paste or ✍ draw a word…": "输入、粘贴或 ✍ 手写一个词…",
+        "draw a kanji you can't type": "手写一个打不出来的汉字",
+        "loading the handwriting recognition… (the first time only)": "正在加载手写识别…（仅第一次）",
+        "draw one kanji: any stroke order is fine. Tap a guess to add it to the word.": "写一个汉字，笔顺不限。点一个候选字即可加入词中。",
+        "the handwriting recognition needs the internet the first time": "手写识别第一次需要联网",
     },
 
     // data-i18n blocks (whole paragraphs with links). Empty until those paragraphs are keyed: a missing

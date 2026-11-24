@@ -942,6 +942,13 @@ export default {
         "the sentence, explained": "разбор предложения",
         "🧠 explain": "🧠 объяснить",
         "the whole sentence, word by word, with its grammar (and a local model's explanation, when one is installed)": "всё предложение по словам, с грамматикой (и объяснение локальной модели, если она установлена)",
+        "🔍 look up a word": "🔍 найти слово",
+        "type, paste or draw a word (/)": "введите, вставьте или нарисуйте слово (/)",
+        "type, paste or ✍ draw a word…": "введите, вставьте или ✍ нарисуйте слово…",
+        "draw a kanji you can't type": "нарисуйте кандзи, который не можете ввести",
+        "loading the handwriting recognition… (the first time only)": "загружаю распознавание рукописного ввода… (только в первый раз)",
+        "draw one kanji: any stroke order is fine. Tap a guess to add it to the word.": "нарисуйте один кандзи: порядок черт любой. Нажмите на вариант, чтобы добавить его к слову.",
+        "the handwriting recognition needs the internet the first time": "для распознавания рукописного ввода в первый раз нужен интернет",
     },
 
     // data-i18n blocks (whole paragraphs with links). Empty until those paragraphs are keyed: a missing

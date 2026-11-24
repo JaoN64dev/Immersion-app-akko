@@ -990,6 +990,13 @@ export default {
         "the sentence, explained": "la frase, explicada",
         "🧠 explain": "🧠 explicar",
         "the whole sentence, word by word, with its grammar (and a local model's explanation, when one is installed)": "la frase entera, palabra por palabra, con su gramática (y la explicación de un modelo local, si hay uno)",
+        "🔍 look up a word": "🔍 buscar una palabra",
+        "type, paste or draw a word (/)": "escribe, pega o dibuja una palabra (/)",
+        "type, paste or ✍ draw a word…": "escribe, pega o ✍ dibuja una palabra…",
+        "draw a kanji you can't type": "dibuja un kanji que no sabes escribir",
+        "loading the handwriting recognition… (the first time only)": "cargando el reconocimiento de escritura… (solo la primera vez)",
+        "draw one kanji: any stroke order is fine. Tap a guess to add it to the word.": "dibuja un kanji: cualquier orden de trazos vale. Toca una sugerencia para añadirla a la palabra.",
+        "the handwriting recognition needs the internet the first time": "el reconocimiento de escritura necesita internet la primera vez",
     },
 
 

@@ -351,6 +351,15 @@ function place(anchor) {
     popup.classList.toggle("above", above);
 }
 
+// A word typed, pasted or drawn in 🔍 look up (scripts/words/lookup.js): the popup near the top of the
+// screen, with no sentence around it
+export function lookupWord(word) {
+    const x = window.innerWidth / 2;
+    lookup(word, { anchor: { getBoundingClientRect: () => ({ left: x, width: 0, top: 96, bottom: 96 }) } });
+}
+
+const openLookupDialog = async () => (await import("./words/lookup.js")).openLookup(lookupWord);
+
 export function closePopup() {
     if (popup.hidden) return;
     popup.hidden = true;
@@ -392,6 +401,20 @@ export function enableWordClicks(container, lineSelector, contextFor = () => ({}
 }
 
 export function init() {
+    // 🔍 look up a word: in the page's menu, and the / key (when not typing somewhere)
+    const menu = document.querySelector("#navi ul");
+    if (menu && !menu.querySelector(".lookup-link")) {
+        const li = document.createElement("li");
+        li.innerHTML = `<a href="#" class="lookup-link" title="type, paste or draw a word (/)">🔍 look up a word</a>`;
+        li.firstChild.addEventListener("click", (e) => { e.preventDefault(); openLookupDialog(); });
+        menu.prepend(li);
+    }
+    document.addEventListener("keydown", (e) => {
+        if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey) return;
+        if (e.target.closest && e.target.closest("input, textarea, select, [contenteditable=true], dialog")) return;
+        e.preventDefault();
+        openLookupDialog();
+    });
     popup.addEventListener("click", (e) => {
         const btn = e.target.closest(".st");
         const key = btn && btn.closest("[data-key]")?.dataset.key;

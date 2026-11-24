@@ -996,6 +996,13 @@ export default {
         "the sentence, explained": "文の解説",
         "🧠 explain": "🧠 解説",
         "the whole sentence, word by word, with its grammar (and a local model's explanation, when one is installed)": "文全体を単語ごとに、文法つきで（ローカルモデルがあればその説明も）",
+        "🔍 look up a word": "🔍 単語を調べる",
+        "type, paste or draw a word (/)": "単語を入力・貼り付け・手書き (/)",
+        "type, paste or ✍ draw a word…": "入力・貼り付け、または ✍ 手書き…",
+        "draw a kanji you can't type": "入力できない漢字を手書きする",
+        "loading the handwriting recognition… (the first time only)": "手書き認識を読み込み中…（初回のみ）",
+        "draw one kanji: any stroke order is fine. Tap a guess to add it to the word.": "漢字を 1 字書いてください。書き順は自由です。候補をタップすると単語に追加されます。",
+        "the handwriting recognition needs the internet the first time": "手書き認識は初回だけインターネットが必要です",
     },
 
 

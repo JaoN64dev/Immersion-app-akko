@@ -941,6 +941,13 @@ export default {
         "the sentence, explained": "der Satz, erklärt",
         "🧠 explain": "🧠 erklären",
         "the whole sentence, word by word, with its grammar (and a local model's explanation, when one is installed)": "der ganze Satz, Wort für Wort, mit Grammatik (und der Erklärung eines lokalen Modells, wenn eins installiert ist)",
+        "🔍 look up a word": "🔍 ein Wort nachschlagen",
+        "type, paste or draw a word (/)": "ein Wort tippen, einfügen oder zeichnen (/)",
+        "type, paste or ✍ draw a word…": "tippen, einfügen oder ✍ zeichnen…",
+        "draw a kanji you can't type": "ein Kanji zeichnen, das du nicht tippen kannst",
+        "loading the handwriting recognition… (the first time only)": "lade die Handschrifterkennung… (nur beim ersten Mal)",
+        "draw one kanji: any stroke order is fine. Tap a guess to add it to the word.": "zeichne ein Kanji: jede Strichfolge geht. Tipp auf einen Vorschlag, um ihn ans Wort anzuhängen.",
+        "the handwriting recognition needs the internet the first time": "die Handschrifterkennung braucht beim ersten Mal Internet",
     },
 
     // data-i18n blocks (whole paragraphs with links). Empty until those paragraphs are keyed: a missing

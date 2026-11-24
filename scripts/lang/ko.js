@@ -941,6 +941,13 @@ export default {
         "the sentence, explained": "문장 설명",
         "🧠 explain": "🧠 설명",
         "the whole sentence, word by word, with its grammar (and a local model's explanation, when one is installed)": "문장 전체를 단어별로, 문법과 함께 (로컬 모델이 있으면 그 해설도)",
+        "🔍 look up a word": "🔍 단어 찾기",
+        "type, paste or draw a word (/)": "단어를 입력, 붙여넣기 또는 손글씨로 (/)",
+        "type, paste or ✍ draw a word…": "입력, 붙여넣기 또는 ✍ 손글씨…",
+        "draw a kanji you can't type": "입력할 수 없는 한자를 손으로 쓰기",
+        "loading the handwriting recognition… (the first time only)": "손글씨 인식을 불러오는 중… (처음 한 번만)",
+        "draw one kanji: any stroke order is fine. Tap a guess to add it to the word.": "한자 한 글자를 쓰세요: 획순은 상관없습니다. 후보를 누르면 단어에 추가됩니다.",
+        "the handwriting recognition needs the internet the first time": "손글씨 인식은 처음 한 번 인터넷이 필요합니다",
     },
 
     // data-i18n blocks (whole paragraphs with links). Empty until those paragraphs are keyed: a missing

@@ -1008,6 +1008,13 @@ export default {
         "the sentence, explained": "la frase, spiegata",
         "🧠 explain": "🧠 spiega",
         "the whole sentence, word by word, with its grammar (and a local model's explanation, when one is installed)": "la frase intera, parola per parola, con la grammatica (e la spiegazione di un modello locale, se installato)",
+        "🔍 look up a word": "🔍 cerca una parola",
+        "type, paste or draw a word (/)": "scrivi, incolla o disegna una parola (/)",
+        "type, paste or ✍ draw a word…": "scrivi, incolla o ✍ disegna una parola…",
+        "draw a kanji you can't type": "disegna un kanji che non sai scrivere",
+        "loading the handwriting recognition… (the first time only)": "caricamento del riconoscimento della scrittura… (solo la prima volta)",
+        "draw one kanji: any stroke order is fine. Tap a guess to add it to the word.": "disegna un kanji: va bene qualsiasi ordine dei tratti. Tocca un suggerimento per aggiungerlo alla parola.",
+        "the handwriting recognition needs the internet the first time": "il riconoscimento della scrittura richiede internet la prima volta",
     },
 
     // data-i18n blocks (whole paragraphs with links).

@@ -1871,3 +1871,16 @@ main .review-modes button[aria-selected="true"] {background: var(--post-bg); col
 .explain-grammar {margin: .6em 0 0;}
 .explain-ai {margin-top: .8em; border-top: 2px dashed var(--border-color); padding-top: .4em;}
 .explain-text h1, .explain-text h2, .explain-text h3 {font-size: 1em; margin: .7em 0 .2em;}
+
+/* ---- 🔍 look up a word, ✍ drawn (scripts/words/lookup.js) ---- */
+.lookup-dialog {width: min(34em, calc(100vw - 32px)); border: 2px solid var(--border-color); border-radius: 10px; background: var(--post-bg); color: var(--ink); padding: .9em 1em;}
+.lookup-dialog::backdrop {background: #0007;}
+.lookup-form {display: flex; gap: .4em;}
+.lookup-input {flex: 1; font-size: 1.3em; min-width: 0;}
+.lookup-pad {display: flex; gap: .8em; margin-top: .8em; flex-wrap: wrap;}
+.lookup-canvas {width: 256px; height: 256px; max-width: 100%; border: 2px dashed var(--border-color); border-radius: 8px; background: var(--post-bg); touch-action: none; cursor: crosshair;}
+.lookup-side {flex: 1; min-width: 10em;}
+.lookup-candidates {display: flex; flex-wrap: wrap; gap: .3em; min-height: 2.6em;}
+.lookup-candidate {font-size: 1.6em; line-height: 1.2; padding: .05em .3em;}
+.lookup-pad-buttons {display: flex; gap: .4em; margin: .5em 0;}
+.lookup-pad-hint, .lookup-credit {font-size: .8em; color: var(--ink-soft);}

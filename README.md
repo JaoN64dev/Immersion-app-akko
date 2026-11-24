@@ -258,6 +258,8 @@ For English, two npm packages are used (installed into `node_modules`, not in `d
 - English subtitles: [OpenSubtitles.com](https://www.opensubtitles.com/) API
 - Word audio: [JapanesePod101](https://www.japanesepod101.com/) and [Lingua Libre](https://lingualibre.org/) (Wikimedia Commons)
 - Magnet links: [WebTorrent](https://webtorrent.io) (MIT), running inside akko's server
+- Handwriting recognition: [KanjiCanvas](https://github.com/asdfjkl/kanjicanvas) © 2019 Dominik Klein (MIT), loaded on first use
+- Written explanations: any model you run with [Ollama](https://ollama.com) on your own computer (optional)
 - Stroke order: [KanjiVG](https://kanjivg.tagaini.net) by Ulrich Apel ([CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/)), fetched per kanji when you tap one
 - Reading PDFs: [pdf.js](https://mozilla.github.io/pdf.js/) (Apache 2.0); Anki decks: [sql.js](https://github.com/sql-js/sql.js) (MIT); both loaded on first use
 
