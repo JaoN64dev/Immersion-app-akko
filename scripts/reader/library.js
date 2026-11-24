@@ -63,7 +63,9 @@ export async function renderLibrary(list, { onOpen, onDelete }) {
         return;
     }
     list.innerHTML = texts.map((t) => {
-        const { position, pct } = readingOf(t);
+        const r = readingOf(t);
+        const position = r.position;
+        const pct = r.pct ?? r.previewPct ?? null;       // previewPct: worked out before it was opened (read.js)
         const read = t.paragraphs.length > 1 ? Math.round((position / (t.paragraphs.length - 1)) * 100) : 0;
         return `<li class="note library-item" data-id="${escapeHtml(t.id)}">
             <div class="library-main">

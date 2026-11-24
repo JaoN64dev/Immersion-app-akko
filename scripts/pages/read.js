@@ -12,6 +12,9 @@ import { readTextFile, splitParagraphs, htmlParagraphs, htmlTitle } from "../rea
 import { parseSubtitle } from "../subtitles/parse.js";
 import { addText, getText, removeText, renderLibrary, readingOf, saveReading } from "../reader/library.js";
 import { tokenize } from "../words/render.js";
+import { comprehension } from "../core/coverage.js";
+import { pctLevel } from "../words/status.js";
+import { understood } from "../core/target.js";
 import { planWeek, planPriming } from "../core/planner.js";
 import { readAloudFrom, stopReadAloud, isReadingAloud } from "../reader/text.js";
 import { KEY as PROGRESS_KEY } from "../progress.js";
@@ -55,7 +58,43 @@ function showLibrary() {
             await removeText(id);
             showLibrary();
         },
-    });
+    }).then(fillCoverage).catch(() => {});
+}
+
+// ---------- the library's % before a text is opened ----------
+// A text only knew its % once it had been read to the end (or the week planned). Now each text
+// without one is split into words in the background, one at a time, and its row gets the %.
+// It stops while a text is open, so the reader never waits for it, and goes on next time.
+
+const FILL_BATCH = 150;            // paragraphs per /api/tokenize request, like the reader
+let filling = false;
+
+async function fillCoverage() {
+    if (filling) return;
+    filling = true;
+    try {
+        const texts = (await idbAll("texts")).filter(ofTarget)
+            .filter((x) => readingOf(x).pct == null && readingOf(x).previewPct == null && (x.chars || 0) >= 40);
+        for (const text of texts) {
+            if (reader.isOpen()) return;
+            const lang = langOf(text.paragraphs.join("\n"), text.lang || target());
+            const lines = [];
+            for (let at = 0; at < text.paragraphs.length; at += FILL_BATCH) {
+                lines.push(...await tokenize(text.paragraphs.slice(at, at + FILL_BATCH), lang));
+                if (reader.isOpen()) return;
+            }
+            const c = comprehension(lines);
+            if (!c.total) continue;
+            // not "pct": Stats counts texts with a pct as read, and these haven't been opened yet
+            saveReading(text.id, { previewPct: c.pct });
+            const meta = ui.library.querySelector(`.library-item[data-id="${CSS.escape(text.id)}"] .library-meta`);
+            if (meta && !meta.querySelector(".pct")) {
+                meta.insertAdjacentHTML("beforeend", ` · <span class="pct ${pctLevel(c.pct)}">${c.pct}% ${escapeHtml(understood())}</span>`);
+            }
+        }
+    } catch { /* the server is busy or gone: the next visit to the library carries on */ } finally {
+        filling = false;
+    }
 }
 
 function open(text) {
