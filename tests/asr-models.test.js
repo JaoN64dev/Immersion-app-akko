@@ -51,3 +51,21 @@ test('whisper.cpp picks the ggml .bin when both kinds are there', () => {
     assert.equal(s.ready, true);
     assert.equal(s.models.length, 2, 'both are still listed for Settings');
 });
+
+test('a program called "main" is only whisper.cpp when it lives in a whisper folder', () => {
+    const other = fs.mkdtempSync(path.join(os.tmpdir(), 'akko-other-'));
+    const whisperDir = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'akko-w-')), 'whisper.cpp', 'build');
+    fs.mkdirSync(whisperDir, { recursive: true });
+    fs.writeFileSync(path.join(other, 'main'), '');
+    fs.writeFileSync(path.join(whisperDir, 'main'), '');
+    const was = process.env.PATH;
+    try {
+        process.env.PATH = other;
+        assert.equal(asr.status().tools.length, 0, 'some other main is not whisper');
+        process.env.PATH = whisperDir;
+        assert.equal(asr.status().tools[0].id, 'main');
+    } finally {
+        process.env.PATH = was;
+        fs.rmSync(other, { recursive: true, force: true });
+    }
+});

@@ -17,6 +17,7 @@ import { readingOf, saveReading } from "./library.js";
 import { understood, target } from "../core/target.js";
 import { langOf } from "../core/script.js";
 import { prime, coverageIfKnown, coverage } from "../core/coverage.js";
+import { t } from "../i18n.js";
 
 const BATCH = 150;             // paragraphs per /api/tokenize request
 const SETTINGS = "akko-reader";
@@ -321,12 +322,12 @@ function speak(text, voice, tag, onBoundary) {
 // can't speak or has no voice for the text's language.
 export async function readAloudFrom(start) {
     if (!rec) return;
-    if (typeof speechSynthesis === "undefined") throw new Error("this browser can't read aloud");
+    if (typeof speechSynthesis === "undefined") throw new Error(t("this browser can't read aloud"));
     stopReadAloud();
     const myJob = ++readJob;
     const tag = speechLang(rec.txtLang || target());
     const voice = await voiceFor(tag);
-    if (!voice) throw new Error(`no ${tag} voice is installed: add one in your system's speech settings`);
+    if (!voice) throw new Error(t("no {lang} voice is installed: add one in your system's speech settings").replace("{lang}", tag));
     if (myJob !== readJob || !rec) return;
     speaking = true;
     readMet = { id: rec.id, words: new Set() };
@@ -374,8 +375,9 @@ function renderBookWords() {
     box.hidden = !unknown.length && !heard.length;
     if (box.hidden) return;
     document.getElementById("reader-words-summary").textContent =
-        `${unknown.length} words you don't know yet in this text` + (heard.length ? ` · ${heard.length} met reading aloud` : "")
-        + (analysing ? " (still analysing)" : "");
+        t("{n} words you don't know yet in this text").replace("{n}", String(unknown.length))
+        + (heard.length ? " · " + t("{n} met reading aloud").replace("{n}", String(heard.length)) : "")
+        + (analysing ? " " + t("(still analysing)") : "");
     document.getElementById("reader-words-list").innerHTML = unknown.slice(0, 80).map(([w, n]) =>
         `<li><span class="w s-${wordStatus(w)}" data-b="${escapeHtml(w)}" data-c="1">${escapeHtml(w)}</span> <small>×${n}</small></li>`).join("");
 }

@@ -83,6 +83,9 @@ function status() {
         if (found.length && !process.env.AKKO_WHISPER) break;
         for (const name of tool.names) {
             const at = which(name);
+            // "main" is what older whisper.cpp builds called their program, but plenty of other
+            // things are called main too: only take it from a folder that is clearly whisper.cpp
+            if (at && name === 'main' && !/whisper/i.test(path.dirname(at))) continue;
             if (at) { found.push({ id: name, path: at, family: tool.family }); break; }
         }
     }

@@ -6,6 +6,7 @@ import { escapeHtml, store } from "../core/utils.js";
 import * as today from "../core/today.js";
 import { target, learningEnglish, keyFor } from "../core/target.js";
 import * as levels from "../core/levels.js";
+import { t } from "../i18n.js";
 import { wordStats, watchStats, mangaStats, podcastStats, textStats, minedStats, grammarStats, companionStats } from "../totals.js";
 
 // ---------- small formatters ----------
@@ -244,19 +245,22 @@ function renderLevel() {
     const now = history[today.dayOf()] || 0;
     const l = levels.nextLevel(history, now);
     if (!l.next) {
-        el.innerHTML = `<p><b>${now.toLocaleString()}</b> words known: past every milestone akko counts.</p>`;
+        el.innerHTML = `<p>${escapeHtml(t("{n} words known: past every milestone akko counts.").replace("{n}", now.toLocaleString()))}</p>`;
         return;
     }
     const pct = Math.round((now / l.next) * 100);
     const when = l.perDay === null
-        ? "akko starts keeping a daily count today: give it a week to say how fast you're going."
+        ? t("akko starts keeping a daily count today: give it a week to say how fast you're going.")
         : l.days === null
-            ? `no new known words since ${l.since}: mark the words you know (key 3) as you go.`
-            : `at your pace since ${l.since} (about ${l.perDay >= 10 ? Math.round(l.perDay) : l.perDay.toFixed(1)} a day), that's <b>${l.days === 1 ? "tomorrow" : l.days <= 60 ? `in ${l.days} days` : `in about ${Math.round(l.days / 30)} months`}</b>.`;
+            ? t("no new known words since {date}: mark the words you know (key 3) as you go.").replace("{date}", l.since)
+            : t("at your pace since {date} (about {n} a day), that's {when}.")
+                .replace("{date}", l.since)
+                .replace("{n}", l.perDay >= 10 ? String(Math.round(l.perDay)) : l.perDay.toFixed(1))
+                .replace("{when}", l.days === 1 ? t("tomorrow") : l.days <= 60 ? t("in {n} days").replace("{n}", String(l.days)) : t("in about {n} months").replace("{n}", String(Math.round(l.days / 30))));
     el.innerHTML = `
-        <p><b>${now.toLocaleString()}</b> words known · next: <b>${l.next.toLocaleString()}</b> (${l.left.toLocaleString()} to go)</p>
+        <p>${escapeHtml(t("{n} words known · next: {next} ({left} to go)").replace("{n}", now.toLocaleString()).replace("{next}", l.next.toLocaleString()).replace("{left}", l.left.toLocaleString()))}</p>
         <div class="stats-bar" role="img" aria-label="${pct}% of the way to ${l.next}"><i class="stats-level-fill" style="width:${pct}%"></i></div>
-        <p class="hint">${when}</p>`;
+        <p class="hint">${escapeHtml(when)}</p>`;
 }
 
 // ---------- retention by source ----------
@@ -266,14 +270,14 @@ function renderRetention(mined) {
     if (!el) return;
     const rows = levels.retentionBySource(mined, store.get(keyFor("akko-review"), {}));
     if (!rows.length) {
-        el.innerHTML = `<p class="stats-empty">nothing reviewed yet: mine a few words, then review them in 復習</p>`;
+        el.innerHTML = `<p class="stats-empty">${escapeHtml(t("nothing reviewed yet: mine a few words, then review them in 復習"))}</p>`;
         return;
     }
     const pc = (x) => `${Math.round(x * 100)}%`;
     el.innerHTML = `
         <table class="stats-table">
             <thead><tr><th>mined from</th><th>words</th><th>reviewed</th><th title="reviews answered anything but “again”">reviews passed</th><th title="how likely you are to remember them right now (FSRS)">remembered today</th></tr></thead>
-            <tbody>${rows.map((r) => `<tr><td>${escapeHtml(r.label)}</td><td>${r.words}</td><td>${r.reviewed}</td><td>${pc(r.passed)}</td><td>${pc(r.recall)}</td></tr>`).join("")}</tbody>
+            <tbody>${rows.map((r) => `<tr><td>${escapeHtml(t(r.label))}</td><td>${r.words}</td><td>${r.reviewed}</td><td>${pc(r.passed)}</td><td>${pc(r.recall)}</td></tr>`).join("")}</tbody>
         </table>
         <p class="hint">a source well below the others is worth a look: those words may need a clearer sentence when you mine them.</p>`;
 }
