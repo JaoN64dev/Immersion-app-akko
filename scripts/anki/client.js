@@ -11,6 +11,7 @@ import { toast } from "../core/toast.js";
 import { setWordStatus, saveWords } from "../words/status.js";
 import { saveItem } from "../mining.js";
 import { pitchCardHtml, pitchNotes } from "../words/pitch.js";
+import { freqRank, cleanWord } from "./schedule.js";
 import { keepMedia } from "../core/media.js";
 
 const KEY = "akko-anki";
@@ -25,6 +26,7 @@ export const SOURCES = {
     furigana: "word[reading] (furigana)",
     meaning: "meaning",
     frequency: "frequency rank (JPDB, lower = more common)",
+    freqSort: "frequency rank, the number alone (for sorting: Lapis FreqSort)",
     pitch: "pitch accent (drawn)",
     pitchNotes: "pitch accent pattern (text)",
     sentence: "sentence",
@@ -40,6 +42,9 @@ export const SOURCES = {
 // first match wins; covers Basic, Lapis, Kaishi, JP Mining Note, Animecards…
 const GUESSES = [
     [/^is[A-Z]|^is /, ""],                                   // Lapis card-type flags
+    [/freq.*sort|sort.*freq/i, "freqSort"],                   // Lapis FreqSort: a number to sort by
+    [/freq/i, "frequency"],
+    [/^(url|link|source.?url|page.?url)$/i, "url"],
     [/sentence.?(eng|translation|meaning)/i, "translation"],
     [/sentence.?furigana/i, ""],
     [/(word|expression|vocab|term|reading).?audio/i, "wordAudio"],
@@ -56,7 +61,7 @@ const GUESSES = [
     [/source|notes|misc/i, "source"],
 ];
 // sources added after people had already set up their fields
-const LATER_SOURCES = ["wordAudio", "pitch", "pitchNotes", "translation"];
+const LATER_SOURCES = ["wordAudio", "pitch", "pitchNotes", "translation", "frequency", "freqSort", "url"];
 const guess = (field) => (GUESSES.find(([re]) => re.test(field)) || [null, ""])[1];
 
 // always read fresh: another page may have changed it
@@ -234,7 +239,7 @@ async function captureMedia(item, media, wantShot, wantAudio) {
 
 // Pronunciation of the word itself, found by the server (JapanesePod101, then Lingua Libre;
 // for English, dictionaryapi.dev)
-const fetchWordAudio = (item) => {
+export const fetchWordAudio = (item) => {
     const params = new URLSearchParams({ word: item.word, reading: item.reading || "", lang: item.lang || "ja" });
     (item.forms || []).forEach((f) => params.append("form", f));
     return getJson(`/api/audio?${params}`);
@@ -252,7 +257,9 @@ async function spokenSentence(text) {
 
 // ---------- building the note ----------
 
-function fieldValue(source, item) {
+export { freqRank };
+
+export function fieldValue(source, item) {
     const bold = item.surface && item.sentence.includes(item.surface)
         ? escapeHtml(item.sentence).replace(escapeHtml(item.surface), `<b>${escapeHtml(item.surface)}</b>`)
         : escapeHtml(item.sentence);
@@ -265,6 +272,7 @@ function fieldValue(source, item) {
         case "pitch": return (item.pitch || []).map((n) => pitchCardHtml(item.reading || item.word, n)).join("・");
         case "pitchNotes": return (item.pitch || []).map((n) => escapeHtml(pitchNotes(item.reading || item.word, n))).join("<br>");
         case "frequency": return (item.freq || []).map((f) => `${escapeHtml(f.title)} ${escapeHtml(f.value)}`).join(" · ");
+        case "freqSort": return freqRank(item);
         case "url": return escapeHtml(item.url || "");
         case "sentence": return escapeHtml(item.sentence);
         case "translation": return escapeHtml(item.translation || "");
@@ -331,10 +339,6 @@ export async function keepOnly(item, media) {
 
 // ---------- importing known words ----------
 
-// "<b>食べる</b>[たべる]" / "食べる, 喰べる" -> "食べる"
-const cleanWord = (html) => String(html || "")
-    .replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/\[[^\]]*\]/g, "")
-    .trim().split(/[\s,、・;/]+/)[0];
 
 // Mature cards (interval ≥ 21 days) -> known, the rest -> learning
 export async function importKnown() {

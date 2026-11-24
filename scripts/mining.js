@@ -8,7 +8,7 @@ import { store, escapeHtml, download } from "./core/utils.js";
 import { idbAll, idbPut, idbPutMany, idbDelete, idbReplace } from "./core/idb.js";
 import * as anki from "./anki/client.js";
 import { t } from "./i18n.js";
-import { target, ofTarget } from "./core/target.js";
+import { target, ofTarget, keyFor } from "./core/target.js";
 import { dropMedia } from "./core/media.js";
 
 const OLD_KEY = "akko-mined";
@@ -76,6 +76,7 @@ export async function mine(entry, ctx) {
         source: info.source || "",
         time: info.time || "",
         url: info.url || "",               // source page, when mined from a URL
+        kind: info.kind || "",             // watch / manga / read / web / listen…: Stats → retention by source
         videoName: info.videoName || "",
         cueStart: info.cueStart ?? null,
         cueEnd: info.cueEnd ?? null,
@@ -128,6 +129,34 @@ function exportTsv() {
     download("akko-mined.tsv", tsv, "text/tab-separated-values");
 }
 
+// An Anki deck file of everything mined, media and 復習 schedule included (scripts/anki/apkg.js).
+// No AnkiConnect, no settings: Anki opens the file.
+async function exportDeck(button) {
+    if (!mined.length || button.disabled) return;
+    const label = button.textContent;
+    button.disabled = true;
+    try {
+        const { exportApkg } = await import("./anki/apkg.js");
+        const out = await exportApkg(mined, {
+            cards: store.get(keyFor("akko-review"), {}),
+            lang: target(),
+            onProgress: (text) => { button.textContent = text; },
+        });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(out.blob);
+        a.download = `akko-${target()}-${new Date().toISOString().slice(0, 10)}.apkg`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+        button.textContent = t("{n} cards ✓ open the file with Anki").replace("{n}", String(out.notes));
+        setTimeout(() => { button.textContent = label; }, 6000);
+    } catch (err) {
+        button.textContent = label;
+        alert(t("couldn't make the deck: ") + err.message);
+    } finally {
+        button.disabled = false;
+    }
+}
+
 // Where "→ Anki" on an old card gets audio/screenshot from (set by the Watch page)
 let mediaFor = () => null;
 
@@ -159,6 +188,8 @@ export function initList({ media } = {}) {
     });
     more.addEventListener("click", () => { shown += PAGE; renderMined(); });
     $("#export-csv").addEventListener("click", exportTsv);
+    const deckButton = $("#export-apkg");
+    if (deckButton) deckButton.addEventListener("click", () => exportDeck(deckButton));
     if (channel) channel.onmessage = reload;      // mined on another page
     loadMined().then(renderMined);
 }

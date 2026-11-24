@@ -373,7 +373,7 @@ export function init() {
         const p = Number(el.dataset.p);
         return {
             sentence: book.pages[p].ocr.blocks[Number(el.dataset.b)].lines.join(""),
-            info: { source: `${book.title} p.${p + 1}`, pageIndex: p },
+            info: { source: `${book.title} p.${p + 1}`, pageIndex: p, kind: "manga" },
         };
     });
     setPopupHooks({ media: mediaFor });

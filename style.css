@@ -666,6 +666,11 @@ body[data-furigana="unknown"] .w:hover rt {visibility: visible;}
 .kanji-list {list-style: none; margin: .3em 0 0; padding: 0; display: grid; gap: .4em;}
 .kanji-list li {display: flex; gap: .6em; align-items: flex-start;}
 .kanji-char {font-size: 2em; line-height: 1; font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif; min-width: 1em;}
+button.kanji-char {background: none; border: 0; padding: 0; color: inherit; cursor: pointer; border-radius: 4px;}
+button.kanji-char:hover, button.kanji-char:focus-visible {outline: 2px solid var(--highlight);}
+.kanji-strokes {display: block; margin-top: .3em;}
+.strokes-svg {width: 7em; height: 7em; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; border: 1px dashed var(--border-color); border-radius: 6px;}
+.strokes-svg text {fill: var(--highlight); stroke: none; font-size: 8px; font-family: sans-serif;}
 .kanji-list div {display: flex; flex-direction: column; font-size: .85em;}
 .kanji-list small {color: var(--visited-link-color);}
 .kanji-meta {color: var(--visited-link-color); font-size: .9em;}
@@ -1252,6 +1257,24 @@ body.target-ja .en-only {display: none !important;}
 /* the words worth learning before a text (scripts/reader/text.js, scripts/core/coverage.js) */
 .reader-prime {margin: 8px 0; font-size: .92em; color: var(--ink-soft);}
 .reader-prime b {color: var(--ink);}
+.reader-words {margin: 12px 0;}
+.stats-level-fill {background: var(--highlight);}
+.heatmap-scroll {overflow-x: auto; padding-bottom: 4px;}
+.heatmap {display: grid; grid-template-columns: repeat(53, 11px); grid-template-rows: 14px repeat(7, 11px); gap: 3px; width: max-content;}
+.hm-month {grid-row: 1; font-size: 10px; line-height: 14px; color: var(--ink-soft); white-space: nowrap;}
+.hm {display: inline-block; width: 11px; height: 11px; border-radius: 2px; background: var(--highlight);}
+.hm-0 {background: var(--border-color); opacity: .35;}
+.hm-1 {opacity: .3;}
+.hm-2 {opacity: .5;}
+.hm-3 {opacity: .75;}
+.hm-4 {opacity: 1;}
+.heatmap-legend {display: flex; align-items: center; gap: 3px; justify-content: flex-end; font-size: .8em; color: var(--ink-soft); margin: .3em 0 0;}
+.stats-table {border-collapse: collapse; width: 100%; font-size: .92em;}
+.stats-table th, .stats-table td {text-align: left; padding: .3em .6em; border-bottom: 1px solid var(--ink-soft);}
+.stats-table th {color: var(--ink-soft); font-weight: normal;}
+.reader-words summary {cursor: pointer; color: var(--ink-soft);}
+.reader-words-list {display: flex; flex-wrap: wrap; gap: .3em .9em; list-style: none; padding: 0; margin: .6em 0 0;}
+.reader-words-list small {color: var(--ink-soft);}
 .prime-word {display: inline-block; padding: 1px 7px; margin: 2px; border-radius: 999px; background: var(--table-highlight); color: var(--ink); cursor: help;}
 .prime-gain {margin-left: 8px; color: var(--ink-soft);}
 
@@ -1821,3 +1844,8 @@ main .review-modes button[aria-selected="true"] {background: var(--post-bg); col
 .review-cloze .blank {letter-spacing: .08em; color: var(--main-color);}
 .review-audio-hint {font-size: .85em; color: var(--ink-soft); margin: 0;}
 .review-play.big {font-size: 1.1em; padding: .4em 1em;}
+
+/* ---- watch: a magnet link (scripts/player/torrent.js) ---- */
+.torrent-bar {display: flex; flex-wrap: wrap; align-items: center; gap: .5em 1em;}
+.torrent-bar select {max-width: 28em;}
+.torrent-note {flex-basis: 100%; margin: 0; font-size: .82em; color: var(--ink-soft);}

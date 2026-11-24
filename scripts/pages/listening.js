@@ -652,7 +652,7 @@ async function init() {
     bindWordDisplay($("#furigana-mode"), $("#color-words"));
     watchHover(ui.player);
     popup.enableWordClicks(ui.player, ".lq-ja", (lineEl) => ({
-        info: { source: `聴解 ${round?.title || ""}`.trim(), translation: lineEl.closest(".lq-line")?.querySelector(".ex-en")?.textContent || "" },
+        info: { source: `聴解 ${round?.title || ""}`.trim(), kind: "listening", translation: lineEl.closest(".lq-line")?.querySelector(".ex-en")?.textContent || "" },
     }));
     window.addEventListener("akko-words-changed", () => recolor(ui.player));
 

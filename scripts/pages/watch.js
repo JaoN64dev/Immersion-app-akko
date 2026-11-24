@@ -41,6 +41,7 @@ function cueContext(cue) {
             source: [state.anime && (state.anime.title.native || state.anime.title.romaji), state.videoName].filter(Boolean).join(" — "),
             time: timeFormatter(el.video.currentTime),
             videoName: state.videoName,
+            kind: "watch",
             cueStart: cue ? cues.cueStart(cue) : null,
             cueEnd: cue ? cues.cueEnd(cue) : null,
             translation: cue ? subs2.textFor(cues.cueStart(cue), cues.cueEnd(cue)) : "",
@@ -151,28 +152,30 @@ const makeSubs = $("#make-subs-from-audio");
 const subsFromAudioStatus = $("#asr-from-audio-status");
 if (makeSubs) {
     makeSubs.addEventListener("click", async () => {
-        makeSubs.disabled = true;
-        subsFromAudioStatus.textContent = "";
+        if (makeSubs.disabled) return;
+        makeSubs.disabled = true;               // a real <button>: one transcription at a time
+        const say = (text) => { subsFromAudioStatus.textContent = text; };
+        const video = state.videoName;          // the subtitles belong to this video, not whatever is open later
         try {
-            subsFromAudioStatus.textContent = t("extracting the audio…");
-            const wav = await dualAudio.extractAudioWav();
-            subsFromAudioStatus.textContent = t("transcribing the audio…");
-            const lang = target();
-            console.log(`watch: sending ${wav.byteLength} bytes of WAV to /api/asr/transcribe`);
-            const res = await fetch(`/api/asr/transcribe?lang=${encodeURIComponent(lang)}&name=${encodeURIComponent(state.videoName || "video")}`, {
+            say(t("extracting the audio…"));
+            const wav = await dualAudio.extractAudioWav((p) => say(`${t("extracting the audio…")} ${Math.round(p * 100)}%`));
+            if (state.videoName !== video) return say("");
+            say(t("transcribing the audio…"));
+            const name = (video || "video").replace(/\.[^.]+$/, "") + ".wav";   // it is a WAV now, whatever the video was
+            const res = await fetch(`/api/asr/transcribe?lang=${encodeURIComponent(target())}&name=${encodeURIComponent(name)}`, {
                 method: "POST",
                 body: wav,
             });
             const body = await res.json().catch(() => ({ error: "the server didn't answer" }));
             if (!res.ok) throw new Error(body.error || res.statusText);
-            const srt = body.srt;
-            if (!srt) throw new Error("the server returned no subtitles");
-            cues.loadSubtitleText(srt, "srt", state.videoName || "video");
-            subsFromAudioStatus.textContent = t("made subtitles: {n} lines").replace("{n}", String(state.cues.length));
-            makeSubs.disabled = false;
+            if (!body.srt) throw new Error("the server returned no subtitles");
+            if (state.videoName !== video) return say("");
+            cues.loadSubtitleText(body.srt, "srt", (video || "video").replace(/\.[^.]+$/, "") + " (from audio).srt");
+            say(t("made subtitles: {n} lines").replace("{n}", String(state.cues.length)));
         } catch (err) {
+            say(err.message || "couldn't make subtitles from the audio");
+        } finally {
             makeSubs.disabled = false;
-            subsFromAudioStatus.textContent = err.message || "couldn't make subtitles from the audio";
         }
     });
 }

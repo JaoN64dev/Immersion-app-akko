@@ -8,7 +8,7 @@
 
 import { $ } from "../core/dom.js";
 import { store, escapeHtml } from "../core/utils.js";
-import { pctLevel } from "../words/status.js";
+import { pctLevel, wordStatus } from "../words/status.js";
 import { tokenize, tokensHtml, recolor, comprehension, sentenceAround } from "../words/render.js";
 import { bindWordDisplay } from "../words/display.js";
 import { watchHover } from "../words/hover.js";
@@ -16,7 +16,8 @@ import { enableWordClicks } from "../popup.js";
 import { readingOf, saveReading } from "./library.js";
 import { understood, target } from "../core/target.js";
 import { langOf } from "../core/script.js";
-import { prime, coverageIfKnown } from "../core/coverage.js";
+import { prime, coverageIfKnown, coverage } from "../core/coverage.js";
+import { t } from "../i18n.js";
 
 const BATCH = 150;             // paragraphs per /api/tokenize request
 const SETTINGS = "akko-reader";
@@ -48,6 +49,8 @@ export function openText(text) {
     // the language it is written in (a book filed before this was detected still reads right)
     rec.txtLang = langOf((text.paragraphs || []).join("\n"), text.lang || target());
     tokens = new Array(text.paragraphs.length);
+    const words = document.getElementById("reader-words");
+    if (words) words.hidden = true;               // nor its word list
     if (ui.prime) ui.prime.hidden = true;          // last text's "learn these first" is not this one's
     near.clear();
     drawn.clear();
@@ -151,6 +154,7 @@ function renderStats() {
         if (c.iPlus1 !== was.iPlus1 || c.total !== was.words) Object.assign(patch, { iPlus1: c.iPlus1, words: c.total, paragraphs: done.length });
         if (Object.keys(patch).length) saveReading(rec.id, patch);
         renderPrime(done, c);
+        renderBookWords();
     } else if (ui.prime) ui.prime.hidden = true;
 }
 
@@ -196,126 +200,198 @@ function trackPosition() {
 }
 
 // ---------- read aloud ----------
+// The browser's own speech synthesis reads the text from where you are, each word lit up as it's
+// said. Nothing is sent anywhere. The words met on the way go into this book's word list
+// (readWords on its reading record), shown under the text.
 
 let readJob = 0;
-let readUtterance = null;
+let speaking = false;             // a read-aloud run is going (also between two sentences)
 let readHighlight = null;
+let finishSentence = null;        // resolves the sentence being spoken, so Stop never leaves it hanging
+let readMet = null;               // {id, words: Set} of the run going on
+
+// the speech tag for a text's language: voices are listed as ja-JP, zh-CN, zh-HK…
+const SPEECH_LANG = { ja: "ja-JP", en: "en-US", ko: "ko-KR", cmn: "zh-CN", zh: "zh-CN", yue: "zh-HK" };
+const speechLang = (lang) => SPEECH_LANG[lang] || lang;
+
+// Chrome lists its voices a moment after the page loads
+function voices() {
+    const now = speechSynthesis.getVoices();
+    if (now.length) return Promise.resolve(now);
+    return new Promise((resolve) => {
+        const done = () => resolve(speechSynthesis.getVoices());
+        speechSynthesis.addEventListener("voiceschanged", done, { once: true });
+        setTimeout(done, 1500);
+    });
+}
+
+// A voice for this language; without one the browser reads Japanese with an English voice (or not at all)
+async function voiceFor(tag) {
+    const norm = (l) => l.toLowerCase().replace("_", "-");
+    const want = norm(tag);
+    const all = await voices();
+    return all.find((v) => norm(v.lang) === want && v.localService)
+        || all.find((v) => norm(v.lang) === want)
+        || all.find((v) => norm(v.lang).split("-")[0] === want.split("-")[0])
+        || null;
+}
+
+// Sentences of a paragraph with where each starts: one utterance per sentence, since Chrome cuts
+// long utterances off after about 15 seconds
+export function sentencesOf(text) {
+    const out = [];
+    const re = /[^。！？!?.\n]+(?:[。！？!?.]+[」』）)"'’”]*)?|[。！？!?.\n]+/g;
+    let m;
+    while ((m = re.exec(text))) {
+        if (m[0].trim()) out.push({ text: m[0], at: m.index });
+    }
+    return out.length ? out : [{ text, at: 0 }];
+}
+
+function flushMet() {
+    const run = readMet;
+    readMet = null;
+    if (!run || !run.words.size) return;
+    const was = readingOf({ id: run.id });
+    const existing = was.readWords || [];
+    const merged = [...new Set([...existing, ...run.words])];
+    if (merged.length !== existing.length) saveReading(run.id, { readWords: merged });
+    renderBookWords();
+}
 
 export function stopReadAloud() {
     readJob++;
-    if (readUtterance) {
-        readUtterance.onend = null;
-        readUtterance.onboundary = null;
-        readUtterance = null;
-    }
+    speaking = false;
     if (typeof speechSynthesis !== "undefined") speechSynthesis.cancel();
+    if (finishSentence) finishSentence();
     unhighlightRead();
+    flushMet();
 }
 
-export function isReadingAloud() {
-    return !!readUtterance;
+export const isReadingAloud = () => speaking;
+
+// Keep the word in view inside the reader, without scrolling the page itself
+function keepInView(el) {
+    const box = ui.text.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    if (r.top >= box.top && r.bottom <= box.bottom && r.left >= box.left && r.right <= box.right) return;
+    const y = window.scrollY, x = window.scrollX;
+    el.scrollIntoView({ block: "center", inline: "center", behavior: "instant" });
+    window.scrollTo({ top: y, left: x, behavior: "instant" });
 }
 
 function highlightRead(el) {
     unhighlightRead();
     readHighlight = el;
-    if (el) {
-        el.classList.add("reading-aloud");
-        el.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" });
-    }
+    el.classList.add("reading-aloud");
+    keepInView(el);
 }
 function unhighlightRead() {
-    if (readHighlight) {
-        readHighlight.classList.remove("reading-aloud");
-        readHighlight = null;
-    }
+    if (readHighlight) readHighlight.classList.remove("reading-aloud");
+    readHighlight = null;
 }
 
-// character range for each word span in a drawn paragraph
-function offsetMap(tk, paraEl) {
-    const out = [];
-    let pos = 0, si = 0;
-    const spans = paraEl.querySelectorAll(".w[data-o]");
-    for (const t of tk) {
-        const start = pos;
-        pos += t.s.length;
-        if (t.s === "\n" || !t.b) continue;
-        const span = spans[si++];
-        if (span) out.push({ el: span, start, end: pos });
-    }
-    return out;
-}
-
-function tokenIndexAt(tk, charIndex) {
+// The word token covering character `at` of paragraph i, if it is a word
+function tokenAt(i, at) {
+    const tk = tokens[i];
+    if (!tk) return null;
     let pos = 0;
-    for (let i = 0; i < tk.length; i++) {
-        const end = pos + tk[i].s.length;
-        if (charIndex >= pos && charIndex < end) return i;
+    for (const t of tk) {
+        const end = pos + t.s.length;
+        if (at < end) return t.b ? { t, start: pos } : null;
         pos = end;
     }
-    return -1;
+    return null;
 }
 
-// Read every paragraph from `start` onward, speaking each with word-by-word highlighting.
-// Nothing is sent anywhere: the browser's own speech synthesis does the talking.
+function speak(text, voice, tag, onBoundary) {
+    return new Promise((resolve) => {
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = tag;
+        if (voice) u.voice = voice;
+        u.onboundary = onBoundary;
+        const done = () => { finishSentence = null; resolve(); };
+        u.onend = done;
+        u.onerror = done;
+        finishSentence = done;
+        speechSynthesis.speak(u);
+    });
+}
+
+// Read every paragraph from `start` onward. Rejects (before saying anything) when the browser
+// can't speak or has no voice for the text's language.
 export async function readAloudFrom(start) {
+    if (!rec) return;
+    if (typeof speechSynthesis === "undefined") throw new Error(t("this browser can't read aloud"));
     stopReadAloud();
-    readJob++;
-    const myJob = readJob;
-    const n = rec.paragraphs.length;
-    const met = new Set();
+    const myJob = ++readJob;
+    const tag = speechLang(rec.txtLang || target());
+    const voice = await voiceFor(tag);
+    if (!voice) throw new Error(t("no {lang} voice is installed: add one in your system's speech settings").replace("{lang}", tag));
+    if (myJob !== readJob || !rec) return;
+    speaking = true;
+    readMet = { id: rec.id, words: new Set() };
+    const met = readMet.words;
 
-    for (let i = start; i < n && readJob === myJob; i++) {
-        const tk = tokens[i];
-        if (!tk || !tk.length) continue;   // not tokenized yet
-        draw(i);
-        const paraEl = ui.text.children[i];
-        const map = offsetMap(tk, paraEl);
-        if (!map.length) continue;          // no highlightable words
-
-        const text = tk.map((t) => t.s).join("");
-        await new Promise((resolve) => {
-            if (readJob !== myJob) { resolve(); return; }
-            if (typeof speechSynthesis === "undefined") { resolve(); return; }
-
-            const u = new SpeechSynthesisUtterance(text);
-            u.lang = (rec.txtLang || target()).slice(0, 2).toLowerCase() === "ja" ? "ja-JP" : (rec.txtLang || "en");
-            u.rate = 1;
-
-            let current = -1;
-            u.onboundary = (event) => {
-                if (readJob !== myJob) return;
-                if (event.name !== "word" && event.name !== "white-space") return;
-                let found = -1;
-                for (let m = 0; m < map.length; m++) {
-                    if (event.charIndex >= map[m].start && event.charIndex < map[m].end) { found = m; break; }
-                }
-                if (found !== -1 && found !== current) {
-                    current = found;
-                    highlightRead(map[found].el);
-                    const ti = tokenIndexAt(tk, map[found].start);
-                    const t = tk[ti];
-                    if (t && t.b) met.add(t.b);
-                }
-            };
-            u.onend = () => { readUtterance = null; resolve(); };
-            u.onerror = () => { readUtterance = null; resolve(); };
-
-            readUtterance = u;
-            speechSynthesis.speak(u);
-        });
+    for (let i = Math.max(0, start || 0); rec && i < rec.paragraphs.length && myJob === readJob; i++) {
+        draw(i);               // a paragraph not analysed yet is still read, just without highlighting
+        const text = tokens[i] ? tokens[i].map((t) => t.s).join("") : rec.paragraphs[i];
+        for (const s of sentencesOf(text)) {
+            if (myJob !== readJob) break;
+            await speak(s.text, voice, tag, (e) => {
+                if (myJob !== readJob || e.name !== "word") return;
+                const hit = tokenAt(i, s.at + e.charIndex);
+                if (!hit) return;
+                if (hit.t.c) met.add(hit.t.b);
+                // looked up each time: the paragraph may have been redrawn since
+                draw(i);
+                const p = ui.text.children[i];
+                const span = p && p.querySelector(`.w[data-o="${hit.start}"]`);
+                if (span && span !== readHighlight) highlightRead(span);
+            });
+        }
         unhighlightRead();
     }
-
-    // per-book word list: words met during read-aloud are saved with the text's reading record
-    if (met.size && rec) {
-        const was = readingOf(rec);
-        const existing = was.readWords || [];
-        const merged = [...new Set([...existing, ...met])];
-        if (merged.length !== existing.length) saveReading(rec.id, { readWords: merged });
+    if (myJob === readJob) {
+        speaking = false;
+        flushMet();
     }
+}
 
-    readJob++;
+// ---------- this book's words ----------
+// The words of this text you don't know yet, most frequent first, and how many were met reading
+// aloud. Downloadable as a .tsv (word, times in the text, met reading aloud).
+
+function bookWords() {
+    const done = tokens.filter(Boolean);
+    const unknown = done.length ? [...coverage(done).unknown].sort((a, b) => b[1] - a[1]) : [];
+    return { unknown, heard: readingOf(rec).readWords || [], analysing: done.length < tokens.length };
+}
+
+function renderBookWords() {
+    const box = document.getElementById("reader-words");
+    if (!box || !rec) return;
+    const { unknown, heard, analysing } = bookWords();
+    box.hidden = !unknown.length && !heard.length;
+    if (box.hidden) return;
+    document.getElementById("reader-words-summary").textContent =
+        t("{n} words you don't know yet in this text").replace("{n}", String(unknown.length))
+        + (heard.length ? " · " + t("{n} met reading aloud").replace("{n}", String(heard.length)) : "")
+        + (analysing ? " " + t("(still analysing)") : "");
+    document.getElementById("reader-words-list").innerHTML = unknown.slice(0, 80).map(([w, n]) =>
+        `<li><span class="w s-${wordStatus(w)}" data-b="${escapeHtml(w)}" data-c="1">${escapeHtml(w)}</span> <small>×${n}</small></li>`).join("");
+}
+
+function downloadBookWords() {
+    if (!rec) return;
+    const { unknown, heard } = bookWords();
+    const met = new Set(heard);
+    const rows = ["word\ttimes in text\tmet reading aloud", ...unknown.map(([w, n]) => `${w}\t${n}\t${met.has(w) ? "yes" : ""}`)];
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([rows.join("\n")], { type: "text/tab-separated-values" }));
+    a.download = `${(rec.title || "words").replace(/[\\/:*?"<>|]/g, "_").slice(0, 80)}.tsv`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
 // ---------- settings ----------
@@ -339,6 +415,9 @@ export function init({ onBack }) {
         if (rec) requestAnimationFrame(() => goTo(at));
     });
     bindWordDisplay($("#furigana-mode"), $("#color-words"));
+    const dl = document.getElementById("reader-words-download");
+    if (dl) dl.addEventListener("click", downloadBookWords);
+    window.addEventListener("akko-words-changed", () => { if (rec) renderBookWords(); });
 
     ui.back.addEventListener("click", close);
     ui.text.addEventListener("scroll", trackPosition, { passive: true });
@@ -347,7 +426,7 @@ export function init({ onBack }) {
         const text = rec.paragraphs[Number(p.dataset.i)];
         return {
             sentence: w && w.dataset.o !== undefined ? sentenceAround(text, Number(w.dataset.o)) : text,
-            info: { source: rec.title, url: rec.url },
+            info: { source: rec.title, url: rec.url, kind: rec.url ? "web" : "read" },
         };
     });
     watchHover(ui.text);

@@ -28,6 +28,7 @@
     "electron-updater": "6.8.9",
     "express": "5.2.1",
     "lindera-wasm-nodejs-ipadic": "2.0.0",
+    "webtorrent": "3.0.21",
     "wordnet-db": "3.1.14"
   },
   "devDependencies": {

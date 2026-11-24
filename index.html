@@ -68,7 +68,7 @@
             </details>
             </nav>
             <p class="credits en-only">definitions: <a href="https://wordnet.princeton.edu" target="_blank" rel="noopener">WordNet</a> (Princeton) · pronunciation: <a href="https://github.com/cmusphinx/cmudict" target="_blank" rel="noopener">CMU Pronouncing Dictionary</a> · translations: <a href="https://en.wiktionary.org" target="_blank" rel="noopener">Wiktionary</a> (CC BY-SA 4.0) · recordings: <a href="https://commons.wikimedia.org" target="_blank" rel="noopener">Wikimedia Commons</a></p>
-            <p class="credits ja-only">dictionary: <a href="https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project" target="_blank" rel="noopener">JMdict</a> &amp; <a href="https://www.edrdg.org/wiki/index.php/KANJIDIC_Project" target="_blank" rel="noopener">KANJIDIC2</a> (EDRDG, CC BY-SA 4.0) · pitch accent: <a href="https://github.com/mifunetoshiro/kanjium" target="_blank" rel="noopener">Kanjium</a> (Wadoku, CC BY-SA 4.0)</p>
+            <p class="credits ja-only">dictionary: <a href="https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project" target="_blank" rel="noopener">JMdict</a> &amp; <a href="https://www.edrdg.org/wiki/index.php/KANJIDIC_Project" target="_blank" rel="noopener">KANJIDIC2</a> (EDRDG, CC BY-SA 4.0) · pitch accent: <a href="https://github.com/mifunetoshiro/kanjium" target="_blank" rel="noopener">Kanjium</a> (Wadoku, CC BY-SA 4.0) · stroke order: <a href="https://kanjivg.tagaini.net" target="_blank" rel="noopener">KanjiVG</a> (Ulrich Apel, CC BY-SA 3.0)</p>
             </div>
         </aside>
         <main>
@@ -158,10 +158,10 @@
 
                 <div class="bubble source-bar">
                     <label class="btn">video file
-                        <input id="video-file" type="file" accept="video/*,.mkv" multiple hidden>
+                        <input id="video-file" type="file" accept="video/*,.mkv,.torrent" multiple hidden>
                     </label>
                     <form id="url-form" class="url-form">
-                        <input id="video-url" type="url" placeholder="or paste a direct video link (.mp4 / .webm / .m3u8)">
+                        <input id="video-url" type="url" placeholder="or paste a direct video link (.mp4 / .webm / .m3u8) or a magnet link">
                         <button type="submit">load</button>
                     </form>
                     <label class="btn">own subtitle file
@@ -170,10 +170,14 @@
                     <label class="btn" title="a translation (English, Spanish, Portuguese…) shown above the video">2nd subtitle file
                         <input id="sub2-file" type="file" accept=".srt,.ass,.ssa,.vtt" hidden>
                     </label>
-                    <label class="btn" id="make-subs-from-audio" data-i18n="subtitles from the video's audio">
-                        subtitles from the video's audio
-                    </label>
+                    <button type="button" id="make-subs-from-audio" title="transcribe a video opened from this computer with Whisper, on this machine (Settings → speech recognition)">subtitles from the video's audio</button>
                     <span id="asr-from-audio-status" class="status dark"></span>
+                </div>
+                <!-- a magnet link pasted above: its episodes and how the download goes (scripts/player/torrent.js) -->
+                <div id="torrent-bar" class="bubble torrent-bar" hidden>
+                    <span id="torrent-status" class="status dark"></span>
+                    <button id="torrent-delete" type="button" class="quiet-danger">delete downloaded files</button>
+                    <p class="hint torrent-note">While an episode plays, akko shares the pieces it already has with other people, as every torrent client does (at most 100 KB/s, and it stops when you close the episode). What you download and share is up to you.</p>
                 </div>
                 <div id="audio-bar" class="bubble audio-bar" hidden>
                     <label>audio <select id="audio-track"></select></label>
@@ -276,6 +280,7 @@
             <section id="mined-section">
                 <h2 class="dashed-heading">Mined words <small id="mined-count"></small></h2>
                 <div class="bubble mined-actions">
+                    <button id="export-apkg" title="a deck file Anki opens by itself: the words, their sentences, pictures and audio, and what you already reviewed in 復習. No AnkiConnect needed.">Anki deck (.apkg)</button>
                     <button id="export-csv">export for Anki (.tsv)</button>
                     <button id="clear-mined" class="quiet-danger">clear all</button>
                 </div>
@@ -304,6 +309,11 @@
                         <div class="row import-row">
                             <button id="anki-import">import known words from this deck</button>
                             <span class="hint">mature cards (interval ≥ 21 days) → known, the rest → learning</span>
+                        </div>
+                        <div class="row import-row">
+                            <label class="btn" title="an .apkg or .colpkg exported from Anki: no AnkiConnect, Anki doesn't even need to be open">or from an Anki file (.apkg)
+                                <input id="anki-import-file" type="file" accept=".apkg,.colpkg" hidden>
+                            </label>
                         </div>
                         <p id="anki-msg" class="status dark"></p>
                     </div>

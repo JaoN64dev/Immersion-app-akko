@@ -120,8 +120,8 @@ export async function extractSubtitle(n, codec) {
 // Pull the whole audio out of the open video file as WAV (16 kHz, mono — what Whisper wants).
 // For "subtitles from audio" on the watch page: phase 4. Needs a local file opened via openFile
 // (remote URLs can't be read by ffmpeg.wasm).
-export async function extractAudioWav() {
-    if (!file) throw new Error("no video file is open");
+export async function extractAudioWav(onProgress) {
+    if (!file) throw new Error("open a video file from this computer first (a video from a link can't be read here)");
     if (busy) throw new Error("still working on a track, try again in a moment");
     const ff = await getFFmpeg();
     // make the open file visible to ffmpeg (load() mounts it when it ran first)
@@ -138,6 +138,7 @@ export async function extractAudioWav() {
     const out = `/audio.wav`;
     const { code } = await run(
         ["-hide_banner", "-i", `/in/${file.name}`, "-map", `0:a:${wanted.n}`, "-vn", "-sn", "-dn", "-ar", "16000", "-ac", "1", "-f", "wav", out],
+        onProgress,
     );
     if (code !== 0) throw new Error("ffmpeg couldn't extract the audio");
     const data = await ffmpeg.readFile(out);

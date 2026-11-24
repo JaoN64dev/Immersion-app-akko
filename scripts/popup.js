@@ -154,12 +154,13 @@ function kanjiHtml(list) {
         <summary>漢字 <small>${list.map((k) => escapeHtml(k.char)).join(" ")}</small></summary>
         <ul class="kanji-list" translate="no">${list.map((k) => `
             <li>
-                <span class="kanji-char" lang="ja">${escapeHtml(k.char)}</span>
+                <button type="button" class="kanji-char" lang="ja" data-k="${escapeHtml(k.char)}" title="stroke order">${escapeHtml(k.char)}</button>
                 <div>
                     <b>${escapeHtml(k.meanings.join(", "))}</b>
                     ${k.on.length ? `<span lang="ja"><small>音</small> ${escapeHtml(k.on.join("、"))}</span>` : ""}
                     ${k.kun.length ? `<span lang="ja"><small>訓</small> ${escapeHtml(k.kun.join("、"))}</span>` : ""}
                     <span class="kanji-meta">${[k.jlpt, k.strokes && `${k.strokes} strokes`, k.grade && (k.grade <= 6 ? `grade ${k.grade}` : "secondary school")].filter(Boolean).join(" · ")}</span>
+                    <span class="kanji-strokes" hidden></span>
                 </div>
             </li>`).join("")}
         </ul>
@@ -287,6 +288,11 @@ function render(word, { entries, inflection, kanji, grammar = [], more = [], exp
     // remember whether the kanji section is open
     const box = popup.querySelector(".kanji-box");
     if (box) box.addEventListener("toggle", () => store.set(KANJI_OPEN, box.open));
+    // a kanji, tapped: its stroke order (KanjiVG), tapped again: drawn again
+    popup.querySelectorAll(".kanji-char").forEach((b) => b.addEventListener("click", async () => {
+        const { showStrokes } = await import("./words/strokes.js");
+        showStrokes(b.closest("li").querySelector(".kanji-strokes"), b.dataset.k);
+    }));
     // and which added dictionaries are folded away
     popup.querySelectorAll(".more-dict").forEach((d) => d.addEventListener("toggle", () => {
         const closed = store.get(MORE_CLOSED, []).filter((t) => t !== d.dataset.title);

@@ -4,7 +4,7 @@
 //
 // A table may be smaller than the English: any string it has no entry for stays English, so a new
 // language can start with the navigation and grow (npm run i18n-audit -- --lang de says what is
-// missing). ja/pt/es are complete and tests/i18n.test.mjs keeps them in step.
+// missing). All nine tables are complete, and tests/i18n.test.mjs keeps them in step.
 //
 // The pages and scripts are written in English. In another language, every piece of text and every
 // title / placeholder / aria-label that has an entry in its table (scripts/lang/ja.js, pt.js, es.js)

@@ -232,6 +232,7 @@ export function init({ onProgressChange }) {
             info: {
                 source: [podcast && podcast.title, episode && episode.title].filter(Boolean).join(" — "),
                 time: timeFormatter(ui.audio.currentTime),
+                kind: "listen",
             },
         };
     });

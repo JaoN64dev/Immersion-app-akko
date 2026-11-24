@@ -885,16 +885,46 @@ router.post('/dictionary/from-url', express.json(), installRoute(async (req, res
 
 const MAX_PAGE = 5e6;         // a page bigger than this is a mistake
 
+// The page's own encoding: plenty of Japanese sites (Aozora Bunko, older blogs) are still
+// Shift_JIS or EUC-JP, and reading those as UTF-8 gives mojibake. The HTTP header wins, then a
+// <meta charset> / http-equiv in the first few KB, then UTF-8.
+function pageCharset(contentType, bytes) {
+  const fromHeader = /charset\s*=\s*["']?([\w.:-]+)/i.exec(contentType || '');
+  const head = bytes.subarray(0, 4096).toString('latin1');
+  const fromMeta = /<meta[^>]+charset\s*=\s*["']?([\w.:-]+)/i.exec(head);
+  for (const label of [fromHeader && fromHeader[1], fromMeta && fromMeta[1]]) {
+    if (!label) continue;
+    try { new TextDecoder(label); return label; } catch { /* a label Node doesn't know */ }
+  }
+  return 'utf-8';
+}
+
+async function fetchPage(href) {
+  const res = await fetch(href, { headers: { 'User-Agent': UA }, redirect: 'follow', signal: AbortSignal.timeout(30e3) })
+    .catch((err) => { throw new Error(err.name === 'TimeoutError' ? 'the page took too long to answer' : `couldn't reach it (${err.message})`); });
+  if (!res.ok) throw new Error(`the site answered ${res.status}`);
+  if (Number(res.headers.get('content-length')) > MAX_PAGE) throw new Error('that page is too big');
+  // stop reading once it's over the ceiling, instead of downloading all of it first
+  const chunks = [];
+  let size = 0;
+  for await (const chunk of res.body) {
+    size += chunk.length;
+    if (size > MAX_PAGE) throw new Error(`that page is too big (over ${MAX_PAGE / 1e6} MB)`);
+    chunks.push(chunk);
+  }
+  const bytes = Buffer.concat(chunks);
+  return { html: new TextDecoder(pageCharset(res.headers.get('content-type'), bytes)).decode(bytes), url: res.url || href };
+}
+
 router.post('/reader/from-url', express.json(), installRoute(async (req, res) => {
   const raw = String((req.body && req.body.url) || '').trim();
   if (!raw) throw new Error('paste the address of a page');
   let url;
   try { url = new URL(raw); } catch { throw new Error("that doesn't look like an address"); }
   if (!/^https?:$/.test(url.protocol)) throw new Error('only http and https addresses');
-  const html = await fetchText(url.href);
-  if (Buffer.byteLength(html) > MAX_PAGE) throw new Error(`that page is too big (${Math.round(Buffer.byteLength(html) / 1e6)} MB)`);
-  const title = (html.match(/<title[^>]*>([^<]*)</i) || [])[1]?.trim() || url.hostname;
-  res.json({ title, html, url: url.href });
+  const page = await fetchPage(url.href);
+  // the page reads its own <title> (entities and all); this is only the fallback
+  res.json({ title: url.hostname, html: page.html, url: page.url });
 }));
 
 router.post('/dictionary/packs/install', express.json(), installRoute(async (req, res) => {

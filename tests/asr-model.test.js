@@ -64,7 +64,12 @@ test('downloadModel: a wrong sha256 is refused and nothing is left behind', asyn
     assert.equal(fs.existsSync(tmp), false, 'no partial file left after a bad checksum');
 });
 
-test('POST /api/asr/model: with no tool installed, nothing is downloaded', async () => {
+test('POST /api/asr/model: with no tool installed, nothing is downloaded', async (t) => {
+    // a PATH with no whisper in it, whatever this machine has installed
+    const saved = { PATH: process.env.PATH, AKKO_WHISPER: process.env.AKKO_WHISPER };
+    process.env.PATH = fs.mkdtempSync(path.join(os.tmpdir(), 'akko-asr-empty-'));
+    delete process.env.AKKO_WHISPER;
+    t.after(() => { for (const [k, v] of Object.entries(saved)) { if (v === undefined) delete process.env[k]; else process.env[k] = v; } });
     const app = express();
     app.use('/api/asr', asr.router);
     const server = app.listen(0);

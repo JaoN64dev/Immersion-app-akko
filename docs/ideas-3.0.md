@@ -13,8 +13,8 @@ paid tier, no per-user cost — and no Apple Developer account, so macOS keeps o
 
 - **Phase 1, 2 and 3 are done** (see the checklists below): any language in the table works through
   its own dictionary, the app plans your week from what you have, and the numbers come from one place.
-- **Phase 4 is under way**: speech recognition is in (a Whisper-class tool on your own machine, and
-  読む → subtitles from audio); mining from anything, Reader 2.0 and card templates are next.
+- **Phase 4 is done**: speech recognition on the reader and the watch page, a webpage or a PDF into
+  the reader, read-aloud with a per-book word list, card templates v2.
 - Phase 5 (`.apkg`, shadowing, handwriting, PWA, cloud v2, the local assistant) is untouched.
 
 ## The headline: any language
@@ -65,15 +65,15 @@ verifiable free pack yet, so they work through *Settings → Dictionaries → ad
 | 6 | Capability-based UI (no broken pages, no dead buttons) | S | done |
 | 7 | **Coverage meter**: "% you know" before an episode or chapter | M | done |
 | 8 | Priming sessions made from what's next | M | done (reader + plan) |
-| 9 | Local speech recognition (Whisper-class, in the app) | L | partly: tool, SRT, reader button |
+| 9 | Local speech recognition (Whisper-class, in the app) | L | done: tool, model download, reader + watch page |
 | 10 | Shadowing: record over the line, compare | L | not started |
-| 11 | Handwriting and stroke order (KanjiVG), ja and zh | M | not started |
-| 12 | Anki two-way: `.apkg` with media and existing SRS | M | not started |
-| 13 | Card templates v2: trimmed audio, screenshot, pitch, frequency | M | not started |
-| 14 | Study planner: "what now?", a time budget | M | done (planner); heatmap left |
-| 15 | Stats 2.0: coverage growth, i+1 lines, retention by source | M | partly: bands, average, i+1 lines |
-| 16 | Reader 2.0: EPUB/text/manga, read-aloud, per-book words | L | partly: EPUB import and the reader exist from 2.0 |
-| 17 | Mine from anything: a URL, text or PDF page | M | partly: pasted text only |
+| 11 | Handwriting and stroke order (KanjiVG), ja and zh | M | stroke order done (ja); handwriting not started |
+| 12 | Anki two-way: `.apkg` with media and existing SRS | M | done: deck export, known words from an .apkg |
+| 13 | Card templates v2: trimmed audio, screenshot, pitch, frequency | M | done (frequency, FreqSort, URL) |
+| 14 | Study planner: "what now?", a time budget | M | done (planner + year heatmap) |
+| 15 | Stats 2.0: coverage growth, i+1 lines, retention by source | M | done: bands, i+1 lines, retention by source, next level |
+| 16 | Reader 2.0: EPUB/text/manga, read-aloud, per-book words | L | done |
+| 17 | Mine from anything: a URL, text or PDF page | M | done |
 | 18 | Mobile parity as a PWA | L | not started (the LAN page exists) |
 | 19 | Cloud v2 + self-host: reviews, positions, shared decks | L | not started (2.0 sync exists) |
 | 20 | Opt-in local assistant: a grammar breakdown of the line | L | not started |
@@ -107,7 +107,11 @@ verifiable free pack yet, so they work through *Settings → Dictionaries → ad
      **lines one word away**.
    - [ ] coverage of the library *before* you open it is only known once the planner has run; the
      EPUB/file list could carry it from the start.
-   - [ ] retention by source and "time to the next level".
+   - [x] retention by source and "time to the next level" (`scripts/core/levels.js`, 6 tests): mined
+     words now say where they came from (`kind`; older ones are recognised by what their page saved),
+     and Stats shows, per source, reviews passed and how likely the words are remembered today (FSRS).
+     A daily count of known words (`akko-known-days`) gives the pace of the last 30 days and the date
+     of the next milestone (100 … 30,000) — after a week of history.
 4. **Content without gaps** — 9, 17, 16, 13. **Next.**
    - [x] local ASR, the machine half: `server/asr.js` finds a Whisper-class tool that is already
      installed (whisper.cpp's `whisper-cli`, OpenAI's `whisper`, `faster-whisper`, or whatever
@@ -151,7 +155,69 @@ verifiable free pack yet, so they work through *Settings → Dictionaries → ad
      for web mining); Anki card templates can map fields to `frequency`, `url` alongside the existing
      `trimmed audio` (recordClip from cueStart→cueEnd), `screenshot` (grabFrame), `pitch` (pitchCardHtml),
      `pitchNotes`, `wordAudio` (JapanesePod101/Lingua Libre), and `spokenSentence` (VOICEVOX/TTS).
+   - [x] **phase 4 fixes, after reading it all back**:
+     - 読む → from a URL decodes the page in its own charset (Shift_JIS / EUC-JP: Aozora Bunko and
+       older sites were mojibake), times out after 30 s, and stops downloading past 5 MB instead of
+       after. The text comes out through the same extractor as an opened .html file, which drops
+       furigana (`<rt>`) and counts a `<blockquote><p>` once; a page written as one `<div>` with
+       `<br>`s (Aozora) is read whole instead of keeping only its title. `tests/reader-url.test.js`.
+     - read aloud: Stop no longer leaves the run hanging (and the words met are saved when you stop);
+       paragraphs not analysed yet are read instead of skipped; one utterance per sentence, since
+       Chrome cuts long ones off; a voice is picked for the text's language (zh-CN for cmn, zh-HK for
+       yue…) and a missing one is said instead of read in English; the page itself no longer scrolls
+       with every word.
+     - per-book words: under the text, the words of it you don't know yet by how often they come up,
+       plus how many were met reading aloud, downloadable as a .tsv.
+     - watch page → subtitles from audio is a real `<button>` (a `<label>` can't be disabled, so a
+       double click ran two transcriptions), shows extraction %, uploads the WAV as `.wav`, and drops
+       a result whose video was closed meanwhile.
+     - whisper.cpp is only offered ggml `.bin` models: OpenAI whisper's `.pt` files share
+       `~/.cache/whisper` and whisper-cli can't read them. `tests/asr-models.test.js`.
+     - Anki: fields named Frequency / FreqSort / URL map themselves; `freqSort` gives the bare rank.
+   - [x] **a PDF into the reader**: 読む → open a file takes `.pdf`. pdf.js (pinned 3.11.174, loaded on
+     first use from jsDelivr like JSZip, with its CMaps so Japanese text comes out) reads the text layer
+     in the browser; lines are glued back into sentences (`pdfLinesToParagraphs`, `tests/pdf.test.mjs`)
+     and a font's radical look-alikes (⽣) become the kanji (生). A scanned PDF says it has no text.
+
 5. **Everything else** — 12, 10, 11, 18, 19, 20 (biggest, most opinionated, last).
+   - [x] **an Anki deck without AnkiConnect** (feature 12, the export half): Watch → mined words →
+     **Anki deck (.apkg)**. sql.js (pinned 1.10.3, jsDelivr) writes the collection in the browser and
+     JSZip packs it with the picture and line audio akko kept, and each word said by a speaker when
+     there is one. Words reviewed in 復習 arrive with their interval and next review; the rest are new.
+     Fixed ids for the note type ("akko"), the deck (`akko::Japanese` …) and every note (from the mined
+     word) make a second export update instead of doubling. Checked against Anki's own importer (the
+     `anki` Python package, 26.9.4): fields, media, schedule, no duplicates on re-import.
+     `tests/apkg.test.mjs` covers the schedule and FreqSort.
+   - [x] **known words from an Anki file** (feature 12, the import half): Watch → Anki panel → *or from
+     an Anki file (.apkg)*. Reads both layouts — `collection.anki21`/`.anki2` and the zstd
+     `collection.anki21b` of Anki 2.1.50+ (fzstd 0.1.1, jsDelivr), skipping the "please update" stub —
+     finds each note type's word field by name, and applies the AnkiConnect import's rule (a mature
+     card → known, else learning; known/ignored words never go down). Checked with files from Anki's
+     own exporter in both layouts.
+   - [x] **watching from a magnet link** (not in the original 20; asked for): paste a `magnet:` link in
+     the Watch page's link box. `server/torrent.js` runs it with WebTorrent 3.0.21 (TCP/UDP + DHT, where
+     nyaa's peers are), downloads only the chosen episode in playback order, and serves it as
+     `/api/torrent/<hash>/<file>/<name>` with Range requests, so the player, seeking, progress and
+     "continue watching" treat it like any link. One torrent at a time, upload capped at 100 KB/s,
+     stopped when the episode closes or nothing plays for 5 minutes; files stay in `<data>/torrents`
+     (deletable from the bar) so whole-file features can use them. The bar says that it shares while it
+     plays. `tests/torrent.test.mjs` seeds the sample locally and checks the list, exact byte ranges,
+     stop and delete, offline. 10-bit x265 releases still need a browser that plays HEVC.
+   - [x] **OpenAI whisper without ffmpeg**: the `whisper` command sends every input through ffmpeg and
+     failed with `FileNotFoundError: [WinError 2]` where ffmpeg isn't installed (reported from a real
+     session). A 16-bit PCM WAV now goes through `server/whisper-wav.py` instead (Python's `wave` module,
+     the samples straight to the model; its code is passed with `python -c`, so it also works from
+     inside the desktop app's app.asar). Any other file gets `needs-wav`, and 読む converts it to a WAV in
+     the browser (`scripts/core/wav.js`) and sends it again. `tests/wav.test.mjs`.
+   - [x] **your year** (feature 14, the heatmap): Settings → Stats → *Your year*, one square per day for
+     the last 53 weeks, darker with more time (under 15 min / 30 / 60 / more), from the days
+     `scripts/core/today.js` already keeps. A summary line says the same in words (active days, longest
+     run, hours). `scripts/core/heatmap.js` is pure (`tests/heatmap.test.mjs`); colours come from the theme.
+   - [x] **stroke order** (feature 11, first half): tap a kanji in the popup's 漢字 section and it
+     draws itself stroke by stroke, numbered; tap again to replay. KanjiVG (pinned r20250816, jsDelivr,
+     CC BY-SA 3.0, credited on the pages and in the README), fetched per kanji and kept for the
+     session; only path data and number positions are read from the file (`scripts/words/strokes.js`).
+     Handwriting input and Chinese stroke order are still open.
 
 ## Fixes after the first local test (3.0.1)
 
