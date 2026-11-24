@@ -303,7 +303,7 @@ export default {
         "paste text": "テキストを貼り付け",
         "from a URL": 'URL から読む',
         "open a file": "ファイルを開く",
-        ".txt · .epub · .html · subtitles": ".txt · .epub · .html · 字幕",
+        ".txt · .epub · .pdf · .html · subtitles": ".txt · .epub · .pdf · .html · 字幕",
         "title": "タイトル",
         "untitled": "無題",
         "read it": "読む",

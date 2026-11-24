@@ -297,7 +297,7 @@ export default {
         "paste text": "colar texto",
         "from a URL": 'de uma URL',
         "open a file": "abrir um arquivo",
-        ".txt · .epub · .html · subtitles": ".txt · .epub · .html · legendas",
+        ".txt · .epub · .pdf · .html · subtitles": ".txt · .epub · .pdf · .html · legendas",
         "title": "título",
         "untitled": "sem título",
         "read it": "ler",

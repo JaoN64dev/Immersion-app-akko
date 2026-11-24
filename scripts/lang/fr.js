@@ -319,7 +319,7 @@ export default {
         "paste text": "coller un texte",
         "from a URL": 'depuis une URL',
         "open a file": "ouvrir un fichier",
-        ".txt · .epub · .html · subtitles": ".txt · .epub · .html · sous-titres",
+        ".txt · .epub · .pdf · .html · subtitles": ".txt · .epub · .pdf · .html · sous-titres",
         "title": "titre",
         "untitled": "sans titre",
         "read it": "le lire",

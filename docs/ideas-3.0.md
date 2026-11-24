@@ -13,8 +13,8 @@ paid tier, no per-user cost — and no Apple Developer account, so macOS keeps o
 
 - **Phase 1, 2 and 3 are done** (see the checklists below): any language in the table works through
   its own dictionary, the app plans your week from what you have, and the numbers come from one place.
-- **Phase 4 is done** except a PDF page as a source (needs pdf.js): speech recognition on the reader
-  and the watch page, a webpage into the reader, read-aloud with a per-book word list, card templates v2.
+- **Phase 4 is done**: speech recognition on the reader and the watch page, a webpage or a PDF into
+  the reader, read-aloud with a per-book word list, card templates v2.
 - Phase 5 (`.apkg`, shadowing, handwriting, PWA, cloud v2, the local assistant) is untouched.
 
 ## The headline: any language
@@ -73,7 +73,7 @@ verifiable free pack yet, so they work through *Settings → Dictionaries → ad
 | 14 | Study planner: "what now?", a time budget | M | done (planner); heatmap left |
 | 15 | Stats 2.0: coverage growth, i+1 lines, retention by source | M | partly: bands, average, i+1 lines |
 | 16 | Reader 2.0: EPUB/text/manga, read-aloud, per-book words | L | done |
-| 17 | Mine from anything: a URL, text or PDF page | M | URL + text done; PDF needs pdf.js |
+| 17 | Mine from anything: a URL, text or PDF page | M | done |
 | 18 | Mobile parity as a PWA | L | not started (the LAN page exists) |
 | 19 | Cloud v2 + self-host: reviews, positions, shared decks | L | not started (2.0 sync exists) |
 | 20 | Opt-in local assistant: a grammar breakdown of the line | L | not started |
@@ -170,6 +170,10 @@ verifiable free pack yet, so they work through *Settings → Dictionaries → ad
      - whisper.cpp is only offered ggml `.bin` models: OpenAI whisper's `.pt` files share
        `~/.cache/whisper` and whisper-cli can't read them. `tests/asr-models.test.js`.
      - Anki: fields named Frequency / FreqSort / URL map themselves; `freqSort` gives the bare rank.
+   - [x] **a PDF into the reader**: 読む → open a file takes `.pdf`. pdf.js (pinned 3.11.174, loaded on
+     first use from jsDelivr like JSZip, with its CMaps so Japanese text comes out) reads the text layer
+     in the browser; lines are glued back into sentences (`pdfLinesToParagraphs`, `tests/pdf.test.mjs`)
+     and a font's radical look-alikes (⽣) become the kanji (生). A scanned PDF says it has no text.
 
 5. **Everything else** — 12, 10, 11, 18, 19, 20 (biggest, most opinionated, last).
 

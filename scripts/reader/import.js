@@ -1,4 +1,4 @@
-// Turning files into {title, paragraphs}: .txt, .html/.xhtml, .epub, subtitles
+// Turning files into {title, paragraphs}: .txt, .html/.xhtml, .epub, .pdf, subtitles
 
 import { loadScript } from "../core/utils.js";
 import { parseSubtitle } from "../subtitles/parse.js";
@@ -82,13 +82,82 @@ async function epub(buf) {
     return { title, paragraphs };
 }
 
+// ---------- PDF ----------
+// pdf.js reads the text layer, in the browser, loaded on first use like JSZip. The CMaps are what
+// make a Japanese PDF's text come out as text. A scanned PDF (pictures of pages) has no text layer:
+// that is said, not shown as an empty book.
+
+const PDFJS = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/";
+
+async function getPdfJs() {
+    await loadScript(`${PDFJS}build/pdf.min.js`);
+    const lib = window.pdfjsLib;
+    lib.GlobalWorkerOptions.workerSrc = `${PDFJS}build/pdf.worker.min.js`;
+    return lib;
+}
+
+const CJK = /[　-ヿ㐀-鿿豈-﫿＀-￯가-힯]/;
+// a line that finishes a sentence (or a heading-ish short line) ends the paragraph
+const ENDS = /[。！？!?.:：」』）)"”…]$/;
+
+// PDF fonts often map a kanji to its look-alike radical character (⽣ U+2F63 for 生, ⾒ for 見): those
+// don't look up in any dictionary. Only that block is normalised, so ① or full-width letters stay.
+const unradical = (s) => s.replace(/[⺀-⿟]/g, (c) => c.normalize("NFKC"));
+
+// A PDF breaks its lines wherever the page edge is, not where sentences end: lines are glued back
+// into paragraphs (no space between two CJK characters, one space otherwise), and a paragraph ends
+// at a blank line or a line that ends a sentence.
+export function pdfLinesToParagraphs(lines) {
+    const out = [];
+    let cur = "";
+    const flush = () => { if (cur.trim()) out.push(cur.trim()); cur = ""; };
+    for (const raw of lines) {
+        const line = unradical(raw).replace(/\s+/g, " ").trim();
+        if (!line) { flush(); continue; }
+        if (cur) {
+            const glue = CJK.test(cur.slice(-1)) && CJK.test(line[0]) ? "" : cur.endsWith("-") ? "" : " ";
+            cur = (glue === "" && cur.endsWith("-") && !CJK.test(line[0]) ? cur.slice(0, -1) : cur) + glue + line;
+        } else cur = line;
+        if (ENDS.test(line)) flush();
+    }
+    flush();
+    return out;
+}
+
+async function pdfBook(buf) {
+    const lib = await getPdfJs();
+    const doc = await lib.getDocument({ data: new Uint8Array(buf), cMapUrl: `${PDFJS}cmaps/`, cMapPacked: true }).promise;
+    const meta = await doc.getMetadata().catch(() => null);
+    const paragraphs = [];
+    for (let n = 1; n <= doc.numPages; n++) {
+        const page = await doc.getPage(n);
+        const content = await page.getTextContent();
+        const lines = [""];
+        for (const item of content.items) {
+            if (typeof item.str !== "string") continue;
+            lines[lines.length - 1] += item.str;
+            if (item.hasEOL) lines.push("");
+        }
+        lines.push("");                       // a page ends a paragraph
+        paragraphs.push(...pdfLinesToParagraphs(lines));
+        page.cleanup();
+    }
+    doc.destroy();
+    if (!paragraphs.length) throw new Error("this PDF has no text in it, only pictures of pages (a scan): open it in the manga reader, which can OCR it page by page");
+    return { title: (meta && meta.info && String(meta.info.Title || "").trim()) || "", paragraphs };
+}
+
 export async function readTextFile(file) {
     const ext = file.name.split(".").pop().toLowerCase();
     const buf = await file.arrayBuffer();
     let title = baseName(file.name);
     let paragraphs;
 
-    if (ext === "epub") {
+    if (ext === "pdf") {
+        const book = await pdfBook(buf);
+        title = book.title || title;
+        paragraphs = book.paragraphs;
+    } else if (ext === "epub") {
         const book = await epub(buf);
         title = book.title || title;
         paragraphs = book.paragraphs;
