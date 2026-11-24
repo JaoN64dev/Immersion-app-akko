@@ -307,6 +307,7 @@ export default {
         "title": "タイトル",
         "untitled": "無題",
         "read it": "読む",
+        "converting the audio for Whisper… (on this computer)": "Whisper 用に音声を変換中…（このパソコンで）",
         "Your year": "この一年",
         "{n} days with the language in the last year · longest run {m} days · {h} h in all": "この一年で言語に触れた日：{n} 日 · 最長連続 {m} 日 · 合計 {h} 時間",
         "less": "少ない",

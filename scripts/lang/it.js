@@ -964,6 +964,7 @@ export default {
         "less": "meno",
         "more": "di più",
         "{date}: {n} min": "{date}: {n} min",
+        "converting the audio for Whisper… (on this computer)": "conversione dell'audio per Whisper… (su questo computer)",
     },
 
     // data-i18n blocks (whole paragraphs with links).

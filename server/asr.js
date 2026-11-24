@@ -108,10 +108,47 @@ function status() {
     };
 }
 
+// ---------- OpenAI whisper without ffmpeg ----------
+// The `whisper` command passes every input through ffmpeg, even a WAV, and fails with
+// "FileNotFoundError: [WinError 2]" where ffmpeg isn't installed. A 16-bit PCM WAV (what the watch
+// page sends, and what 読む converts to when asked) needs no ffmpeg: server/whisper-wav.py reads it
+// with Python's own wave module and gives the samples to whisper directly.
+
+const WAV_HELPER = path.join(__dirname, 'whisper-wav.py');
+
+// a RIFF/WAVE file holding 16-bit PCM
+function isPcmWav(file) {
+    let fd;
+    try {
+        fd = fs.openSync(file, 'r');
+        const head = Buffer.alloc(36);
+        if (fs.readSync(fd, head, 0, 36, 0) < 36) return false;
+        return head.toString('latin1', 0, 4) === 'RIFF' && head.toString('latin1', 8, 12) === 'WAVE'
+            && head.toString('latin1', 12, 16) === 'fmt ' && head.readUInt16LE(20) === 1 && head.readUInt16LE(34) === 16;
+    } catch { return false; } finally { if (fd !== undefined) fs.closeSync(fd); }
+}
+
+// the Python that the `whisper` command runs with: next to it in a venv's Scripts folder, one level up
+// in a normal Windows install (Python312\Scripts\whisper.exe), the #! line of the script elsewhere
+function pythonFor(tool) {
+    const exe = process.platform === 'win32' ? 'python.exe' : 'python3';
+    const dir = path.dirname(tool.path);
+    for (const p of [path.join(dir, exe), path.join(path.dirname(dir), exe), path.join(dir, 'python')]) {
+        if (fs.existsSync(p)) return p;
+    }
+    try {
+        const first = fs.readFileSync(tool.path, 'utf8').split('\n')[0];
+        const m = /^#!\s*(\S+python[\w.]*)/.exec(first);
+        if (m && fs.existsSync(m[1])) return m[1];
+    } catch { /* a binary, not a script */ }
+    return which('python3') || which('python');
+}
+
+const languageCode = (lang) => ({ ja: 'ja', en: 'en', ko: 'ko', cmn: 'zh', yue: 'yue', de: 'de', es: 'es', it: 'it', fr: 'fr', ru: 'ru', pt: 'pt' })[lang] || lang || 'auto';
+
 // the command line for the tool we found, writing an SRT next to `base`
 function command(tool, audio, base, lang) {
-    const languageCodes = { ja: 'ja', en: 'en', ko: 'ko', cmn: 'zh', yue: 'yue', de: 'de', es: 'es', it: 'it', fr: 'fr', ru: 'ru', pt: 'pt' };
-    const l = languageCodes[lang] || lang || 'auto';
+    const l = languageCode(lang);
     if (tool.family === 'cpp') {
         const model = (status().model) || 'model.bin';
         return { args: ['-m', model, '-f', audio, '-osrt', '-of', base, '-l', l], srt: `${base}.srt` };
@@ -183,8 +220,21 @@ function transcribe(audio, { lang = 'ja', timeout = 30 * 60e3 } = {}) {
         if (tool.family === 'cpp' && !found.model) return reject(new Error(found.help));
         const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'akko-asr-'));
         const base = path.join(dir, path.parse(audio).name);
-        const { args, srt } = command(tool, audio, base, lang);
-        const child = spawn(tool.path, args, { cwd: dir });
+        let run = { exe: tool.path, ...command(tool, audio, base, lang) };
+        if (tool.family === 'openai' && !which('ffmpeg')) {
+            if (!isPcmWav(audio)) {
+                try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* temp */ }
+                const err = new Error('OpenAI whisper needs ffmpeg to read this kind of file, and ffmpeg is not installed: send it as a WAV, or install ffmpeg (Windows: winget install Gyan.FFmpeg)');
+                err.code = 'needs-wav';
+                return reject(err);
+            }
+            const python = pythonFor(tool);
+            // the code itself goes in with -c: in the desktop app the file is inside app.asar, which only
+            // Node can read, not Python
+            if (python) run = { exe: python, args: ['-c', fs.readFileSync(WAV_HELPER, 'utf8'), audio, dir, languageCode(lang), 'base'], srt: `${base}.srt` };
+        }
+        const { args, srt } = run;
+        const child = spawn(run.exe, args, { cwd: dir, env: { ...process.env, PYTHONUTF8: '1', PYTHONIOENCODING: 'utf-8' } });
         let said = '';
         child.stdout.on('data', (b) => { said += b.toString(); });
         child.stderr.on('data', (b) => { said += b.toString(); });
@@ -257,10 +307,11 @@ router.post('/transcribe', express.raw({ type: () => true, limit: '2gb' }), asyn
         res.json({ srt });
     } catch (err) {
         console.error('asr:', err.message);
-        res.status(503).json({ error: err.message });
+        // needs-wav: the page can turn the file into a WAV itself and send it again
+        res.status(err.code === 'needs-wav' ? 422 : 503).json({ error: err.message, code: err.code || null });
     } finally {
         try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* temp */ }
     }
 });
 
-module.exports = { status, transcribe, which, models, router, TOOLS, downloadModel };
+module.exports = { status, transcribe, which, models, router, TOOLS, downloadModel, isPcmWav, pythonFor };

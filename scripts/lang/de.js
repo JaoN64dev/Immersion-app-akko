@@ -897,6 +897,7 @@ export default {
         "less": "weniger",
         "more": "mehr",
         "{date}: {n} min": "{date}: {n} Min",
+        "converting the audio for Whisper… (on this computer)": "wandle das Audio für Whisper um… (auf diesem Computer)",
     },
 
     // data-i18n blocks (whole paragraphs with links). Empty until those paragraphs are keyed: a missing

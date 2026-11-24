@@ -301,6 +301,7 @@ export default {
         "title": "título",
         "untitled": "sem título",
         "read it": "ler",
+        "converting the audio for Whisper… (on this computer)": "convertendo o áudio para o Whisper… (neste computador)",
         "Your year": "Seu ano",
         "{n} days with the language in the last year · longest run {m} days · {h} h in all": "{n} dias com o idioma no último ano · maior sequência {m} dias · {h} h no total",
         "less": "menos",

@@ -116,8 +116,19 @@ ui.audioFile.addEventListener("change", async () => {
     if (!file) return;
     ui.status.textContent = `listening to ${file.name}… this runs on this computer and takes as long as it takes`;
     try {
-        const res = await fetch(`/api/asr/transcribe?lang=${encodeURIComponent(target())}&name=${encodeURIComponent(file.name)}`, { method: "POST", body: file });
-        const body = await res.json().catch(() => ({ error: "the server didn't answer" }));
+        const send = (body, name) => fetch(`/api/asr/transcribe?lang=${encodeURIComponent(target())}&name=${encodeURIComponent(name)}`, { method: "POST", body });
+        let res = await send(file, file.name);
+        let body = await res.json().catch(() => ({ error: "the server didn't answer" }));
+        // OpenAI whisper without ffmpeg can only read a WAV: make one here and send that instead
+        if (res.status === 422 && body.code === "needs-wav") {
+            ui.status.textContent = t("converting the audio for Whisper… (on this computer)");
+            const { audioFileToWav } = await import("../core/wav.js");
+            let wav;
+            try { wav = await audioFileToWav(file); } catch { throw new Error(body.error); }
+            ui.status.textContent = `listening to ${file.name}… this runs on this computer and takes as long as it takes`;
+            res = await send(wav, file.name.replace(/\.[^.]+$/, "") + ".wav");
+            body = await res.json().catch(() => ({ error: "the server didn't answer" }));
+        }
         if (!res.ok) throw new Error(body.error || res.statusText);
         const paragraphs = parseSubtitle(body.srt, "srt").map((c) => c.text.replace(/\n/g, " ").trim()).filter(Boolean);
         if (!paragraphs.length) throw new Error("no speech in that file");

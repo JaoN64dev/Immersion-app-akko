@@ -194,6 +194,12 @@ verifiable free pack yet, so they work through *Settings → Dictionaries → ad
      finds each note type's word field by name, and applies the AnkiConnect import's rule (a mature
      card → known, else learning; known/ignored words never go down). Checked with files from Anki's
      own exporter in both layouts.
+   - [x] **OpenAI whisper without ffmpeg**: the `whisper` command sends every input through ffmpeg and
+     failed with `FileNotFoundError: [WinError 2]` where ffmpeg isn't installed (reported from a real
+     session). A 16-bit PCM WAV now goes through `server/whisper-wav.py` instead (Python's `wave` module,
+     the samples straight to the model; its code is passed with `python -c`, so it also works from
+     inside the desktop app's app.asar). Any other file gets `needs-wav`, and 読む converts it to a WAV in
+     the browser (`scripts/core/wav.js`) and sends it again. `tests/wav.test.mjs`.
    - [x] **your year** (feature 14, the heatmap): Settings → Stats → *Your year*, one square per day for
      the last 53 weeks, darker with more time (under 15 min / 30 / 60 / more), from the days
      `scripts/core/today.js` already keeps. A summary line says the same in words (active days, longest

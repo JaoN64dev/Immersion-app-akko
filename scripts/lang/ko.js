@@ -897,6 +897,7 @@ export default {
         "less": "적음",
         "more": "많음",
         "{date}: {n} min": "{date}: {n}분",
+        "converting the audio for Whisper… (on this computer)": "Whisper용으로 오디오 변환 중… (이 컴퓨터에서)",
     },
 
     // data-i18n blocks (whole paragraphs with links). Empty until those paragraphs are keyed: a missing
