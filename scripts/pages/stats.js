@@ -4,7 +4,8 @@
 
 import { escapeHtml, store } from "../core/utils.js";
 import * as today from "../core/today.js";
-import { target, learningEnglish } from "../core/target.js";
+import { target, learningEnglish, keyFor } from "../core/target.js";
+import * as levels from "../core/levels.js";
 import { wordStats, watchStats, mangaStats, podcastStats, textStats, minedStats, grammarStats, companionStats } from "../totals.js";
 
 // ---------- small formatters ----------
@@ -234,6 +235,49 @@ const TYPE_INFO = {
     netflix: { label: "Netflix", color: "var(--extra7)" },
 };
 
+// ---------- your next level (scripts/core/levels.js) ----------
+
+function renderLevel() {
+    const el = document.getElementById("stats-level");
+    if (!el) return;
+    const history = levels.snapshot();
+    const now = history[today.dayOf()] || 0;
+    const l = levels.nextLevel(history, now);
+    if (!l.next) {
+        el.innerHTML = `<p><b>${now.toLocaleString()}</b> words known: past every milestone akko counts.</p>`;
+        return;
+    }
+    const pct = Math.round((now / l.next) * 100);
+    const when = l.perDay === null
+        ? "akko starts keeping a daily count today: give it a week to say how fast you're going."
+        : l.days === null
+            ? `no new known words since ${l.since}: mark the words you know (key 3) as you go.`
+            : `at your pace since ${l.since} (about ${l.perDay >= 10 ? Math.round(l.perDay) : l.perDay.toFixed(1)} a day), that's <b>${l.days === 1 ? "tomorrow" : l.days <= 60 ? `in ${l.days} days` : `in about ${Math.round(l.days / 30)} months`}</b>.`;
+    el.innerHTML = `
+        <p><b>${now.toLocaleString()}</b> words known · next: <b>${l.next.toLocaleString()}</b> (${l.left.toLocaleString()} to go)</p>
+        <div class="stats-bar" role="img" aria-label="${pct}% of the way to ${l.next}"><i class="stats-level-fill" style="width:${pct}%"></i></div>
+        <p class="hint">${when}</p>`;
+}
+
+// ---------- retention by source ----------
+
+function renderRetention(mined) {
+    const el = document.getElementById("stats-retention");
+    if (!el) return;
+    const rows = levels.retentionBySource(mined, store.get(keyFor("akko-review"), {}));
+    if (!rows.length) {
+        el.innerHTML = `<p class="stats-empty">nothing reviewed yet: mine a few words, then review them in 復習</p>`;
+        return;
+    }
+    const pc = (x) => `${Math.round(x * 100)}%`;
+    el.innerHTML = `
+        <table class="stats-table">
+            <thead><tr><th>mined from</th><th>words</th><th>reviewed</th><th title="reviews answered anything but “again”">reviews passed</th><th title="how likely you are to remember them right now (FSRS)">remembered today</th></tr></thead>
+            <tbody>${rows.map((r) => `<tr><td>${escapeHtml(r.label)}</td><td>${r.words}</td><td>${r.reviewed}</td><td>${pc(r.passed)}</td><td>${pc(r.recall)}</td></tr>`).join("")}</tbody>
+        </table>
+        <p class="hint">a source well below the others is worth a look: those words may need a clearer sentence when you mine them.</p>`;
+}
+
 function renderRecent(rows) {
     const el = document.getElementById("stats-recent");
     const items = rows.filter((r) => r.title && r.when).sort((a, b) => b.when - a.when).slice(0, 12);
@@ -269,6 +313,8 @@ async function init() {
     renderWordBar(words);
     renderCoverage();
     renderMiningChart(mined.items);
+    renderLevel();
+    renderRetention(mined.items);
     renderRecent([...watch.recent, ...manga.recent, ...text.recent, ...companion.recent]);
 }
 

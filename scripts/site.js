@@ -17,6 +17,7 @@ import * as wordsSync from "./core/words-sync.js";
 import * as sync from "./core/sync.js";
 import * as tour from "./core/tour.js";
 import * as oops from "./core/oops.js";
+import * as levels from "./core/levels.js";
 
 today.start();          // count today's minutes (watching, listening, reading)
 autoBackup.start();     // every few days, a backup to the server's data folder
@@ -24,6 +25,7 @@ themes.start();         // light / dark
 companion.start();      // the browser extension: what you did on YouTube / Netflix comes in
 wordsSync.start();      // one word list for every window, phone and the extension (server/words.js)
 sync.start();           // the rest in step too: positions, 復習, mined words, the library… (server/sync.js)
+setTimeout(() => { try { levels.snapshot(); } catch (err) { console.warn(err); } }, 3000);   // known words today, for "time to the next level"
 
 // ---------- ? shows this page's keys ----------
 // (the same list as the sidebar's "Keys", which is usually folded away)

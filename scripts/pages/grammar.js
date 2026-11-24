@@ -245,7 +245,7 @@ async function init() {
     watchHover(ui.lesson);
     // mined cards get the lesson as source and the example's translation
     popup.enableWordClicks(ui.lesson, ".ex-ja", (lineEl) => ({
-        info: { source: `文法 ${current.title}`, translation: current.examples[Number(lineEl.dataset.i)]?.en || "" },
+        info: { source: `文法 ${current.title}`, kind: "grammar", translation: current.examples[Number(lineEl.dataset.i)]?.en || "" },
     }));
     window.addEventListener("akko-words-changed", () => recolor(ui.lesson));
 

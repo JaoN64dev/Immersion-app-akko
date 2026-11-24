@@ -71,7 +71,7 @@ verifiable free pack yet, so they work through *Settings → Dictionaries → ad
 | 12 | Anki two-way: `.apkg` with media and existing SRS | M | not started |
 | 13 | Card templates v2: trimmed audio, screenshot, pitch, frequency | M | done (frequency, FreqSort, URL) |
 | 14 | Study planner: "what now?", a time budget | M | done (planner); heatmap left |
-| 15 | Stats 2.0: coverage growth, i+1 lines, retention by source | M | partly: bands, average, i+1 lines |
+| 15 | Stats 2.0: coverage growth, i+1 lines, retention by source | M | done: bands, i+1 lines, retention by source, next level |
 | 16 | Reader 2.0: EPUB/text/manga, read-aloud, per-book words | L | done |
 | 17 | Mine from anything: a URL, text or PDF page | M | done |
 | 18 | Mobile parity as a PWA | L | not started (the LAN page exists) |
@@ -107,7 +107,11 @@ verifiable free pack yet, so they work through *Settings → Dictionaries → ad
      **lines one word away**.
    - [ ] coverage of the library *before* you open it is only known once the planner has run; the
      EPUB/file list could carry it from the start.
-   - [ ] retention by source and "time to the next level".
+   - [x] retention by source and "time to the next level" (`scripts/core/levels.js`, 6 tests): mined
+     words now say where they came from (`kind`; older ones are recognised by what their page saved),
+     and Stats shows, per source, reviews passed and how likely the words are remembered today (FSRS).
+     A daily count of known words (`akko-known-days`) gives the pace of the last 30 days and the date
+     of the next milestone (100 … 30,000) — after a week of history.
 4. **Content without gaps** — 9, 17, 16, 13. **Next.**
    - [x] local ASR, the machine half: `server/asr.js` finds a Whisper-class tool that is already
      installed (whisper.cpp's `whisper-cli`, OpenAI's `whisper`, `faster-whisper`, or whatever

@@ -76,6 +76,7 @@ export async function mine(entry, ctx) {
         source: info.source || "",
         time: info.time || "",
         url: info.url || "",               // source page, when mined from a URL
+        kind: info.kind || "",             // watch / manga / read / web / listen…: Stats → retention by source
         videoName: info.videoName || "",
         cueStart: info.cueStart ?? null,
         cueEnd: info.cueEnd ?? null,

@@ -41,6 +41,7 @@ function cueContext(cue) {
             source: [state.anime && (state.anime.title.native || state.anime.title.romaji), state.videoName].filter(Boolean).join(" — "),
             time: timeFormatter(el.video.currentTime),
             videoName: state.videoName,
+            kind: "watch",
             cueStart: cue ? cues.cueStart(cue) : null,
             cueEnd: cue ? cues.cueEnd(cue) : null,
             translation: cue ? subs2.textFor(cues.cueStart(cue), cues.cueEnd(cue)) : "",

@@ -1253,6 +1253,10 @@ body.target-ja .en-only {display: none !important;}
 .reader-prime {margin: 8px 0; font-size: .92em; color: var(--ink-soft);}
 .reader-prime b {color: var(--ink);}
 .reader-words {margin: 12px 0;}
+.stats-level-fill {background: var(--highlight);}
+.stats-table {border-collapse: collapse; width: 100%; font-size: .92em;}
+.stats-table th, .stats-table td {text-align: left; padding: .3em .6em; border-bottom: 1px solid var(--ink-soft);}
+.stats-table th {color: var(--ink-soft); font-weight: normal;}
 .reader-words summary {cursor: pointer; color: var(--ink-soft);}
 .reader-words-list {display: flex; flex-wrap: wrap; gap: .3em .9em; list-style: none; padding: 0; margin: .6em 0 0;}
 .reader-words-list small {color: var(--ink-soft);}

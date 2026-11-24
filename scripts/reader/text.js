@@ -424,7 +424,7 @@ export function init({ onBack }) {
         const text = rec.paragraphs[Number(p.dataset.i)];
         return {
             sentence: w && w.dataset.o !== undefined ? sentenceAround(text, Number(w.dataset.o)) : text,
-            info: { source: rec.title, url: rec.url },
+            info: { source: rec.title, url: rec.url, kind: rec.url ? "web" : "read" },
         };
     });
     watchHover(ui.text);
