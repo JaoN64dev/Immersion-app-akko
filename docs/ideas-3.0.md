@@ -66,7 +66,7 @@ verifiable free pack yet, so they work through *Settings → Dictionaries → ad
 | 7 | **Coverage meter**: "% you know" before an episode or chapter | M | done |
 | 8 | Priming sessions made from what's next | M | done (reader + plan) |
 | 9 | Local speech recognition (Whisper-class, in the app) | L | done: tool, model download, reader + watch page |
-| 10 | Shadowing: record over the line, compare | L | not started |
+| 10 | Shadowing: record over the line, compare | L | done (Watch page) |
 | 11 | Handwriting and stroke order (KanjiVG), ja and zh | M | stroke order done (ja); handwriting not started |
 | 12 | Anki two-way: `.apkg` with media and existing SRS | M | done: deck export, known words from an .apkg |
 | 13 | Card templates v2: trimmed audio, screenshot, pitch, frequency | M | done (frequency, FreqSort, URL) |
@@ -194,6 +194,14 @@ verifiable free pack yet, so they work through *Settings → Dictionaries → ad
      finds each note type's word field by name, and applies the AnkiConnect import's rule (a mature
      card → known, else learning; known/ignored words never go down). Checked with files from Anki's
      own exporter in both layouts.
+   - [x] **shadowing** (feature 10): Watch → 🎤 shadow or R replays the line while recording it, then
+     records you for as long plus a second, and draws both melodies with a *melody match* %
+     (`scripts/core/prosody.js`, pure): pitch by autocorrelation, each voice in semitones from its own
+     median (a low and a high voice can match), slips dropped, then subsequence DTW — all of the line
+     against any stretch of your recording at 2/3–1.5× its length, so an "eh" before or a word after
+     doesn't count, with a small cost for stretching time. Tuned on real speech: the same sentence in
+     another voice scores ~80–95, a different sentence ~25–70 (`tests/prosody.test.mjs` keeps the
+     ranking, with the measured tracks in `tests/fixtures/`). Nothing is saved or sent.
    - [x] **watching from a magnet link** (not in the original 20; asked for): paste a `magnet:` link in
      the Watch page's link box. `server/torrent.js` runs it with WebTorrent 3.0.21 (TCP/UDP + DHT, where
      nyaa's peers are), downloads only the chosen episode in playback order, and serves it as
