@@ -62,6 +62,7 @@
                 <li><kbd>K</kbd> skip the intro (or jump 85 s)</li>
                 <li><kbd>I</kbd> mark where the intro starts / ends</li>
                 <li><kbd>N</kbd> next episode (open several files at once, or drag them in)</li>
+                <li><kbd>R</kbd> shadowing: hear the line, say it after, compare the melody</li>
                 <li><kbd>[</kbd> <kbd>]</kbd> sub delay</li>
                 <li><kbd>1</kbd>–<kbd>4</kbd> new / learning / known / ignore the word under the mouse</li>
             </ul>
@@ -219,11 +220,29 @@
                                 <span class="ja-only"><br><button type="button" id="try-sample" class="try-sample">▶ or try a sample: <span lang="ja" translate="no">吾輩は猫である</span> (40 s)</button></span></p>
                         </div>
 
+                        <!-- shadowing: the line's melody and yours (scripts/player/shadow.js) -->
+                        <div id="shadow-panel" class="note shadow-panel" hidden>
+                            <div class="shadow-head">
+                                <b>shadowing</b>
+                                <span id="shadow-status" class="status"></span>
+                                <span id="shadow-score" class="shadow-score"></span>
+                                <button id="shadow-close" type="button" title="close">✕</button>
+                            </div>
+                            <canvas id="shadow-canvas" class="shadow-canvas" width="640" height="150"></canvas>
+                            <div class="shadow-actions">
+                                <button id="shadow-play-original" type="button" disabled>▶ the line</button>
+                                <button id="shadow-play-yours" type="button" disabled>▶ you</button>
+                                <button id="shadow-again" type="button" disabled>↻ again</button>
+                                <span class="hint">solid: the line · dashed: you. The melody is compared, not the voice: a low and a high voice can both match.</span>
+                            </div>
+                        </div>
+
                         <div class="toolbar player-toolbar">
                             <div class="toolbar-main">
                                 <button id="prev-line" title="previous line (A)">⏮ line</button>
                                 <button id="replay-line" title="replay line (S)">↻ replay</button>
                                 <button id="next-line" title="next line (D)">line ⏭</button>
+                                <button id="shadow-line" title="shadowing: hear the line, say it after, compare the melody (R)">shadow</button>
                                 <button id="fullscreen" title="full screen with subtitles (F, or double-click the video)">full screen</button>
                                 <button id="transcript-toggle" class="transcript-toggle" aria-pressed="true" title="show / hide the transcript next to the video">transcript</button>
                             </div>

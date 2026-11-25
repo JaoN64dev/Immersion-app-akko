@@ -20,6 +20,7 @@
 //   - /api/sync     everything else in step between windows, browsers, phones server/sync.js
 //   - /api/cloud    akko accounts: words and mined words between computers   server/cloud.js
 //   - /api/torrent  watching from a magnet link, streamed to the player      server/torrent.js
+//   - /api/assistant a sentence explained by a model on this computer (Ollama) server/assistant.js
 
 // first: it keeps the warnings and errors every other part prints, for the diagnostics
 const diagnostics = require('./server/diagnostics');
@@ -58,6 +59,7 @@ app.use(guard);
 app.use('/api/subs', subtitles.router);
 app.use('/api/asr', require('./server/asr').router);
 app.use('/api/torrent', require('./server/torrent').router);     // magnet links -> the player (server/torrent.js)
+app.use('/api/assistant', require('./server/assistant').router); // a sentence explained by a local model (Ollama)
 app.use('/api/dictionaries', dictionaries.router);
 app.use('/api', dictionary.router);
 app.use('/api/anki', anki.router);

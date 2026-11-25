@@ -3,7 +3,7 @@ title: 〜てある
 meaning: has been done (and stays that way)
 level: N4
 order: 35
-detect: て|で + ある
+detect: て|で[接続助詞] + ある
 see: te-iru, te-oku
 ---
 
