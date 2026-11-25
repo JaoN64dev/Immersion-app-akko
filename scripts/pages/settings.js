@@ -389,7 +389,7 @@ help.init();
 account.init();
 
 // ---------- the local assistant (server/assistant.js, scripts/words/explain.js) ----------
-// Is Ollama running here, which models does it have, and which one 🧠 explain uses ("akko-assistant").
+// Is Ollama running here, which models does it have, and which one explain uses ("akko-assistant").
 (function assistant() {
     const status = $("#assistant-status");
     if (!status) return;
@@ -397,9 +397,9 @@ account.init();
     const KEY = "akko-assistant";
     getJson("/api/assistant").then((s) => {
         help.open = !s.running || !s.models.length;
-        if (!s.running) { status.textContent = t("Ollama isn't running on this computer: 🧠 explain shows akko's own breakdown only."); return; }
+        if (!s.running) { status.textContent = t("Ollama isn't running on this computer: explain shows akko's own breakdown only."); return; }
         if (!s.models.length) { status.textContent = t("Ollama is running but has no model yet: see step 2 below."); return; }
-        status.textContent = t("Ollama is running here with {n} model(s): 🧠 explain also writes an explanation.").replace("{n}", String(s.models.length));
+        status.textContent = t("Ollama is running here with {n} model(s): explain also writes an explanation.").replace("{n}", String(s.models.length));
         row.hidden = false;
         pick.innerHTML = s.models.map((m) => `<option>${escapeHtml(m)}</option>`).join("");
         const saved = store.get(KEY, {}).model;

@@ -1,4 +1,4 @@
-// Shadowing (3.0, feature 10) on the Watch page: R or 🎤 replays the current line while recording
+// Shadowing (3.0, feature 10) on the Watch page: R or replays the current line while recording
 // its sound, then records you saying it, and draws both melodies on top of each other with a
 // "melody match" (scripts/core/prosody.js). Both recordings can be played back. Nothing is saved or
 // sent anywhere: it all happens in this page.
@@ -66,7 +66,7 @@ async function recordYou(seconds) {
         const { rec, done } = recorderFor(mic);
         rec.start();
         for (let left = Math.ceil(seconds); left > 0; left--) {
-            say(t("🎤 your turn: say the line ({n})").replace("{n}", String(left)));
+            say(t("your turn: say the line ({n})").replace("{n}", String(left)));
             await sleep(Math.min(1000, (seconds - (Math.ceil(seconds) - left)) * 1000));
         }
         rec.stop();
@@ -135,7 +135,7 @@ export async function shadowLine(again = false) {
     ui.original.disabled = ui.yours.disabled = ui.again.disabled = true;
     state.recording = true;            // "continue watching" doesn't save the jumps around the line
     try {
-        say(t("🔊 listen…"));
+        say(t("listen…"));
         const originalBlob = await recordLine(cue);
         const seconds = cueEnd(cue) - cueStart(cue) + 1;
         const yoursBlob = await recordYou(seconds);

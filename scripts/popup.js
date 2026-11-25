@@ -272,7 +272,7 @@ function render(word, { entries, inflection, kanji, grammar = [], more = [], exp
         ${lemma && lemma.toLowerCase() !== word.toLowerCase() ? `<span class="lemma" lang="${target()}">→ ${escapeHtml(lemma)}</span>` : ""}
         ${link}
         ${!en && ctx && ctx.sentence && ctx.sentence.length > 1 ? `<button class="say-sentence" title="hear the whole sentence">▶ sentence</button>` : ""}
-        ${ctx && ctx.sentence && ctx.sentence.length > 1 ? `<button class="explain-sentence-btn" title="the whole sentence, word by word, with its grammar (and a local model's explanation, when one is installed)">🧠 explain</button>` : ""}
+        ${ctx && ctx.sentence && ctx.sentence.length > 1 ? `<button class="explain-sentence-btn" title="the whole sentence, word by word, with its grammar (and a local model's explanation, when one is installed)">explain</button>` : ""}
         <button class="close" title="close">✕</button></div>
         ${expressionHtml(expression)}
         ${inflectionHtml(lemma || word, inflection)}
@@ -351,7 +351,7 @@ function place(anchor) {
     popup.classList.toggle("above", above);
 }
 
-// A word typed, pasted or drawn in 🔍 look up (scripts/words/lookup.js): the popup near the top of the
+// A word typed, pasted or drawn in look up (scripts/words/lookup.js): the popup near the top of the
 // screen, with no sentence around it
 export function lookupWord(word) {
     const x = window.innerWidth / 2;
@@ -401,11 +401,11 @@ export function enableWordClicks(container, lineSelector, contextFor = () => ({}
 }
 
 export function init() {
-    // 🔍 look up a word: in the page's menu, and the / key (when not typing somewhere)
+    // look up a word: in the page's menu, and the / key (when not typing somewhere)
     const menu = document.querySelector("#navi ul");
     if (menu && !menu.querySelector(".lookup-link")) {
         const li = document.createElement("li");
-        li.innerHTML = `<a href="#" class="lookup-link" title="type, paste or draw a word (/)">🔍 look up a word</a>`;
+        li.innerHTML = `<a href="#" class="lookup-link" title="type, paste or draw a word (/)">look up a word</a>`;
         li.firstChild.addEventListener("click", (e) => { e.preventDefault(); openLookupDialog(); });
         menu.prepend(li);
     }

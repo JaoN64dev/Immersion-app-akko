@@ -1,9 +1,9 @@
-// 🔍 Look up a word (3.0, feature 11's handwriting half): type or paste a word, or draw a kanji you
+// Look up a word (3.0, feature 11's handwriting half): type or paste a word, or draw a kanji you
 // can't type, and it opens in the usual word popup (meanings, kanji, stroke order, mining…).
 // Opened from the page's menu or with / (scripts/popup.js adds both on the pages that have a popup).
 //
 // The drawing is recognised in the browser by KanjiCanvas (Dominik Klein, MIT licence,
-// https://github.com/asdfjkl/kanjicanvas), loaded from a pinned commit the first time ✍ is used —
+// https://github.com/asdfjkl/kanjicanvas), loaded from a pinned commit the first time is used —
 // any stroke order, any stroke count. Nothing is sent anywhere.
 
 import { escapeHtml, loadScript } from "../core/utils.js";
@@ -35,8 +35,8 @@ function ensureDialog() {
     dialog.innerHTML = `
         <form method="dialog" class="lookup-form">
             <input class="lookup-input" type="search" autocomplete="off">
-            <button type="submit" class="lookup-go">🔍</button>
-            <button type="button" class="lookup-draw" title="">✍</button>
+            <button type="submit" class="lookup-go">look up</button>
+            <button type="button" class="lookup-draw" title="">draw</button>
             <button type="button" class="lookup-close" title="">✕</button>
         </form>
         <div class="lookup-pad" hidden>
@@ -66,7 +66,7 @@ function ensureDialog() {
     dialog.querySelector(".lookup-close").addEventListener("click", () => dialog.close());
     dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
 
-    // ✍: the drawing pad. Each stroke lifted: the best guesses, tap one to add it to the word
+    //: the drawing pad. Each stroke lifted: the best guesses, tap one to add it to the word
     const recognise = () => {
         const K = window.KanjiCanvas;
         if (!K || !K["recordedPattern_" + PAD] || !K["recordedPattern_" + PAD].length) { candidates.innerHTML = ""; return; }
@@ -106,7 +106,7 @@ export function openLookup(lookup) {
     const host = document.fullscreenElement || document.body;
     if (d.parentElement !== host) host.append(d);
     const input = d.querySelector(".lookup-input");
-    input.placeholder = t("type, paste or ✍ draw a word…");
+    input.placeholder = t("type, paste or draw a word…");
     input.lang = target();
     d.querySelector(".lookup-draw").title = t("draw a kanji you can't type");
     d.querySelector(".lookup-close").title = t("close");

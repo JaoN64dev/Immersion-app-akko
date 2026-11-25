@@ -1,4 +1,4 @@
-// "🧠 explain" in the word popup: the whole sentence broken down (3.0, feature 20).
+// "explain" in the word popup: the whole sentence broken down (3.0, feature 20).
 //
 // Right away, from akko itself: every word with its dictionary form, reading and first meaning, and
 // the grammar lessons the sentence contains. Then, when Ollama runs on this computer

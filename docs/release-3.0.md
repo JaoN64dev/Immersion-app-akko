@@ -18,7 +18,7 @@ Everything still runs on your own computer: no account needed, nothing uploaded,
 
 ## Watch
 
-- **🎤 Shadowing** (`R`): hear a line, say it after, and see your melody next to the original's.
+- **Shadowing** (`R`): hear a line, say it after, and see your melody next to the original's.
 - **Subtitles from the video's audio**, made by Whisper on your computer. OpenAI's whisper now works
   even without ffmpeg.
 - **Magnet links and .torrent files**: paste one (or nyaa's download link) and the episode streams to
@@ -30,12 +30,12 @@ Everything still runs on your own computer: no account needed, nothing uploaded,
 
 - **Web pages** (Japanese sites in any encoding) and **PDFs** straight into the reader.
 - **Read aloud**, with each word lit up as it's said, and a word list per book (.tsv).
-- **🔍 Look up a word** from the menu or with `/`: type it, paste it, or ✍ **draw** a kanji.
+- **Look up a word** from the menu or with `/`: type it, paste it, or **draw** a kanji.
 - **Kanji stroke order**: tap a kanji in the word popup.
 
 ## Understand
 
-- **🧠 Explain** in the word popup: the whole sentence word by word, with its grammar. With Ollama
+- **Explain** in the word popup: the whole sentence word by word, with its grammar. With Ollama
   installed, a local language model also writes an explanation (Settings → Local assistant).
 
 ## Anki

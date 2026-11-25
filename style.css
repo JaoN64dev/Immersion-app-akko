@@ -1859,7 +1859,7 @@ main .review-modes button[aria-selected="true"] {background: var(--post-bg); col
 .shadow-actions .hint {font-size: .8em; color: var(--ink-soft);}
 .shadow-score {font-weight: bold;}
 
-/* ---- 🧠 explain: a sentence broken down (scripts/words/explain.js) ---- */
+/* ---- explain: a sentence broken down (scripts/words/explain.js) ---- */
 .explain-dialog {max-width: min(46em, calc(100vw - 32px)); max-height: 85vh; width: 100%; border: 2px solid var(--border-color); border-radius: 10px; background: var(--post-bg); color: var(--ink); padding: 1em 1.2em;}
 .explain-dialog::backdrop {background: #0007;}
 .explain-head {display: flex; align-items: center; gap: .6em;}
@@ -1872,7 +1872,7 @@ main .review-modes button[aria-selected="true"] {background: var(--post-bg); col
 .explain-ai {margin-top: .8em; border-top: 2px dashed var(--border-color); padding-top: .4em;}
 .explain-text h1, .explain-text h2, .explain-text h3 {font-size: 1em; margin: .7em 0 .2em;}
 
-/* ---- 🔍 look up a word, ✍ drawn (scripts/words/lookup.js) ---- */
+/* ---- look up a word, drawn (scripts/words/lookup.js) ---- */
 .lookup-dialog {width: min(34em, calc(100vw - 32px)); border: 2px solid var(--border-color); border-radius: 10px; background: var(--post-bg); color: var(--ink); padding: .9em 1em;}
 .lookup-dialog::backdrop {background: #0007;}
 .lookup-form {display: flex; gap: .4em;}
