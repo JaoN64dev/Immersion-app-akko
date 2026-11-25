@@ -221,7 +221,10 @@ function transcribe(audio, { lang = 'ja', timeout = 30 * 60e3 } = {}) {
         const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'akko-asr-'));
         const base = path.join(dir, path.parse(audio).name);
         let run = { exe: tool.path, ...command(tool, audio, base, lang) };
-        if (tool.family === 'openai' && !which('ffmpeg')) {
+        // only OpenAI's own `whisper` command is known to need ffmpeg; a tool AKKO_WHISPER points at
+        // could read anything, so it is run as it is
+        const openaiWhisper = tool.family === 'openai' && /^whisper(\.(exe|cmd|bat))?$/i.test(path.basename(tool.path));
+        if (openaiWhisper && !which('ffmpeg')) {
             if (!isPcmWav(audio)) {
                 try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* temp */ }
                 const err = new Error('OpenAI whisper needs ffmpeg to read this kind of file, and ffmpeg is not installed: send it as a WAV, or install ffmpeg (Windows: winget install Gyan.FFmpeg)');
